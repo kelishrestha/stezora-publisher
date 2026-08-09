@@ -1,7 +1,7 @@
 import { SITE } from './config';
 import { absoluteUrl, canonicalUrl, formatDate } from './seo';
 
-type JsonLd = Record<string, unknown>;
+export type JsonLd = Record<string, unknown>;
 
 export interface PageMeta {
 	title: string;
@@ -53,6 +53,25 @@ export function articleJsonLd(meta: PageMeta): JsonLd {
 		author: { '@type': 'Person', name: SITE.author },
 		publisher: { '@type': 'Organization', name: SITE.name },
 		mainEntityOfPage: canonicalUrl(meta.path),
+	};
+}
+
+export interface BreadcrumbItem {
+	name: string;
+	href?: string;
+}
+
+export function breadcrumbJsonLd(items: BreadcrumbItem[]): JsonLd {
+	const itemList = items.map((item, index) => ({
+		'@type': 'ListItem',
+		position: index + 1,
+		name: item.name,
+		...(item.href ? { item: canonicalUrl(item.href) } : {}),
+	}));
+	return {
+		'@context': 'https://schema.org',
+		'@type': 'BreadcrumbList',
+		itemListElement: itemList,
 	};
 }
 

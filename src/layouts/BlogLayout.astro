@@ -1,0 +1,52 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import Breadcrumbs from '../components/blog/Breadcrumbs.astro';
+import PostMeta from '../components/blog/PostMeta.astro';
+import type { Post } from '../lib/publications/collections';
+import type { Publication } from '../lib/publications/types';
+import { PUBLICATIONS_PATH, publicationPath, postPath } from '../lib/publications';
+
+export interface Props {
+	post: Post;
+	publication: Publication;
+}
+
+const { post, publication } = Astro.props;
+
+const path = postPath(publication.slug, post.id);
+const breadcrumbs = [
+	{ name: 'Home', href: '/' },
+	{ name: 'Publications', href: PUBLICATIONS_PATH },
+	{ name: publication.name, href: publicationPath(publication.slug) },
+	{ name: post.data.title },
+];
+---
+
+<BaseLayout
+	title={post.data.title}
+	description={post.data.excerpt}
+	path={path}
+	type="article"
+	publishedAt={post.data.pubDate}
+	updatedAt={post.data.updatedDate}
+	breadcrumbs={breadcrumbs}
+>
+	<article class="mx-auto w-full max-w-3xl py-10">
+		<header>
+			<Breadcrumbs items={breadcrumbs} />
+			<h1 class="mt-6 font-serif text-3xl font-bold tracking-tight sm:text-4xl">{post.data.title}</h1>
+			<div class="mt-4">
+				<PostMeta
+					publicationSlug={publication.slug}
+					category={post.data.category}
+					tags={post.data.tags}
+					pubDate={post.data.pubDate}
+					updatedDate={post.data.updatedDate}
+				/>
+			</div>
+		</header>
+		<div class="prose prose-slate mt-10 max-w-none dark:prose-invert">
+			<slot />
+		</div>
+	</article>
+</BaseLayout>

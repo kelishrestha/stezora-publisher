@@ -1,0 +1,41 @@
+---
+import PublicationLayout from '../../../../layouts/PublicationLayout.astro';
+import { getCategoriesForPublication } from '../../../../lib/publications/collections';
+import { categoryPath, getPublications, publicationPath } from '../../../../lib/publications';
+
+export function getStaticPaths() {
+	return getPublications().map((publication) => ({
+		params: { slug: publication.slug },
+		props: { publication },
+	}));
+}
+
+const { slug } = Astro.params;
+const { publication } = Astro.props;
+
+const categories = await getCategoriesForPublication(slug);
+---
+
+<PublicationLayout
+	publication={publication}
+	title="Categories"
+	description={`Categories in ${publication.name}.`}
+	path={`${publicationPath(publication.slug)}/categories`}
+>
+	<section>
+		<h2 class="font-serif text-2xl font-semibold">Categories</h2>
+		<ul class="mt-6 grid gap-4 sm:grid-cols-2">
+			{categories.map((category) => (
+				<li>
+					<a
+						href={categoryPath(publication.slug, category.slug)}
+						class="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-5 py-4 transition-colors hover:border-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-500"
+					>
+						<span class="font-medium">{category.name}</span>
+						<span class="text-sm text-slate-500 dark:text-slate-400">{category.count}</span>
+					</a>
+				</li>
+			))}
+		</ul>
+	</section>
+</PublicationLayout>

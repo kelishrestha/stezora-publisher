@@ -1,0 +1,50 @@
+---
+import PublicationLayout from '../../../../layouts/PublicationLayout.astro';
+import PostList from '../../../../components/blog/PostList.astro';
+import Breadcrumbs from '../../../../components/blog/Breadcrumbs.astro';
+import { getCategoriesForPublication, getPostsByCategory } from '../../../../lib/publications/collections';
+import { PUBLICATIONS_PATH, categoryPath, getPublications, publicationPath } from '../../../../lib/publications';
+
+export async function getStaticPaths() {
+	const paths = [];
+	for (const publication of getPublications()) {
+		const categories = await getCategoriesForPublication(publication.slug);
+		for (const category of categories) {
+			paths.push({
+				params: { slug: publication.slug, category: category.slug },
+				props: { publication, categoryName: category.name },
+			});
+		}
+	}
+	return paths;
+}
+
+const { slug, category: categorySlug } = Astro.params;
+const { publication, categoryName } = Astro.props;
+
+const posts = await getPostsByCategory(slug, categoryName);
+
+const breadcrumbs = [
+	{ name: 'Home', href: '/' },
+	{ name: 'Publications', href: PUBLICATIONS_PATH },
+	{ name: publication.name, href: publicationPath(publication.slug) },
+	{ name: 'Categories', href: `${publicationPath(publication.slug)}/categories` },
+	{ name: categoryName },
+];
+---
+
+<PublicationLayout
+	publication={publication}
+	title={categoryName}
+	description={`Posts in ${categoryName} from ${publication.name}.`}
+	path={categoryPath(publication.slug, categorySlug)}
+	breadcrumbs={breadcrumbs}
+>
+	<Breadcrumbs items={breadcrumbs} />
+	<section class="mt-6">
+		<h2 class="font-serif text-2xl font-semibold">{categoryName}</h2>
+		<div class="mt-6">
+			<PostList posts={posts} publicationSlug={publication.slug} />
+		</div>
+	</section>
+</PublicationLayout>

@@ -1,0 +1,17 @@
+---
+import type { Post } from '../../lib/publications/collections';
+import PostCard from './PostCard.astro';
+
+interface Props {
+	posts: Post[];
+	publicationSlug: string;
+}
+
+const { posts, publicationSlug } = Astro.props;
+---
+
+<div class="space-y-10">
+	{posts.map((post) => (
+		<PostCard post={post} publicationSlug={publicationSlug} />
+	))}
+</div>

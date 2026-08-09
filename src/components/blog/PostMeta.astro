@@ -1,0 +1,47 @@
+---
+import { formatDate } from '../../lib/seo/seo';
+import { categoryPath, slugify, tagPath } from '../../lib/publications';
+
+interface Props {
+	publicationSlug: string;
+	category: string;
+	tags: string[];
+	pubDate: Date;
+	updatedDate?: Date;
+}
+
+const { publicationSlug, category, tags, pubDate, updatedDate } = Astro.props;
+
+function displayDate(date: Date): string {
+	return date.toLocaleDateString('en', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+---
+
+<p class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
+	<time datetime={formatDate(pubDate)}>{displayDate(pubDate)}</time>
+	{updatedDate && updatedDate.getTime() > pubDate.getTime() && (
+		<span aria-hidden="true">·</span>
+	)}
+	{updatedDate && updatedDate.getTime() > pubDate.getTime() && (
+		<time datetime={formatDate(updatedDate)}>Updated {displayDate(updatedDate)}</time>
+	)}
+	<span aria-hidden="true">·</span>
+	<a
+		href={categoryPath(publicationSlug, slugify(category))}
+		class="font-medium text-slate-700 transition-colors hover:text-slate-900 dark:text-slate-200 dark:hover:text-white"
+	>
+		{category}
+	</a>
+	{tags.length > 0 && (
+		<span class="flex flex-wrap items-center gap-x-2">
+			{tags.map((tag) => (
+				<a
+					href={tagPath(publicationSlug, slugify(tag))}
+					class="transition-colors hover:text-slate-900 dark:hover:text-white"
+				>
+					#{tag}
+				</a>
+			))}
+		</span>
+	)}
+</p>

@@ -1,0 +1,30 @@
+---
+import BlogLayout from '../../../../layouts/BlogLayout.astro';
+import { render } from 'astro:content';
+import { getPublishedPosts } from '../../../../lib/publications/collections';
+import { getPublication } from '../../../../lib/publications';
+
+export async function getStaticPaths() {
+	const posts = await getPublishedPosts();
+	return posts
+		.filter((post) => getPublication(post.data.publication))
+		.map((post) => ({
+			params: { slug: post.data.publication, post: post.id },
+			props: { post },
+		}));
+}
+
+const { slug } = Astro.params;
+const { post } = Astro.props;
+
+const publication = getPublication(slug);
+if (!publication) {
+	throw new Error(`Publication not found: ${slug}`);
+}
+
+const { Content } = await render(post);
+---
+
+<BlogLayout post={post} publication={publication}>
+	<Content />
+</BlogLayout>

@@ -1,0 +1,33 @@
+---
+import type { Post } from '../../lib/publications/collections';
+import { postPath } from '../../lib/publications';
+import PostMeta from './PostMeta.astro';
+
+interface Props {
+	post: Post;
+	publicationSlug: string;
+}
+
+const { post, publicationSlug } = Astro.props;
+---
+
+<article class="group">
+	<h2 class="font-serif text-xl font-semibold leading-snug">
+		<a
+			href={postPath(publicationSlug, post.id)}
+			class="transition-colors group-hover:text-slate-600 dark:group-hover:text-slate-300"
+		>
+			{post.data.title}
+		</a>
+	</h2>
+	<p class="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{post.data.excerpt}</p>
+	<div class="mt-3">
+		<PostMeta
+			publicationSlug={publicationSlug}
+			category={post.data.category}
+			tags={post.data.tags}
+			pubDate={post.data.pubDate}
+			updatedDate={post.data.updatedDate}
+		/>
+	</div>
+</article>
