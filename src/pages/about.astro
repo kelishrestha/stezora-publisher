@@ -1,0 +1,24 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Container from '../components/ui/Container.astro';
+import { SITE } from '../lib/seo/config';
+---
+
+<BaseLayout title="About" description={`About ${SITE.name}`} path="/about">
+	<Container class="py-16">
+		<article class="max-w-2xl space-y-4 text-slate-700 dark:text-slate-200">
+			<h1 class="font-serif text-3xl font-bold tracking-tight sm:text-4xl">About</h1>
+			<p>
+				{SITE.name} is a personal multi-publication publishing platform. It will host three
+				publications under one roof, written by one author.
+			</p>
+			<p>
+				This site is part of an ongoing effort to move away from Blogger while preserving the
+				content, history, and readership of three existing blogs.
+			</p>
+			<p>
+				The foundation is in place. Publication pages and articles arrive in the next phase.
+			</p>
+		</article>
+	</Container>
+</BaseLayout>

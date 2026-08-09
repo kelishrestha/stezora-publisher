@@ -1,0 +1,96 @@
+---
+import '../styles/global.css';
+import SiteHeader from '../components/navigation/SiteHeader.astro';
+import SiteFooter from '../components/navigation/SiteFooter.astro';
+import { SITE } from '../lib/seo/config';
+import { absoluteUrl, canonicalUrl, formatDate } from '../lib/seo/seo';
+import {
+	articleJsonLd,
+	renderJsonLd,
+	webPageJsonLd,
+	websiteJsonLd,
+} from '../lib/seo/structured-data';
+
+export interface Props {
+	title?: string;
+	description?: string;
+	path?: string;
+	image?: string;
+	type?: 'website' | 'article';
+	publishedAt?: Date | string;
+	updatedAt?: Date | string;
+	noindex?: boolean;
+}
+
+const {
+	title,
+	description = SITE.description,
+	path = '/',
+	image = SITE.defaultImage,
+	type = 'website',
+	publishedAt,
+	updatedAt,
+	noindex = false,
+} = Astro.props;
+
+const pageTitle = title ? `${title} | ${SITE.name}` : `${SITE.name} — ${SITE.description}`;
+const canonical = canonicalUrl(path);
+const ogImage = absoluteUrl(image);
+const published = publishedAt ? formatDate(publishedAt) : undefined;
+const updated = updatedAt ? formatDate(updatedAt) : published;
+const pageJsonLd =
+	type === 'article'
+		? articleJsonLd({ title: pageTitle, description, path, image, publishedAt, updatedAt })
+		: webPageJsonLd({ title: pageTitle, description, path, image });
+const jsonLd = renderJsonLd(websiteJsonLd(), pageJsonLd);
+---
+
+<!doctype html>
+<html lang={SITE.locale}>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{pageTitle}</title>
+		<meta name="description" content={description} />
+		<link rel="canonical" href={canonical} />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" />
+		<link rel="alternate" type="application/rss+xml" title={`${SITE.name} RSS Feed`} href={absoluteUrl('/rss.xml')} />
+		<link rel="sitemap" href={absoluteUrl('/sitemap-index.xml')} />
+		{noindex && <meta name="robots" content="noindex, nofollow" />}
+
+		<meta property="og:type" content={type === 'article' ? 'article' : 'website'} />
+		<meta property="og:title" content={pageTitle} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content={canonical} />
+		<meta property="og:image" content={ogImage} />
+		<meta property="og:site_name" content={SITE.name} />
+		<meta property="og:locale" content={SITE.locale} />
+		{published && <meta property="article:published_time" content={published} />}
+		{updated && <meta property="article:modified_time" content={updated} />}
+
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={pageTitle} />
+		<meta name="twitter:description" content={description} />
+		<meta name="twitter:image" content={ogImage} />
+
+		<script is:inline>
+			(() => {
+				const stored = localStorage.getItem('theme');
+				const theme = stored ?? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+				document.documentElement.classList.toggle('dark', theme === 'dark');
+			})();
+		</script>
+		{jsonLd.map((node) => (
+			<script type="application/ld+json" is:inline set:html={JSON.stringify(node)} />
+		))}
+	</head>
+	<body class="flex min-h-screen flex-col bg-white font-sans text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-100">
+		<SiteHeader />
+		<main class="flex-1">
+			<slot />
+		</main>
+		<SiteFooter />
+	</body>
+</html>

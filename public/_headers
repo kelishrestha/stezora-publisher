@@ -1,0 +1,13 @@
+/*
+	Security and caching headers for Cloudflare static assets.
+	Assets built by Astro are hashed and can be cached aggressively.
+*/
+
+/_astro/*
+	Cache-Control: public, max-age=31536000, immutable
+
+/*
+	X-Content-Type-Options: nosniff
+	Referrer-Policy: strict-origin-when-cross-origin
+	Permissions-Policy: camera=(), microphone=(), geolocation=()
+	X-Frame-Options: DENY
