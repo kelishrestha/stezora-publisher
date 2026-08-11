@@ -7,12 +7,16 @@
   },
   "scripts": {
     "dev": "astro dev",
+    "dev:worker": "wrangler dev",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
+    "types": "wrangler types",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "astro check",
     "test": "vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:worker": "vitest run --project worker",
     "deploy": "pnpm build && wrangler deploy",
     "blogger:import": "tsx --env-file=.env.development scripts/blogger/import.ts",
     "blogger:oauth": "tsx --env-file=.env.development scripts/blogger/oauth.ts",
@@ -26,10 +30,13 @@
     "astro": "^7.2.0",
     "marked": "^18.0.9",
     "sanitize-html": "^2.17.6",
-    "tailwindcss": "^4.3.3"
+    "tailwindcss": "^4.3.3",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@cloudflare/vitest-pool-workers": "^0.20.3",
+    "@cloudflare/workers-types": "^5.20260810.1",
     "@types/sanitize-html": "^2.16.1",
     "@typescript-eslint/parser": "^8.66.0",
     "eslint": "^10.8.1",

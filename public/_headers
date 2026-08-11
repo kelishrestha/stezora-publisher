@@ -1,7 +1,5 @@
-/*
-	Security and caching headers for Cloudflare static assets.
-	Assets built by Astro are hashed and can be cached aggressively.
-*/
+# Security and caching headers for Cloudflare static assets.
+# Assets built by Astro are hashed and can be cached aggressively.
 
 /_astro/*
 	Cache-Control: public, max-age=31536000, immutable
