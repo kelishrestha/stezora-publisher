@@ -23,6 +23,9 @@ pnpm-debug.log*
 # test coverage
 coverage/
 
+# generated import artifacts
+migration-reports/
+
 # macOS-specific files
 .DS_Store
 
@@ -31,3 +34,6 @@ coverage/
 .vscode/
 .qodo/
 personal_publishing_platform_agentic_coding_recommendation.md
+.env.*
+!.env.example
+src/content/posts/

@@ -288,12 +288,24 @@ interface Publication {
   slug: string;
   description?: string;
   logoUrl?: string;
-  bloggerBlogId?: string;
-  bloggerUrl?: string;
   createdAt: string;
   updatedAt: string;
 }
 ```
+
+Blogger integration data (blog ID and blog URL) is **not** part of the `Publication` model. Resolve it per publication from environment variables via `src/lib/blogger/config.ts`:
+
+```ts
+bloggerBlogIdForPublication('the-sore-transition');
+bloggerUrlForPublication('the-sore-transition');
+```
+
+The env keys derive from the slug: `BLOGGER_<SLUG_UPPER_SNAKE_CASE>_BLOG_ID` and `BLOGGER_<SLUG_UPPER_SNAKE_CASE>_BLOG_URL` (see `.env.example`). Never hard-code Blogger IDs or URLs in the public site code.
+
+Rules:
+
+- `bloggerBlogIdForPublication` is required and must be a numeric string; the resolver validates this and throws with the env key name otherwise.
+- `bloggerUrlForPublication` is optional (returns `undefined` when unset) and normalizes the value to an absolute `https://` URL.
 
 Do not hard-code publication-specific behavior into UI components.
 
@@ -529,6 +541,21 @@ pnpm blogger:import --blog publication-c
 ```
 
 The exact command structure can differ, but the underlying importer must support multiple publications.
+
+Per-publication Blogger blog IDs and blog URLs are configured with environment variables, not in the `Publication` model. `scripts/blogger/import.ts` resolves them via `src/lib/blogger/config.ts`:
+
+```text
+BLOGGER_THE_SORE_TRANSITION_BLOG_ID=...
+BLOGGER_THE_SORE_TRANSITION_BLOG_URL=...
+BLOGGER_THE_REBELLIOUS_FLAME_BLOG_ID=...
+BLOGGER_THE_REBELLIOUS_FLAME_BLOG_URL=...
+BLOGGER_MY_SOULFUL_INCANTATIONS_BLOG_ID=...
+BLOGGER_MY_SOULFUL_INCANTATIONS_BLOG_URL=...
+```
+
+Keep these values in `.env.development` (real) and `.env.example` (placeholders).
+
+`BLOGGER_<SLUG>_BLOG_ID` is required for import (numeric string). `BLOGGER_<SLUG>_BLOG_URL` is optional for import — it is only reported when present; its consumers are future redirect/canonical and sync logic.
 
 ---
 
@@ -1073,6 +1100,22 @@ Avoid dependency accumulation.
 
 Keep business logic separate from UI.
 
+Every configuration option exposed by a class, function, or module must be consumed.
+
+Do not leave dead configuration.
+
+Bad:
+
+```text
+config.baseUrl is accepted but the implementation hardcodes a default.
+```
+
+Good:
+
+```text
+Every exposed option is used or removed.
+```
+
 Prefer:
 
 ```text
@@ -1201,6 +1244,8 @@ AUTH_SECRET
 CLOUDFLARE_API_TOKEN
 ```
 
+Per-publication Blogger blog IDs and URLs (`BLOGGER_<SLUG>_BLOG_ID`, `BLOGGER_<SLUG>_BLOG_URL`) are not secrets, but they must still be read from environment variables via `src/lib/blogger/config.ts`. Do not hard-code them in `src/lib/publications`.
+
 Use:
 
 ```text
@@ -1208,6 +1253,8 @@ Use:
 ```
 
 for documentation.
+
+Commit `.env.example` to the repository. It must contain only safe placeholder values, never real secrets.
 
 Use Cloudflare secrets/environment bindings in production.
 
@@ -1500,6 +1547,16 @@ redirects
 
 Do not lose old URLs during migration.
 
+The Blogger identifiers on each post record (`blogger_blog_id`, `blogger_post_id`, `blogger_url`) must be consumed by the public site, not merely stored.
+
+For every imported post:
+
+- the old Blogger URL must 301-redirect to the new public URL, or
+- the old Blogger URL must remain the canonical URL until search engines re-crawl, or
+- the redirect/canonical mapping must be explicitly documented and deferred as tracked work.
+
+Storing Blogger metadata without any public URL handling is not a complete migration.
+
 ---
 
 # 61. Admin UX
@@ -1666,6 +1723,14 @@ Deploy
 ```
 
 Production secrets must be configured separately from development.
+
+A fresh checkout must produce a complete site.
+
+The build must never depend on machine-local files that cannot be regenerated.
+
+If content is stored outside Git (see section 81), the build must fetch/export it from D1 before compiling. An empty or partial site because content files were absent is a deployment failure.
+
+Production `SITE.url` must be the real custom domain, never a development or `workers.dev` URL (see section 84).
 
 ---
 
@@ -1916,3 +1981,104 @@ Understand the audience
 ```
 
 Keep the implementation simple enough that one developer can understand and maintain the entire system.
+
+---
+
+# 81. Content Storage and Build Reproducibility
+
+Post content lives in D1 and is the single source of truth.
+
+Post content is not committed to Git.
+
+The public site is built statically from content exported from D1 at build time.
+
+Approved pipeline:
+
+```text
+Blogger ──► import script ──► D1                          (source of truth)
+                                      │
+D1 ──► build-time export ──► gitignored JSON ──► Astro static build ──► CDN
+```
+
+Rules:
+
+1. Do not commit post content JSON to Git.
+
+2. JSON files under `src/content/posts/` are build artifacts. They must be fully reproducible from D1 at any time.
+
+3. A fresh clone plus the content export must build the complete site. Never rely on content that exists only on one machine.
+
+4. Keep a second copy of content until D1 is seeded. Options:
+
+   - commit the JSON temporarily, or
+   - seed D1 immediately from the existing files.
+
+   Do not leave migrated content stored only in gitignored files.
+
+5. The Blogger import must upsert into D1, keyed on `(blogger_blog_id, blogger_post_id)` with a UNIQUE constraint, so re-import stays idempotent without matching by title.
+
+6. The Worker must expose a read-only endpoint (for example `GET /api/content`) that returns all published post data for the build-time export.
+
+7. The build-time export script runs before `pnpm build` (for example as a `prebuild` step) and regenerates the gitignored JSON files in the same shape the content loader expects.
+
+8. Keep public pages static. The export runs at build time; the runtime site remains "Request → CDN → HTML".
+
+---
+
+# 82. Post Slug and Public URL Rules
+
+A post slug must not duplicate the publication slug.
+
+Bad:
+
+```text
+/publications/the-sore-transition/posts/the-sore-transition-my-post
+```
+
+Good:
+
+```text
+/publications/the-sore-transition/posts/my-post
+```
+
+Rules:
+
+1. Store a `slug` on the post record independently of the content filename.
+
+2. Derive the public post path from `(publication.slug, post.slug)`, never from the filename.
+
+3. Keep slugs stable across re-imports. For a known `blogger_post_id`, preserve the existing slug.
+
+4. URLs must remain lowercase, readable, stable, and SEO-friendly.
+
+---
+
+# 83. Content Sanitization Boundary
+
+Imported Blogger HTML is untrusted.
+
+Sanitization must happen at the storage boundary — every time content is written to D1 — not only during the original import.
+
+Rules:
+
+1. Re-run the content sanitizer on every write path: import, edit, CMS save.
+
+2. Never assume that content stored earlier is still safe because it was sanitized once.
+
+3. The public render path may render stored HTML directly only because storage guarantees sanitized content on every write.
+
+4. Add tests that exercise editing/re-writing a post and verify the stored content remains sanitized.
+
+---
+
+# 84. Production Site URL
+
+`SITE.url` in `src/lib/seo/config.ts` feeds canonical URLs, the sitemap, Open Graph metadata, and RSS feeds.
+
+Rules:
+
+1. `SITE.url` must be the real production custom domain before deployment.
+
+2. A `workers.dev` or localhost URL must never ship as the canonical origin.
+
+3. Verify canonical URLs, sitemap, and RSS in the deployment checklist use the production domain.

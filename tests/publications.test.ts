@@ -71,7 +71,13 @@ describe('slugify', () => {
 
 	it('handles empty strings', () => {
 		expect(slugify('')).toBe('');
-		expect(slugify('  ---  ')).toBe('');
+		expect(slugify('   ')).toBe('');
+	});
+
+	it('falls back to a stable hash slug for non-latin text', () => {
+		expect(slugify('민윤기')).toBe(slugify('민윤기'));
+		expect(slugify('민윤기')).toMatch(/^term-[0-9a-z]+$/);
+		expect(slugify('민윤기')).not.toBe(slugify('윤기민'));
 	});
 });
 

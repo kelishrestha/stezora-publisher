@@ -2,10 +2,10 @@ import { getCollection } from 'astro:content';
 import type { CollectionEntry } from 'astro:content';
 import { slugify, sortByDateDesc } from './index';
 
-export type Post = CollectionEntry<'blog'>;
+export type Post = CollectionEntry<'posts'>;
 
 export async function getPublishedPosts(): Promise<Post[]> {
-	const posts = await getCollection('blog');
+	const posts = await getCollection('posts');
 	return sortByDateDesc(posts, (post) => post.data.pubDate).filter((post) => post.data.status === 'published');
 }
 

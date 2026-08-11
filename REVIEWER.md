@@ -284,11 +284,11 @@ name
 slug
 description
 logo
-blogger_blog_id
-blogger_url
 created_at
 updated_at
 ```
+
+Blogger integration data (`blogger_blog_id`, `blogger_url`) is NOT part of the `Publication` model. Resolve it per publication from environment variables via `src/lib/blogger/config.ts` (`bloggerBlogIdForPublication(slug)`, `bloggerUrlForPublication(slug)`); the env keys derive from the slug (`BLOGGER_<SLUG>_BLOG_ID` / `_BLOG_URL`). The reviewer must flag Blogger IDs/URLs hard-coded in public site code or in the frontend `Publication` model.
 
 Publication configuration should not be duplicated throughout frontend components.
 

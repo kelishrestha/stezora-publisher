@@ -12,13 +12,28 @@ export function getPublication(slug: string): Publication | undefined {
 }
 
 export function slugify(value: string): string {
-	return value
-		.toLowerCase()
-		.trim()
+	const trimmed = value.toLowerCase().trim();
+	if (!trimmed) {
+		return '';
+	}
+	const slug = trimmed
 		.replace(/[^a-z0-9\s_-]/g, '')
 		.replace(/[\s_]+/g, '-')
 		.replace(/-+/g, '-')
 		.replace(/^-|-$/g, '');
+	if (slug) {
+		return slug;
+	}
+	return `term-${stableHash(trimmed)}`;
+}
+
+function stableHash(value: string): string {
+	let hash = 2166136261;
+	for (let i = 0; i < value.length; i += 1) {
+		hash ^= value.charCodeAt(i);
+		hash = Math.imul(hash, 16777619);
+	}
+	return (hash >>> 0).toString(36);
 }
 
 export function publicationPath(slug: string): string {

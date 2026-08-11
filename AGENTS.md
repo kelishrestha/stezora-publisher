@@ -179,6 +179,8 @@ blogger_sync
 
 Do not over-design the schema before the first implementation.
 
+Note: `publications.blogger_blog_id` and `publications.blogger_url` are D1 columns for Blogger synchronization. They do NOT belong on the frontend `Publication` domain model; Blogger integration config is read from environment variables via `src/lib/blogger/config.ts`.
+
 ---
 
 ## Content
