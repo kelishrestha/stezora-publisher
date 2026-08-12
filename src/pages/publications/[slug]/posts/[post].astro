@@ -1,5 +1,6 @@
 ---
 import BlogLayout from '../../../../layouts/BlogLayout.astro';
+import { sanitizeContentHtml } from '../../../../lib/blogger/sanitize';
 import { getPublishedPosts } from '../../../../lib/publications/collections';
 import { getPublication } from '../../../../lib/publications';
 
@@ -20,8 +21,10 @@ const publication = getPublication(slug);
 if (!publication) {
 	throw new Error(`Publication not found: ${slug}`);
 }
+
+const content = sanitizeContentHtml(post.data.content);
 ---
 
 <BlogLayout post={post} publication={publication}>
-	<Fragment set:html={post.data.content} />
+	<Fragment set:html={content} />
 </BlogLayout>

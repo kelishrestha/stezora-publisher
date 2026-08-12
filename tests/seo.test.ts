@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SITE } from '../src/lib/seo/config';
 import { absoluteUrl, canonicalUrl, formatDate } from '../src/lib/seo/seo';
+import { serializeJsonLd } from '../src/lib/seo/structured-data';
 
 describe('seo helpers', () => {
 	it('turns a relative path into an absolute URL', () => {
@@ -21,5 +22,20 @@ describe('seo helpers', () => {
 
 	it('returns an empty string for invalid dates', () => {
 		expect(formatDate('not-a-date')).toBe('');
+	});
+});
+
+describe('serializeJsonLd', () => {
+	it('escapes < so titles cannot break out of the JSON-LD script tag', () => {
+		const payload = { '@type': 'Article', headline: '</script><script>alert(1)</script>' };
+		const output = serializeJsonLd(payload);
+		expect(output).not.toContain('</script>');
+		expect(output).toContain('\\u003c/script>');
+		expect(JSON.parse(output)).toEqual(payload);
+	});
+
+	it('escapes < but keeps > and normal JSON intact', () => {
+		const output = serializeJsonLd({ headline: '5 < 10' });
+		expect(output).toContain('5 \\u003c 10');
 	});
 });

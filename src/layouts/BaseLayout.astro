@@ -8,6 +8,7 @@ import {
 	articleJsonLd,
 	breadcrumbJsonLd,
 	renderJsonLd,
+	serializeJsonLd,
 	webPageJsonLd,
 	websiteJsonLd,
 } from '../lib/seo/structured-data';
@@ -88,7 +89,7 @@ const jsonLd = breadcrumbs.length > 0 ? renderJsonLd(websiteJsonLd(), pageJsonLd
 			})();
 		</script>
 		{jsonLd.map((node) => (
-			<script type="application/ld+json" is:inline set:html={JSON.stringify(node)} />
+			<script type="application/ld+json" is:inline set:html={serializeJsonLd(node)} />
 		))}
 	</head>
 	<body class="flex min-h-screen flex-col bg-white font-sans text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-100">

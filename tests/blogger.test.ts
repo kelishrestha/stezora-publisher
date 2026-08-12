@@ -125,4 +125,12 @@ describe('blogger slugs and filenames', () => {
 	it('builds the post filename from publication and slug', () => {
 		expect(postFilename('the-sore-transition', 'my-post')).toBe('the-sore-transition-my-post.json');
 	});
+
+	it('rejects slugs that could escape the content directory', () => {
+		for (const slug of ['../evil', '..', '.', 'a/b', 'a\\b', '', 'A', 'has space']) {
+			expect(() => postFilename('pub', slug), `publication-safe slug ${slug}`).toThrow(/Invalid post slug/);
+			expect(() => postFilename(slug, 'post'), `publication unsafe ${slug}`).toThrow(/Invalid publication slug/);
+		}
+		expect(() => postFilename('good', 'good-post')).not.toThrow();
+	});
 });

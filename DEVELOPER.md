@@ -21,6 +21,8 @@ You must prioritize:
 
 Do not introduce unnecessary complexity.
 
+Read AGENTS.md and ARCHITECTURE.md before developing any feature.
+
 ---
 
 # 2. Product Context
@@ -296,8 +298,8 @@ interface Publication {
 Blogger integration data (blog ID and blog URL) is **not** part of the `Publication` model. Resolve it per publication from environment variables via `src/lib/blogger/config.ts`:
 
 ```ts
-bloggerBlogIdForPublication('the-sore-transition');
-bloggerUrlForPublication('the-sore-transition');
+bloggerBlogIdForPublication("the-sore-transition");
+bloggerUrlForPublication("the-sore-transition");
 ```
 
 The env keys derive from the slug: `BLOGGER_<SLUG_UPPER_SNAKE_CASE>_BLOG_ID` and `BLOGGER_<SLUG_UPPER_SNAKE_CASE>_BLOG_URL` (see `.env.example`). Never hard-code Blogger IDs or URLs in the public site code.
@@ -1728,7 +1730,7 @@ A fresh checkout must produce a complete site.
 
 The build must never depend on machine-local files that cannot be regenerated.
 
-If content is stored outside Git (see section 81), the build must fetch/export it from D1 before compiling. An empty or partial site because content files were absent is a deployment failure.
+If content is stored outside Git (see section 81), the build must fetch/export it from D1 before compiling. Production builds and `pnpm deploy` must use remote export (`EXPORT_CONTENT_URL`, §81 rule 10); the `deploy` script refuses to run without it so the build never depends on machine-local D1 state. An empty or partial site because content files were absent is a deployment failure.
 
 Production `SITE.url` must be the real custom domain, never a development or `workers.dev` URL (see section 84).
 
@@ -2002,14 +2004,15 @@ D1 ──► build-time export ──► gitignored JSON ──► Astro static 
 
 Rules:
 
-1. Do not commit post content JSON to Git.
+1. Do not commit post content JSON to Git. The JSON files under `src/content/posts/` act as an off-Git backup of D1 content. Keeping them untracked:
+   - prevents accidental public disclosure of the owner's writings if the repository becomes public, and
+   - prevents an attacker with repository write access from injecting or altering published content through the content files (content is never authored in the repository).
 
-2. JSON files under `src/content/posts/` are build artifacts. They must be fully reproducible from D1 at any time.
+2. JSON files under `src/content/posts/` are build artifacts and a backup. They are regenerated from D1 at build time (`prebuild` → `pnpm export:content`) and, if D1 is ever lost, can restore it via `pnpm db:backfill`. They must be fully reproducible from D1 at any time.
 
 3. A fresh clone plus the content export must build the complete site. Never rely on content that exists only on one machine.
 
 4. Keep a second copy of content until D1 is seeded. Options:
-
    - commit the JSON temporarily, or
    - seed D1 immediately from the existing files.
 
@@ -2022,6 +2025,10 @@ Rules:
 7. The build-time export script runs before `pnpm build` (for example as a `prebuild` step) and regenerates the gitignored JSON files in the same shape the content loader expects.
 
 8. Keep public pages static. The export runs at build time; the runtime site remains "Request → CDN → HTML".
+
+9. The build-time export must never silently empty `src/content/posts/`. If the export returns zero posts while the directory already contains content, the export must fail instead of deleting the backup files. If it returns zero posts into an empty directory it must also fail (an empty site is a deployment failure), unless `EXPORT_CONTENT_ALLOW_EMPTY=1` is set for a site that genuinely has no posts yet. Both protect against an unseeded or empty D1, or a failed remote endpoint.
+
+10. Production builds and `pnpm deploy` must fetch content with `EXPORT_CONTENT_URL` (remote export) so the deployed site is reproducible from Git and never depends on machine-local D1 state.
 
 ---
 
@@ -2082,3 +2089,12 @@ Rules:
 2. A `workers.dev` or localhost URL must never ship as the canonical origin.
 
 3. Verify canonical URLs, sitemap, and RSS in the deployment checklist use the production domain.
+Rules:
+
+1. The admin user is created by `pnpm db:seed` from `ADMIN_EMAIL` and `ADMIN_INITIAL_PASSWORD` (`.env.development`, documented in `.env.example`). Only one admin row exists.
+
+2. The password is stored in D1 as a salted PBKDF2-SHA256 hash (`worker/lib/password.ts`), never as plaintext and never printed to stdout or logs. Reversible encryption is not used and not required.
+
+3. Re-running the seed must NOT change the admin password unless `ADMIN_INITIAL_PASSWORD` actually changed. The generated SQL uses `ON CONFLICT (email) DO UPDATE SET password_hash = excluded.password_hash WHERE users.password_hash != excluded.password_hash`, so an unchanged password leaves the stored hash untouched.
+
+4. `ADMIN_INITIAL_PASSWORD` is a bootstrap secret only. Once the CMS is live, password changes must go through the authenticated change-password flow, not the seed script.

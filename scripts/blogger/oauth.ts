@@ -1,4 +1,5 @@
 import { createServer } from 'node:http';
+import { randomBytes } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
@@ -17,7 +18,7 @@ function requireEnv(name: string): string {
 	return value;
 }
 
-function authUrl(clientId: string): string {
+function authUrl(clientId: string, state: string): string {
 	const query = new URLSearchParams({
 		client_id: clientId,
 		redirect_uri: REDIRECT_URI,
@@ -26,8 +27,15 @@ function authUrl(clientId: string): string {
 		access_type: 'offline',
 		prompt: 'consent',
 		include_granted_scopes: 'true',
+		state,
 	});
 	return `${AUTH_URL}?${query.toString()}`;
+}
+
+function timingSafeEqual(a: string, b: string): boolean {
+	const aBytes = Buffer.from(a);
+	const bBytes = Buffer.from(b);
+	return aBytes.length === bBytes.length && Buffer.compare(aBytes, bBytes) === 0;
 }
 
 async function exchangeCode(code: string, clientId: string, clientSecret: string): Promise<{ access_token?: string; refresh_token?: string }> {
@@ -69,8 +77,9 @@ async function updateEnvFile(key: string, value: string): Promise<void> {
 async function main(): Promise<void> {
 	const clientId = requireEnv('BLOGGER_CLIENT_ID');
 	const clientSecret = requireEnv('BLOGGER_CLIENT_SECRET');
+	const state = randomBytes(16).toString('hex');
 
-	const url = authUrl(clientId);
+	const url = authUrl(clientId, state);
 	console.log('\n1. Open this URL in your browser and authorize access:\n');
 	console.log(`   ${url}\n`);
 	console.log('   (Make sure the redirect URI below is registered in the Google Cloud\n');
@@ -81,6 +90,12 @@ async function main(): Promise<void> {
 		const server = createServer(async (req, res) => {
 			try {
 				const requestUrl = new URL(req.url ?? '/', REDIRECT_URI);
+				const receivedState = requestUrl.searchParams.get('state');
+				if (!receivedState || !timingSafeEqual(receivedState, state)) {
+					res.writeHead(403, { 'Content-Type': 'text/plain' });
+					res.end('State mismatch. Authorization rejected.');
+					return;
+				}
 				const code = requestUrl.searchParams.get('code');
 				if (!code) {
 					res.writeHead(400, { 'Content-Type': 'text/plain' });

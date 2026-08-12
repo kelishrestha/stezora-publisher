@@ -38,7 +38,17 @@ export async function readExistingPosts(dir: string): Promise<ExistingPosts> {
 	return { byBloggerPostId, byFile };
 }
 
+const SAFE_SLUG = /^[a-z0-9][a-z0-9-]*$/;
+
+function assertSafeSlug(value: string, label: string): void {
+	if (!SAFE_SLUG.test(value)) {
+		throw new Error(`Invalid ${label} "${value}": slugs must match [a-z0-9-]`);
+	}
+}
+
 export function postFilename(publicationSlug: string, postSlug: string): string {
+	assertSafeSlug(publicationSlug, 'publication slug');
+	assertSafeSlug(postSlug, 'post slug');
 	return `${publicationSlug}-${postSlug}.json`;
 }
 

@@ -78,3 +78,7 @@ export function breadcrumbJsonLd(items: BreadcrumbItem[]): JsonLd {
 export function renderJsonLd(...nodes: JsonLd[]): JsonLd[] {
 	return nodes;
 }
+
+export function serializeJsonLd(node: JsonLd): string {
+	return JSON.stringify(node).replace(/</g, '\\u003c');
+}

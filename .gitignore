@@ -20,6 +20,9 @@ pnpm-debug.log*
 # cloudflare local state
 .wrangler/
 
+# generated SQL for seed/backfill
+.d1/
+
 # test coverage
 coverage/
 
