@@ -2072,7 +2072,7 @@ Rules:
 
 2. Never assume that content stored earlier is still safe because it was sanitized once.
 
-3. The public render path may render stored HTML directly only because storage guarantees sanitized content on every write.
+3. Defense in depth: the public render path must NOT rely solely on storage-time guarantees. `set:html` content must pass through `sanitizeContentHtml` again at render time (see `src/pages/publications/[slug]/posts/[post].astro`), and the build-time export must re-sanitize before writing the JSON Astro consumes (see `scripts/export-content.ts`). A future CMS write path must sanitize at the API boundary as well.
 
 4. Add tests that exercise editing/re-writing a post and verify the stored content remains sanitized.
 

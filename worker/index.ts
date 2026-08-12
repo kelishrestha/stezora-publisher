@@ -1,26 +1,6 @@
 import { routes } from './routes';
-
-const API_ERROR_BODY = {
-	success: false,
-	error: { code: 'INTERNAL_ERROR', message: 'Internal server error.' },
-} as const;
-
-const METHOD_NOT_ALLOWED_BODY = {
-	success: false,
-	error: { code: 'METHOD_NOT_ALLOWED', message: 'Method not allowed.' },
-} as const;
-
-const NOT_FOUND_BODY = {
-	success: false,
-	error: { code: 'NOT_FOUND', message: 'Not found.' },
-} as const;
-
-function json(body: unknown, status: number, headers?: Record<string, string>): Response {
-	return new Response(JSON.stringify(body), {
-		status,
-		headers: { 'content-type': 'application/json; charset=utf-8', ...headers },
-	});
-}
+import { fail } from './lib/http';
+import { toApiError } from './lib/errors';
 
 function errorSummary(error: unknown): { name: string; message: string } {
 	if (error instanceof Error) {
@@ -33,7 +13,7 @@ export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		const url = new URL(request.url);
 
-		if (url.pathname.startsWith('/api/')) {
+		if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/media/')) {
 			const requestId = crypto.randomUUID();
 			const match = routes.match(url.pathname, request.method);
 			if (match.kind === 'match') {
@@ -42,15 +22,23 @@ export default {
 					response.headers.set('x-request-id', requestId);
 					return response;
 				} catch (error) {
+					const apiError = toApiError(error);
 					const { name, message } = errorSummary(error);
-					console.error('api_route_failed', { requestId, method: request.method, path: url.pathname, error: name, message });
-					return json(API_ERROR_BODY, 500, { 'x-request-id': requestId });
+					console.error('api_route_failed', {
+						requestId,
+						method: request.method,
+						path: url.pathname,
+						code: apiError.code,
+						error: name,
+						message,
+					});
+					return fail(apiError.code, apiError.message, apiError.status, { 'x-request-id': requestId });
 				}
 			}
 			if (match.kind === 'method-not-allowed') {
-				return json(METHOD_NOT_ALLOWED_BODY, 405, { 'x-request-id': requestId });
+				return fail('METHOD_NOT_ALLOWED', 'Method not allowed.', 405, { 'x-request-id': requestId });
 			}
-			return json(NOT_FOUND_BODY, 404, { 'x-request-id': requestId });
+			return fail('NOT_FOUND', 'Not found.', 404, { 'x-request-id': requestId });
 		}
 
 		return env.ASSETS.fetch(request);
