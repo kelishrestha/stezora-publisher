@@ -19,11 +19,11 @@ const links = [
 ];
 ---
 
-<header class="border-b border-slate-200 py-10 dark:border-slate-800">
+<header class="border-b border-border py-10">
 	<div class="mx-auto w-full max-w-4xl px-4 sm:px-6">
-		<p class="text-xs font-medium uppercase tracking-widest text-slate-400 dark:text-slate-500">Publication</p>
+		<p class="text-xs font-medium uppercase tracking-widest text-muted-foreground">Publication</p>
 		<h1 class="mt-2 font-serif text-3xl font-bold tracking-tight sm:text-4xl">{publication.name}</h1>
-		<p class="mt-3 max-w-2xl text-base text-slate-600 dark:text-slate-300">{publication.description}</p>
+		<p class="mt-3 max-w-2xl text-base text-muted-foreground">{publication.description}</p>
 
 		<nav aria-label={`${publication.name} navigation`} class="mt-6">
 			<ul class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm font-medium">
@@ -31,7 +31,7 @@ const links = [
 					<li>
 						<a
 							href={link.href}
-							class="text-slate-700 transition-colors hover:text-slate-900 dark:text-slate-200 dark:hover:text-white"
+							class="text-muted-foreground transition-colors hover:text-accent-foreground"
 						>
 							{link.label}
 						</a>
@@ -45,7 +45,7 @@ const links = [
 				{categories.map((category) => (
 					<a
 						href={categoryPath(publication.slug, category.slug)}
-						class="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600 transition-colors hover:border-slate-400 hover:text-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-500 dark:hover:text-white"
+						class="rounded-full border border-transparent bg-accent-soft px-3 py-1 text-xs font-medium text-accent-foreground transition-colors hover:opacity-80"
 					>
 						{category.name}
 					</a>
@@ -58,7 +58,7 @@ const links = [
 				{tags.map((tag) => (
 					<a
 						href={tagPath(publication.slug, tag.slug)}
-						class="text-xs text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+						class="text-xs text-muted-foreground transition-colors hover:text-accent-foreground"
 					>
 						#{tag.name}
 					</a>

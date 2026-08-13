@@ -20,18 +20,18 @@ const contentPostSchema = z.object({
 });
 
 interface ContentResponse {
-	publications: Array<{ id: string; name: string; slug: string; description: string | null }>;
+	publications: Array<{ id: string; name: string; slug: string; description: string | null; accent: string | null }>;
 	posts: Array<Record<string, unknown>>;
 	categories: Array<{ id: string; publication_id: string; name: string; slug: string }>;
 	tags: Array<{ id: string; name: string; slug: string }>;
 }
 
-async function seedPublication(id: string, slug = id): Promise<void> {
+async function seedPublication(id: string, slug = id, accent: string | null = null): Promise<void> {
 	await db
 		.prepare(
-			'INSERT INTO publications (id, name, slug, description, created_at) VALUES (?, ?, ?, ?, ?)'
+			'INSERT INTO publications (id, name, slug, description, accent, created_at) VALUES (?, ?, ?, ?, ?, ?)'
 		)
-		.bind(id, `Name ${id}`, slug, `Description ${id}`, new Date().toISOString())
+		.bind(id, `Name ${id}`, slug, `Description ${id}`, accent, new Date().toISOString())
 		.run();
 }
 
@@ -102,7 +102,13 @@ describe('GET /api/content', () => {
 		for (const publication of body.publications.filter((publication) =>
 			['pub-list-a', 'pub-list-b'].includes(publication.slug)
 		)) {
-			expect(Object.keys(publication).sort()).toEqual(['description', 'id', 'name', 'slug']);
+			expect(Object.keys(publication).sort()).toEqual([
+				'accent',
+				'description',
+				'id',
+				'name',
+				'slug',
+			]);
 		}
 	});
 
@@ -171,6 +177,16 @@ describe('GET /api/content', () => {
 		expect(posts).toHaveLength(1);
 		const post = contentPostSchema.parse(posts[0]);
 		expect(post.title).toBe('Title live');
+	});
+
+	it('includes the per-publication accent theme on publication feeds', async () => {
+		await seedPublication('pub-accent', 'pub-accent', 'rose');
+
+		const body = await fetchContent();
+
+		expect(
+			body.publications.find((publication) => publication.slug === 'pub-accent')
+		).toMatchObject({ accent: 'rose' });
 	});
 
 	it('returns categories and tags for the CMS', async () => {

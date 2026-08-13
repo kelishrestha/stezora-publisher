@@ -29,10 +29,10 @@ const tags = await getTagsForPublication(slug);
 				<li>
 					<a
 						href={tagPath(publication.slug, tag.slug)}
-						class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-sm text-slate-600 transition-colors hover:border-slate-400 hover:text-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-500 dark:hover:text-white"
+						class="inline-flex items-center gap-1.5 rounded-full border border-transparent bg-accent-soft px-3 py-1.5 text-sm text-accent-foreground transition-colors hover:opacity-80"
 					>
 						#{tag.name}
-						<span class="text-xs text-slate-400 dark:text-slate-500">{tag.count}</span>
+						<span class="text-xs text-muted-foreground">{tag.count}</span>
 					</a>
 				</li>
 			))}

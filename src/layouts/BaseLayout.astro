@@ -13,6 +13,7 @@ import {
 	websiteJsonLd,
 } from '../lib/seo/structured-data';
 import type { BreadcrumbItem } from '../lib/seo/structured-data';
+import type { PublicationAccent } from '../lib/publications/types';
 
 export interface Props {
 	title?: string;
@@ -24,6 +25,7 @@ export interface Props {
 	updatedAt?: Date | string;
 	noindex?: boolean;
 	breadcrumbs?: BreadcrumbItem[];
+	accent?: PublicationAccent;
 }
 
 const {
@@ -36,6 +38,7 @@ const {
 	updatedAt,
 	noindex = false,
 	breadcrumbs = [],
+	accent,
 } = Astro.props;
 
 const pageTitle = title ? `${title} | ${SITE.name}` : `${SITE.name} — ${SITE.description}`;
@@ -51,7 +54,7 @@ const jsonLd = breadcrumbs.length > 0 ? renderJsonLd(websiteJsonLd(), pageJsonLd
 ---
 
 <!doctype html>
-<html lang={SITE.locale}>
+<html lang={SITE.locale} data-accent={accent ?? undefined}>
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -92,7 +95,7 @@ const jsonLd = breadcrumbs.length > 0 ? renderJsonLd(websiteJsonLd(), pageJsonLd
 			<script type="application/ld+json" is:inline set:html={serializeJsonLd(node)} />
 		))}
 	</head>
-	<body class="flex min-h-screen flex-col bg-white font-sans text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-100">
+	<body class="flex min-h-screen flex-col bg-background font-sans text-foreground antialiased">
 		<SiteHeader />
 		<main class="flex-1">
 			<slot />

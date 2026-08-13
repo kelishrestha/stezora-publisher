@@ -3,11 +3,11 @@ import Container from '../ui/Container.astro';
 import { SITE } from '../../lib/seo/config';
 ---
 
-<footer class="border-t border-slate-200 dark:border-slate-800">
-	<Container class="flex flex-col items-center justify-between gap-2 py-6 text-sm text-slate-500 dark:text-slate-400 sm:flex-row">
+<footer class="border-t border-border">
+	<Container class="flex flex-col items-center justify-between gap-2 py-6 text-sm text-muted-foreground sm:flex-row">
 		<p>&copy; {new Date().getFullYear()} {SITE.name}. All rights reserved.</p>
 		<p>
-			Published with <a href="https://astro.build" class="underline decoration-slate-300 underline-offset-2 hover:text-slate-900 dark:decoration-slate-700 dark:hover:text-white">Astro</a>
+			Published with <a href="https://astro.build" class="underline decoration-border underline-offset-2 hover:text-accent-foreground">Astro</a>
 			, hosted on Cloudflare.
 		</p>
 	</Container>

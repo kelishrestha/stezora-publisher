@@ -1,3 +1,6 @@
+import { and, asc, desc, eq, lte } from 'drizzle-orm';
+import { createDb } from '../db/client';
+import { categories, posts, postTags, publications, tags } from '../db/schema';
 import type { RouteHandler } from '../router';
 
 interface ContentPublication {
@@ -5,6 +8,7 @@ interface ContentPublication {
 	name: string;
 	slug: string;
 	description: string | null;
+	accent: string | null;
 }
 
 interface ContentCategory {
@@ -42,72 +46,77 @@ interface ContentResponse {
 	tags: ContentTag[];
 }
 
-interface PostRow {
-	title: string;
-	slug: string;
-	excerpt: string | null;
-	content: string;
-	pub_date: string;
-	updated_date: string | null;
-	blogger_post_id: string | null;
-	canonical_url: string | null;
-	publication: string;
-	category: string | null;
-}
-
-interface PostTagRow {
-	publication: string;
-	post_slug: string;
-	tag_name: string;
-}
-
 export const content: RouteHandler = async ({ env }) => {
+	const db = createDb(env.DB);
 	const now = new Date().toISOString();
 
-	const [publicationsResult, categoriesResult, tagsResult, postsResult, postTagsResult] =
-		await env.DB.batch([
-			env.DB.prepare('SELECT id, name, slug, description FROM publications ORDER BY slug'),
-			env.DB.prepare('SELECT id, publication_id, name, slug FROM categories ORDER BY name'),
-			env.DB.prepare('SELECT id, name, slug FROM tags ORDER BY name'),
-			env.DB.prepare(
-				`SELECT
-					p.title,
-					p.slug,
-					p.excerpt,
-					p.content,
-					p.published_at AS pub_date,
-					p.updated_at AS updated_date,
-					p.blogger_post_id,
-					p.canonical_url,
-					pub.slug AS publication,
-					cat.name AS category
-				FROM posts p
-				JOIN publications pub ON pub.id = p.publication_id
-				LEFT JOIN categories cat ON cat.id = p.category_id
-				WHERE p.status = 'published' AND p.published_at IS NOT NULL AND p.published_at <= ?
-				ORDER BY p.published_at DESC`
-			).bind(now),
-			env.DB.prepare(
-				`SELECT pub.slug AS publication, p.slug AS post_slug, t.name AS tag_name
-				FROM post_tags pt
-				JOIN posts p ON p.id = pt.post_id
-				JOIN publications pub ON pub.id = p.publication_id
-				JOIN tags t ON t.id = pt.tag_id`
-			),
-		]);
+	const [publicationsResult, categoriesResult, tagsResult, postsResult, postTagsResult] = await Promise.all([
+		db
+			.select({
+				id: publications.id,
+				name: publications.name,
+				slug: publications.slug,
+				description: publications.description,
+				accent: publications.accent,
+			})
+			.from(publications)
+			.orderBy(asc(publications.slug)),
+		db
+			.select({
+				id: categories.id,
+				publication_id: categories.publication_id,
+				name: categories.name,
+				slug: categories.slug,
+			})
+			.from(categories)
+			.orderBy(asc(categories.name)),
+		db
+			.select({ id: tags.id, name: tags.name, slug: tags.slug })
+			.from(tags)
+			.orderBy(asc(tags.name)),
+		db
+			.select({
+				title: posts.title,
+				slug: posts.slug,
+				excerpt: posts.excerpt,
+				content: posts.content,
+				pub_date: posts.published_at,
+				updated_date: posts.updated_at,
+				blogger_post_id: posts.blogger_post_id,
+				canonical_url: posts.canonical_url,
+				publication: publications.slug,
+				category: categories.name,
+			})
+			.from(posts)
+			.innerJoin(publications, eq(posts.publication_id, publications.id))
+			.leftJoin(categories, eq(posts.category_id, categories.id))
+			.where(and(eq(posts.status, 'published'), lte(posts.published_at, now)))
+			.orderBy(desc(posts.published_at)),
+		db
+			.select({
+				publication: publications.slug,
+				post_slug: posts.slug,
+				tag_name: tags.name,
+			})
+			.from(postTags)
+			.innerJoin(posts, eq(postTags.post_id, posts.id))
+			.innerJoin(publications, eq(posts.publication_id, publications.id))
+			.innerJoin(tags, eq(postTags.tag_id, tags.id)),
+	]);
 
 	const tagsByPost = new Map<string, string[]>();
-	for (const row of postTagsResult.results as PostTagRow[]) {
+	for (const row of postTagsResult) {
 		const key = `${row.publication}/${row.post_slug}`;
-		const tags = tagsByPost.get(key);
-		if (tags) {
-			tags.push(row.tag_name);
+		const existing = tagsByPost.get(key);
+		if (existing) {
+			existing.push(row.tag_name);
 		} else {
 			tagsByPost.set(key, [row.tag_name]);
 		}
 	}
 
-	const posts: ContentPost[] = (postsResult.results as PostRow[]).map((row) => {
+	const contentPosts: ContentPost[] = postsResult.map((row) => {
+		// The filter guarantees a non-null published date.
 		const post: ContentPost = {
 			slug: row.slug,
 			title: row.title,
@@ -115,7 +124,7 @@ export const content: RouteHandler = async ({ env }) => {
 			publication: row.publication,
 			category: row.category ?? '',
 			tags: tagsByPost.get(`${row.publication}/${row.slug}`) ?? [],
-			pubDate: row.pub_date,
+			pubDate: row.pub_date ?? '',
 			status: 'published',
 			content: row.content,
 		};
@@ -132,10 +141,10 @@ export const content: RouteHandler = async ({ env }) => {
 	});
 
 	const response: ContentResponse = {
-		publications: publicationsResult.results as ContentPublication[],
-		posts,
-		categories: categoriesResult.results as ContentCategory[],
-		tags: tagsResult.results as ContentTag[],
+		publications: publicationsResult,
+		posts: contentPosts,
+		categories: categoriesResult,
+		tags: tagsResult,
 	};
 
 	return new Response(JSON.stringify(response), {

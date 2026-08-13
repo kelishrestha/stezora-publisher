@@ -29,10 +29,10 @@ const categories = await getCategoriesForPublication(slug);
 				<li>
 					<a
 						href={categoryPath(publication.slug, category.slug)}
-						class="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-5 py-4 transition-colors hover:border-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-500"
+						class="flex items-center justify-between rounded-xl border border-border bg-surface px-5 py-4 transition-colors hover:border-accent"
 					>
 						<span class="font-medium">{category.name}</span>
-						<span class="text-sm text-slate-500 dark:text-slate-400">{category.count}</span>
+						<span class="text-sm text-muted-foreground">{category.count}</span>
 					</a>
 				</li>
 			))}

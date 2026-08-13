@@ -33,6 +33,19 @@ describe('publication model', () => {
 		}
 	});
 
+	it('assigns each publication a valid accent palette', () => {
+		const accents = ['space-indigo', 'ocean-deep', 'dark-amaranth', 'bright-amber', 'soft-periwinkle'];
+		for (const publication of getPublications()) {
+			expect(accents).toContain(publication.accent);
+		}
+	});
+
+	it('assigns accents per the palette assignment table', () => {
+		expect(getPublication('the-sore-transition')?.accent).toBe('dark-amaranth');
+		expect(getPublication('the-rebellious-flame')?.accent).toBe('bright-amber');
+		expect(getPublication('my-soulful-incantations')?.accent).toBe('soft-periwinkle');
+	});
+
 	it('looks up a publication by slug', () => {
 		expect(getPublication('the-rebellious-flame')?.name).toBe('The Rebellious Flame');
 		expect(getPublication('nope')).toBeUndefined();

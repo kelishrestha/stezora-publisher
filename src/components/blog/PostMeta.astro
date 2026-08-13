@@ -17,7 +17,7 @@ function displayDate(date: Date): string {
 }
 ---
 
-<p class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
+<p class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
 	<time datetime={formatDate(pubDate)}>{displayDate(pubDate)}</time>
 	{updatedDate && updatedDate.getTime() > pubDate.getTime() && (
 		<span aria-hidden="true">·</span>
@@ -28,7 +28,7 @@ function displayDate(date: Date): string {
 	<span aria-hidden="true">·</span>
 	<a
 		href={categoryPath(publicationSlug, slugify(category))}
-		class="font-medium text-slate-700 transition-colors hover:text-slate-900 dark:text-slate-200 dark:hover:text-white"
+		class="font-medium text-accent-foreground transition-colors hover:text-foreground"
 	>
 		{category}
 	</a>
@@ -37,7 +37,7 @@ function displayDate(date: Date): string {
 			{tags.map((tag) => (
 				<a
 					href={tagPath(publicationSlug, slugify(tag))}
-					class="transition-colors hover:text-slate-900 dark:hover:text-white"
+					class="transition-colors hover:text-accent-foreground"
 				>
 					#{tag}
 				</a>
