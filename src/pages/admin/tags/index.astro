@@ -1,0 +1,15 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import TagManager from '../../../components/admin/TagManager';
+
+const title = 'Tags';
+const description = 'Manage tags shared across publications.';
+---
+
+<AdminLayout title={title} description={description} path="/admin/tags">
+	<h1 class="text-2xl font-semibold tracking-tight text-foreground">Tags</h1>
+	<p class="mt-1 text-sm text-muted-foreground">Tags are shared across publications. Delete is blocked while a post uses one.</p>
+	<div class="mt-6">
+		<TagManager client:load />
+	</div>
+</AdminLayout>

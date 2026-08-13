@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "astro dev",
     "dev:worker": "wrangler dev",
+    "dev:cms": "pnpm build && pnpm dev:worker",
     "build": "astro build",
     "prebuild": "pnpm export:content",
     "export:content": "tsx scripts/export-content.ts",

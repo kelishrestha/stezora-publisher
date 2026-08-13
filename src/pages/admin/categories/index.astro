@@ -1,0 +1,15 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import CategoryManager from '../../../components/admin/CategoryManager';
+
+const title = 'Categories';
+const description = 'Manage categories per publication.';
+---
+
+<AdminLayout title={title} description={description} path="/admin/categories">
+	<h1 class="text-2xl font-semibold tracking-tight text-foreground">Categories</h1>
+	<p class="mt-1 text-sm text-muted-foreground">Categories belong to one publication. Delete is blocked while a post uses one.</p>
+	<div class="mt-6">
+		<CategoryManager client:load />
+	</div>
+</AdminLayout>

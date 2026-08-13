@@ -1747,6 +1747,51 @@ pnpm install
 pnpm dev
 ```
 
+### Public-only development
+
+`pnpm dev` (Astro dev server) serves the public site only — the Worker, D1,
+R2, and the `/admin` CMS shell are not reachable. Use it for layout and
+content work.
+
+### Full-stack local CMS server
+
+The CMS runs on the Worker. To run it locally, serve the built static assets
+(`./dist`) plus the Worker, local D1, and local R2 through Cloudflare tooling.
+The full path from a fresh clone:
+
+```bash
+pnpm install
+
+# 1. Local secrets (wrangler dev reads these). Never committed.
+cp .dev.vars.example .dev.vars     # then set BETTER_AUTH_SECRET (openssl rand -hex 32)
+
+# 2. Local D1: apply migrations, seed the admin user + publications, backfill content.
+pnpm db:migrate                    # wrangler d1 migrations apply ... --local
+pnpm db:seed                       # needs ADMIN_EMAIL / ADMIN_INITIAL_PASSWORD
+pnpm db:backfill                   # optional: pull existing JSON content into D1
+
+# 3. Build, then serve the full stack.
+pnpm build && pnpm dev:worker      # wrangler dev → http://localhost:8787
+```
+
+The CMS is then at `http://localhost:8787/admin` (login → dashboard → posts).
+`BETTER_AUTH_URL` defaults to `http://localhost:8787` in `.dev.vars.example`.
+
+### Current build blocker for the CMS
+
+The admin **edit** page is a dynamic route (`src/pages/admin/posts/[id]/edit.astro`)
+and Astro cannot build it statically without `getStaticPaths` or an SSR adapter.
+The Cloudflare SSR adapter is Phase 5, so the route is intentionally left as-is
+and `pnpm build` stays red until then. When the build goes green (Phase 5 SSR),
+the commands above bring up the full local CMS. The list/new/dashboard admin
+pages build today; only the dynamic edit route blocks the production build.
+
+### Convenience
+
+```bash
+pnpm dev:cms   # pnpm build && pnpm dev:worker  (full stack; see blocker above)
+```
+
 Database/Cloudflare development should use local tooling where appropriate.
 
 ---
