@@ -2,5 +2,9 @@
 # Copy to .dev.vars and fill in real values. Never commit secrets.
 # Placeholder values only in this committed example file.
 
-# Session signing secret for the CMS (Phase 4). Generate with: openssl rand -hex 32
-AUTH_SECRET=
+# BetterAuth secret — signs CMS sessions (Phase 4/M6). Generate with: openssl rand -hex 32
+BETTER_AUTH_SECRET=
+
+# Optional: canonical URL for BetterAuth when running `wrangler dev`.
+# Defaults to http://localhost:8787 (the `wrangler dev` port).
+BETTER_AUTH_URL=http://localhost:8787

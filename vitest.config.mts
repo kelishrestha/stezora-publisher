@@ -19,9 +19,13 @@ export default defineConfig(async () => {
 					plugins: [
 						cloudflareTest({
 							wrangler: { configPath: './wrangler.jsonc' },
-							miniflare: {
-								bindings: { TEST_MIGRATIONS: migrations },
+miniflare: {
+							bindings: {
+								TEST_MIGRATIONS: migrations,
+								// Test-only value; never a real secret.
+								BETTER_AUTH_SECRET: 'vitest-better-auth-secret',
 							},
+						},
 						}),
 					],
 					test: {
