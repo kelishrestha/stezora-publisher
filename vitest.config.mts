@@ -32,6 +32,14 @@ export default defineConfig(async () => {
 						name: 'worker',
 						include: ['tests/worker/**/*.test.ts'],
 						setupFiles: ['./tests/worker/apply-migrations.ts'],
+						deps: {
+							optimizer: {
+								ssr: {
+									enabled: true,
+									include: ['sanitize-html'],
+								},
+							},
+						},
 					},
 				},
 			],

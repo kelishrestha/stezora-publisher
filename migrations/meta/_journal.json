@@ -15,6 +15,13 @@
       "when": 1786598399308,
       "tag": "0001_unknown_jane_foster",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1786601994259,
+      "tag": "0002_aberrant_hobgoblin",
+      "breakpoints": true
     }
   ]
 }
