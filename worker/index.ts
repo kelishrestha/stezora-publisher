@@ -1,6 +1,8 @@
 import { routes } from './routes';
 import { fail } from './lib/http';
 import { toApiError } from './lib/errors';
+import { getAuth } from './lib/auth';
+import { adminAssetPath, isAdminAssetRequest } from './lib/gate';
 
 function errorSummary(error: unknown): { name: string; message: string } {
 	if (error instanceof Error) {
@@ -12,6 +14,30 @@ function errorSummary(error: unknown): { name: string; message: string } {
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		const url = new URL(request.url);
+
+		if (url.pathname.startsWith('/api/auth')) {
+			// BetterAuth owns everything under /api/auth (sign-in, sign-out,
+			// get-session), including its own CSRF and rate-limit handling.
+			const auth = getAuth(request, env);
+			try {
+				return await auth.handler(request);
+			} catch (error) {
+				const apiError = toApiError(error);
+				return fail(apiError.code, apiError.message, apiError.status);
+			}
+		}
+
+		if (isAdminAssetRequest(url.pathname)) {
+			// Static admin pages are only reachable with a valid session. The
+			// login page (/admin/login) is excluded by the gate and stays public.
+			const auth = getAuth(request, env);
+			const session = await auth.api.getSession({ headers: request.headers });
+			if (!session) {
+				return Response.redirect(new URL('/admin/login', request.url), 302);
+			}
+			const assetPath = adminAssetPath(url.pathname);
+			return env.ASSETS.fetch(new Request(new URL(assetPath, request.url), request));
+		}
 
 		if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/media/')) {
 			const requestId = crypto.randomUUID();

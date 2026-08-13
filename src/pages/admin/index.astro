@@ -1,0 +1,15 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import Dashboard from '../../components/admin/Dashboard';
+
+const title = 'Dashboard';
+const description = 'Per-publication publishing statistics for the Stezora CMS.';
+---
+
+<AdminLayout title={title} description={description} path="/admin">
+	<h1 class="text-2xl font-semibold tracking-tight text-foreground">Dashboard</h1>
+	<p class="mt-1 text-sm text-muted-foreground">Posts per publication, media, and recent activity.</p>
+	<div class="mt-6">
+		<Dashboard client:load />
+	</div>
+</AdminLayout>

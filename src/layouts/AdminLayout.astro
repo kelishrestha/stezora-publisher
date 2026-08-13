@@ -1,0 +1,65 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+	title?: string;
+	description?: string;
+	path?: string;
+}
+
+const { title, description, path = '/admin' } = Astro.props;
+---
+
+
+<BaseLayout title={title} description={description} path={path} noindex>
+	<header class="border-b border-border bg-surface">
+		<nav class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3" aria-label="Admin">
+			<div class="flex items-center gap-6">
+				<a href="/admin" class="text-sm font-semibold tracking-tight text-accent-foreground">
+					Stezora CMS
+				</a>
+				<ul class="flex items-center gap-1 text-sm">
+					<li>
+						<a href="/admin" class="rounded-md px-3 py-1.5 text-foreground hover:bg-surface-elevated">Dashboard</a>
+					</li>
+					<li>
+						<a href="/admin/posts" class="rounded-md px-3 py-1.5 text-muted-foreground hover:bg-surface-elevated hover:text-foreground">Posts</a>
+					</li>
+					<li>
+						<a href="/admin/media" class="rounded-md px-3 py-1.5 text-muted-foreground hover:bg-surface-elevated hover:text-foreground">Media</a>
+					</li>
+					<li>
+						<a href="/admin/categories" class="rounded-md px-3 py-1.5 text-muted-foreground hover:bg-surface-elevated hover:text-foreground">Categories</a>
+					</li>
+					<li>
+						<a href="/admin/tags" class="rounded-md px-3 py-1.5 text-muted-foreground hover:bg-surface-elevated hover:text-foreground">Tags</a>
+					</li>
+				</ul>
+			</div>
+			<div class="flex items-center gap-3 text-sm">
+				<a href="/" class="text-muted-foreground hover:text-foreground">View site</a>
+				<button
+					type="button"
+					id="admin-sign-out"
+					class="rounded-md bg-accent-soft px-3 py-1.5 font-medium text-accent-foreground hover:opacity-90"
+				>
+					Sign out
+				</button>
+			</div>
+		</nav>
+	</header>
+	<main class="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+		<slot />
+	</main>
+</BaseLayout>
+
+<script>
+	import { createAuthClient } from 'better-auth/client';
+
+	const authClient = createAuthClient();
+
+	document.getElementById('admin-sign-out')?.addEventListener('click', async () => {
+		await authClient.signOut();
+		window.location.href = '/admin/login';
+	});
+</script>

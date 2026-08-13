@@ -1,0 +1,99 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+
+<BaseLayout title="Sign in" description="Sign in to the Stezora CMS" path="/admin/login" noindex>
+	<main class="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 py-16">
+		<div class="rounded-xl border border-border bg-surface p-8 shadow-sm">
+			<h1 class="text-xl font-semibold tracking-tight text-foreground">Sign in to Stezora CMS</h1>
+			<p class="mt-1 text-sm text-muted-foreground">Use your admin account to manage content.</p>
+
+			<form id="login-form" class="mt-6 space-y-4">
+				<div>
+					<label for="email" class="block text-sm font-medium text-foreground">Email</label>
+					<input
+						id="email"
+						name="email"
+						type="email"
+						autocomplete="username"
+						required
+						class="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none"
+						placeholder="you@example.com"
+					/>
+				</div>
+
+				<div>
+					<label for="password" class="block text-sm font-medium text-foreground">Password</label>
+					<input
+						id="password"
+						name="password"
+						type="password"
+						autocomplete="current-password"
+						required
+						class="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none"
+						placeholder="Your password"
+					/>
+				</div>
+
+				<div id="login-error" class="hidden rounded-md bg-accent-soft px-3 py-2 text-sm text-accent-foreground" role="alert"></div>
+
+				<button
+					type="submit"
+					id="login-submit"
+					class="w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+				>
+					Sign in
+				</button>
+			</form>
+		</div>
+	</main>
+</BaseLayout>
+
+<script>
+	import { createAuthClient } from 'better-auth/client';
+
+	const authClient = createAuthClient();
+	const form = document.getElementById('login-form') as HTMLFormElement | null;
+	const errorBox = document.getElementById('login-error');
+	const submit = document.getElementById('login-submit');
+
+	function showError(message: string) {
+		if (!errorBox) return;
+		errorBox.textContent = message;
+		errorBox.classList.remove('hidden');
+	}
+
+	function hideError() {
+		errorBox?.classList.add('hidden');
+	}
+
+	form?.addEventListener('submit', async (event) => {
+		event.preventDefault();
+		hideError();
+
+		const formData = new FormData(form);
+		const email = String(formData.get('email') ?? '');
+		const password = String(formData.get('password') ?? '');
+
+		if (!email || !password) {
+			showError('Enter your email and password.');
+			return;
+		}
+
+		submit?.setAttribute('disabled', '');
+		if (submit) submit.textContent = 'Signing in…';
+
+		const { error } = await authClient.signIn.email({ email, password });
+
+		if (error) {
+			showError('Sign in failed. Check your email and password.');
+			submit?.removeAttribute('disabled');
+			if (submit) submit.textContent = 'Sign in';
+			formData.set('password', '');
+			return;
+		}
+
+		window.location.href = '/admin';
+	});
+</script>

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { RouteContext, RouteHandler } from '../router';
+import { getAuth } from './auth';
 import { ApiError } from './errors';
 import { validateWith } from './validate';
 
@@ -38,13 +39,14 @@ export function withBodyLimit<C extends { request: Request }>(
 }
 
 /**
- * Requires an authenticated admin user. The session cookie is verified in
- * P4.1; until then the guard always rejects so protected routes are closed by
- * default (DEVELOPER.md §12: never rely on UI hiding for security).
+ * Requires an authenticated admin user. The session cookie is verified
+ * through BetterAuth; requests without a valid session get a 401 so protected
+ * routes are closed on the server by default (DEVELOPER.md §12: never rely on
+ * UI hiding for security).
  */
 export function requireAdmin(handler: AuthenticatedHandler): RouteHandler {
 	return async (context) => {
-		const user = await authenticateSession(context.request);
+		const user = await authenticateSession(context.request, context.env);
 		if (!user) {
 			throw new ApiError(401, 'UNAUTHORIZED', 'Authentication required.');
 		}
@@ -72,11 +74,19 @@ export function validatePagination(query: unknown): { limit: number; offset: num
 }
 
 /**
- * Resolves the admin user from the session cookie. Implemented in P4.1
- * (session token signed with AUTH_SECRET); returns null until then so
- * protected routes stay locked.
+ * Resolves the admin user from the BetterAuth session cookie. The session is
+ * the only authentication token — there is no separate `AUTH_SECRET` HMAC
+ * (DEVELOPER.md §13). Used by `requireAdmin` and the `/admin` asset gate.
  */
-async function authenticateSession(request: Request): Promise<AdminUser | null> {
-	void request;
-	return null;
+async function authenticateSession(request: Request, env: Env): Promise<AdminUser | null> {
+	const auth = getAuth(request, env);
+	const session = await auth.api.getSession({ headers: request.headers });
+	if (!session) {
+		return null;
+	}
+	return {
+		id: session.user.id,
+		email: session.user.email,
+		role: (session.user as { role?: string }).role ?? 'admin',
+	};
 }

@@ -106,7 +106,24 @@ async function bundleWorker(): Promise<string> {
 		write: false,
 		logLevel: 'silent',
 	});
-	return result.outputFiles[0].text;
+	return patchBundleForMiniflare(result.outputFiles[0].text);
+}
+
+/**
+ * BetterAuth pulls in a Kysely adapter whose dead node:sqlite probe emits a
+ * non-literal `import(nodeSqlite)`. Miniflare's module locator rejects
+ * non-literal dynamic-import specifiers at build time (workerd tolerates them
+ * in dead code), which breaks the local Miniflare harness used here. The
+ * branch is never reached for a D1 binding (`db instanceof DatabaseSync` is
+ * false), so neutralize the import while keeping `DatabaseSync` undefined.
+ */
+export function patchBundleForMiniflare(code: string): string {
+	const pattern =
+		/\{ ?DatabaseSync ?\} = await import\(\s*\/\* @vite-ignore \*\/\s*\/\* webpackIgnore: true \*\/\s*nodeSqlite\s*\)/;
+	if (!pattern.test(code)) {
+		throw new Error('Expected the better-auth Kysely node:sqlite import to be present in the worker bundle.');
+	}
+	return code.replace(pattern, '{ DatabaseSync } = void 0');
 }
 
 async function fetchLocalContent(): Promise<ContentResponse> {
@@ -122,6 +139,7 @@ async function fetchLocalContent(): Promise<ContentResponse> {
 		script: await bundleWorker(),
 		modules: true,
 		compatibilityDate: typeof config.compatibility_date === 'string' ? config.compatibility_date : undefined,
+		compatibilityFlags: ['nodejs_compat'],
 		d1Databases: { [d1.binding]: databaseId },
 		r2Buckets: r2 ? { [r2.binding]: r2.bucket_name } : undefined,
 		resourcePersistencePath: path.join(root, '.wrangler', 'state', 'v3'),

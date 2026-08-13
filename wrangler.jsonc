@@ -2,6 +2,9 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "stezora-publisher",
 	"compatibility_date": "2026-08-08",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
 	"main": "./worker/index.ts",
 	"assets": {
 		"directory": "./dist",
