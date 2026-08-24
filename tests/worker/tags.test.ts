@@ -78,7 +78,7 @@ function postPayload(overrides: Record<string, unknown> = {}): Record<string, un
 	};
 }
 
-describe('admin categories and tags API', () => {
+describe('admin tags API', () => {
 	let cookie: string;
 
 	beforeAll(async () => {
@@ -88,28 +88,26 @@ describe('admin categories and tags API', () => {
 	});
 
 	it('requires authentication for every endpoint', async () => {
-		expect((await fetchWorker('/api/admin/categories')).status).toBe(401);
-		expect((await fetchWorker('/api/admin/categories', { method: 'POST', body: '{}' })).status).toBe(401);
 		expect((await fetchWorker('/api/admin/tags')).status).toBe(401);
 		expect((await fetchWorker('/api/admin/tags', { method: 'POST', body: '{}' })).status).toBe(401);
 	});
 
-	it('creates categories scoped to a publication and rejects duplicate slugs in it', async () => {
+	it('creates tags scoped to a publication and rejects duplicate slugs in it', async () => {
 		const headers = { cookie, 'content-type': 'application/json' };
 
-		const created = await fetchWorker('/api/admin/categories', {
+		const created = await fetchWorker('/api/admin/tags', {
 			method: 'POST',
 			headers,
 			body: JSON.stringify({ publicationId: 'pub-a', name: 'Poetry' }),
 		});
 		expect(created.status).toBe(201);
 		const body = (await created.json()) as Envelope;
-		const category = body.data?.category as { id: string; publication_id: string; slug: string } | undefined;
-		expect(category?.slug).toBe('poetry');
-		expect(category?.publication_id).toBe('pub-a');
+		const tag = body.data?.tag as { id: string; publication_id: string; slug: string } | undefined;
+		expect(tag?.slug).toBe('poetry');
+		expect(tag?.publication_id).toBe('pub-a');
 
 		// Same slug under a different publication is allowed.
-		const other = await fetchWorker('/api/admin/categories', {
+		const other = await fetchWorker('/api/admin/tags', {
 			method: 'POST',
 			headers,
 			body: JSON.stringify({ publicationId: 'pub-b', name: 'Poetry' }),
@@ -117,7 +115,7 @@ describe('admin categories and tags API', () => {
 		expect(other.status).toBe(201);
 
 		// Duplicate slug within the same publication is rejected.
-		const duplicate = await fetchWorker('/api/admin/categories', {
+		const duplicate = await fetchWorker('/api/admin/tags', {
 			method: 'POST',
 			headers,
 			body: JSON.stringify({ publicationId: 'pub-a', name: 'Poetry' }),
@@ -126,79 +124,69 @@ describe('admin categories and tags API', () => {
 		expect(((await duplicate.json()) as Envelope).error?.code).toBe('SLUG_CONFLICT');
 	});
 
-	it('updates and deletes an unreferenced category', async () => {
+	it('updates and deletes an unreferenced tag', async () => {
 		const headers = { cookie, 'content-type': 'application/json' };
-		const created = await fetchWorker('/api/admin/categories', {
+		const created = await fetchWorker('/api/admin/tags', {
 			method: 'POST',
 			headers,
 			body: JSON.stringify({ publicationId: 'pub-a', name: 'Essays' }),
 		});
 		const createdBody = (await created.json()) as Envelope;
-		const id = (createdBody.data?.category as { id: string }).id;
+		const id = (createdBody.data?.tag as { id: string }).id;
 
-		const updated = await fetchWorker(`/api/admin/categories/${id}`, {
+		const updated = await fetchWorker(`/api/admin/tags/${id}`, {
 			method: 'PUT',
 			headers,
 			body: JSON.stringify({ name: 'Long Essays' }),
 		});
 		expect(updated.status).toBe(200);
-		expect(((await updated.json()) as Envelope).data?.category).toMatchObject({ name: 'Long Essays' });
+		expect(((await updated.json()) as Envelope).data?.tag).toMatchObject({ name: 'Long Essays' });
 
-		const deleted = await fetchWorker(`/api/admin/categories/${id}`, { method: 'DELETE', headers: { cookie } });
+		const deleted = await fetchWorker(`/api/admin/tags/${id}`, { method: 'DELETE', headers: { cookie } });
 		expect(deleted.status).toBe(200);
 	});
 
-	it('blocks deleting a category still referenced by a post (409 IN_USE)', async () => {
+	it('blocks deleting a tag still referenced by a post (409 IN_USE)', async () => {
 		const headers = { cookie, 'content-type': 'application/json' };
-		const created = await fetchWorker('/api/admin/categories', {
+		const created = await fetchWorker('/api/admin/tags', {
 			method: 'POST',
 			headers,
 			body: JSON.stringify({ publicationId: 'pub-a', name: 'Featured' }),
 		});
 		const createdBody = (await created.json()) as Envelope;
-		const categoryId = (createdBody.data?.category as { id: string }).id;
+		const tagId = (createdBody.data?.tag as { id: string }).id;
 
 		const postResponse = await fetchWorker('/api/admin/posts', {
 			method: 'POST',
 			headers,
-			body: JSON.stringify(postPayload({ categoryId })),
+			body: JSON.stringify(postPayload({ title: 'Featured post', tagNames: ['Featured'] })),
 		});
 		expect(postResponse.status).toBe(201);
 
-		const deleted = await fetchWorker(`/api/admin/categories/${categoryId}`, { method: 'DELETE', headers: { cookie } });
+		const deleted = await fetchWorker(`/api/admin/tags/${tagId}`, { method: 'DELETE', headers: { cookie } });
 		expect(deleted.status).toBe(409);
 		expect(((await deleted.json()) as Envelope).error?.code).toBe('IN_USE');
 	});
 
-	it('creates tags and rejects duplicate slugs globally', async () => {
+	it('keeps same-named tags scoped per publication and blocks deletion while referenced', async () => {
 		const headers = { cookie, 'content-type': 'application/json' };
 		const created = await fetchWorker('/api/admin/tags', {
 			method: 'POST',
 			headers,
-			body: JSON.stringify({ name: 'Analysis' }),
+			body: JSON.stringify({ publicationId: 'pub-a', name: 'Shared' }),
 		});
-		expect(created.status).toBe(201);
-		expect(((await created.json()) as Envelope).data?.tag).toMatchObject({ slug: 'analysis' });
+		const tagA = ((await created.json()) as Envelope).data?.tag as { id: string; publication_id: string };
 
-		const duplicate = await fetchWorker('/api/admin/tags', {
+		// Same tag name in a different publication is its own row.
+		const createdB = await fetchWorker('/api/admin/tags', {
 			method: 'POST',
 			headers,
-			body: JSON.stringify({ name: 'Analysis' }),
+			body: JSON.stringify({ publicationId: 'pub-b', name: 'Shared' }),
 		});
-		expect(duplicate.status).toBe(409);
-		expect(((await duplicate.json()) as Envelope).error?.code).toBe('SLUG_CONFLICT');
-	});
+		const tagB = ((await createdB.json()) as Envelope).data?.tag as { id: string; publication_id: string };
+		expect(tagA.publication_id).not.toBe(tagB.publication_id);
 
-	it('reuses a tag across publications and blocks deletion while referenced', async () => {
-		const headers = { cookie, 'content-type': 'application/json' };
-		const created = await fetchWorker('/api/admin/tags', {
-			method: 'POST',
-			headers,
-			body: JSON.stringify({ name: 'Shared' }),
-		});
-		const tagId = ((await created.json()) as Envelope).data?.tag as { id: string };
-
-		// Same tag name reused on posts in two publications resolves to one row.
+		// Each post resolves its tag within its own publication.
 		const postA = await fetchWorker('/api/admin/posts', {
 			method: 'POST',
 			headers,
@@ -212,14 +200,34 @@ describe('admin categories and tags API', () => {
 		expect(postA.status).toBe(201);
 		expect(postB.status).toBe(201);
 
-		// Deleting the tag is blocked while it is referenced.
-		const deleted = await fetchWorker(`/api/admin/tags/${tagId.id}`, { method: 'DELETE', headers: { cookie } });
+		// Deleting a tag is blocked while it is referenced.
+		const deleted = await fetchWorker(`/api/admin/tags/${tagA.id}`, { method: 'DELETE', headers: { cookie } });
 		expect(deleted.status).toBe(409);
 		expect(((await deleted.json()) as Envelope).error?.code).toBe('IN_USE');
 
-		// Editor meta still exposes both publications and the shared tag.
+		// Editor meta exposes both publications and both publications' tags.
 		const meta = await fetchWorker('/api/admin/posts/meta', { headers: { cookie } });
 		const metaBody = (await meta.json()) as Envelope;
 		expect(metaBody.data?.tags).toContainEqual(expect.objectContaining({ name: 'Shared' }));
+	});
+
+	it('lists tags scoped to a publication', async () => {
+		const headers = { cookie, 'content-type': 'application/json' };
+		await fetchWorker('/api/admin/tags', {
+			method: 'POST',
+			headers,
+			body: JSON.stringify({ publicationId: 'pub-a', name: 'Scoped A' }),
+		});
+		await fetchWorker('/api/admin/tags', {
+			method: 'POST',
+			headers,
+			body: JSON.stringify({ publicationId: 'pub-b', name: 'Scoped B' }),
+		});
+
+		const listA = await fetchWorker('/api/admin/tags?publicationId=pub-a', { headers: { cookie } });
+		const bodyA = (await listA.json()) as Envelope;
+		const tagsA = bodyA.data?.tags as Array<{ name: string }>;
+		expect(tagsA.find((t) => t.name === 'Scoped A')).toBeTruthy();
+		expect(tagsA.find((t) => t.name === 'Scoped B')).toBeFalsy();
 	});
 });
