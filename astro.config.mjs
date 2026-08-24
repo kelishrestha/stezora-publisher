@@ -9,7 +9,15 @@ import { SITE } from './src/lib/seo/config';
 // https://astro.build/config
 export default defineConfig({
 	site: SITE.url,
-	integrations: [sitemap(), react()],
+	integrations: [
+		sitemap({
+			// Only public, indexable pages belong in the sitemap (§57). The CMS
+			// shell (/admin/*) is excluded; drafts/scheduled-future/archived never
+			// generate pages, so they can never appear here. `page` is absolute.
+			filter: (page) => !new URL(page).pathname.startsWith('/admin'),
+		}),
+		react(),
+	],
 	vite: {
 		plugins: [tailwindcss()],
 	},
