@@ -19,7 +19,6 @@ const postPayload = z.object({
 	slug: z.string().max(200).optional(),
 	excerpt: z.string().max(500).default(''),
 	contentMarkdown: z.string().max(2_000_000).default(''),
-	categoryId: z.string().nullable().optional(),
 	tagNames: z.array(z.string().max(50)).default([]),
 	status: z.string().default('draft'),
 	publishedAt: z.string().nullable().optional(),
@@ -54,12 +53,12 @@ export const listPosts: AuthenticatedHandler = async ({ env, request }) => {
 
 /**
  * GET /api/admin/posts/meta
- * Editor bootstrap: publications (with accents), categories, and tags so the
- * post editor can render its selectors from CMS data (P4.5 tables).
+ * Editor bootstrap: publications (with accents) and tags so the post editor
+ * can render its selectors from CMS data (P4.5 tables).
  */
 export const editorMeta: AuthenticatedHandler = async ({ env }) => {
 	const db = createDb(env.DB);
-	const [publicationsResult, categoriesResult, tagsResult] = await Promise.all([
+	const [publicationsResult, tagsResult] = await Promise.all([
 		db
 			.select({
 				id: publications.id,
@@ -69,10 +68,9 @@ export const editorMeta: AuthenticatedHandler = async ({ env }) => {
 			})
 			.from(publications)
 			.orderBy(publications.slug),
-		new PostRepository(env.DB).listCategories(),
 		new PostRepository(env.DB).listTags(),
 	]);
-	return ok({ publications: publicationsResult, categories: categoriesResult, tags: tagsResult });
+	return ok({ publications: publicationsResult, tags: tagsResult });
 };
 
 /**
@@ -102,7 +100,6 @@ export const createPost: AuthenticatedHandler = async ({ env, request }) => {
 
 	const post = await repository.create({
 		publicationId: publication.id,
-		categoryId: body.categoryId ?? null,
 		title: body.title,
 		slug,
 		excerpt: body.excerpt,
@@ -158,7 +155,6 @@ export const updatePost: AuthenticatedHandler = async ({ env, request, params })
 
 	const post = await repository.update(existing.id, {
 		publicationId: publication.id,
-		categoryId: body.categoryId ?? null,
 		title: body.title,
 		slug,
 		excerpt: body.excerpt,

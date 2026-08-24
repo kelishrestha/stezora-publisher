@@ -9,6 +9,7 @@ import { slugify } from '../../../src/lib/publications';
 export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 const tagPayload = z.object({
+	publicationId: z.string().min(1),
 	name: z.string().min(1).max(120),
 	slug: z.string().max(160).optional(),
 });
@@ -26,16 +27,19 @@ function normalizeSlug(raw: string | undefined, name: string): string {
 
 /**
  * GET /api/admin/tags
- * List all tags (tags are shared across publications, §10).
+ * List tags, optionally scoped to one publication (tags belong to a
+ * publication, §10).
  */
-export const listTags: AuthenticatedHandler = async ({ env }) => {
-	const tags = await new TagRepository(env.DB).list();
+export const listTags: AuthenticatedHandler = async ({ env, request }) => {
+	const url = new URL(request.url);
+	const publicationId = url.searchParams.get('publicationId') ?? undefined;
+	const tags = await new TagRepository(env.DB).list(publicationId);
 	return ok({ tags });
 };
 
 /**
  * POST /api/admin/tags
- * Create a tag. Tags.slug is globally unique.
+ * Create a tag. Slug must be unique within its publication.
  */
 export const createTag: AuthenticatedHandler = async ({ env, request }) => {
 	const raw = await readJsonBody(request);
@@ -43,16 +47,17 @@ export const createTag: AuthenticatedHandler = async ({ env, request }) => {
 	const slug = normalizeSlug(body.slug, body.name);
 
 	const repository = new TagRepository(env.DB);
-	if (await repository.existsBySlug(slug)) {
-		throw new ApiError(409, 'SLUG_CONFLICT', `A tag with the slug '${slug}' already exists.`);
+	if (await repository.existsBySlug(body.publicationId, slug)) {
+		throw new ApiError(409, 'SLUG_CONFLICT', `A tag with the slug '${slug}' already exists in this publication.`);
 	}
 
-	const tag = await repository.create({ name: body.name, slug });
+	const tag = await repository.create({ publicationId: body.publicationId, name: body.name, slug });
 	return ok({ tag }, 201);
 };
 
 /**
  * PUT /api/admin/tags/:id
+ * Update name and/or slug. Slug uniqueness still applies within the publication.
  */
 export const updateTag: AuthenticatedHandler = async ({ env, request, params }) => {
 	const repository = new TagRepository(env.DB);
@@ -68,8 +73,8 @@ export const updateTag: AuthenticatedHandler = async ({ env, request, params }) 
 
 	const name = parsed.name ?? existing.name;
 	const slug = parsed.slug ? normalizeSlug(parsed.slug, name) : existing.slug;
-	if (await repository.existsBySlug(slug, existing.id)) {
-		throw new ApiError(409, 'SLUG_CONFLICT', `A tag with the slug '${slug}' already exists.`);
+	if (await repository.existsBySlug(existing.publication_id, slug, existing.id)) {
+		throw new ApiError(409, 'SLUG_CONFLICT', `A tag with the slug '${slug}' already exists in this publication.`);
 	}
 
 	const tag = await repository.update(existing.id, { name, slug });

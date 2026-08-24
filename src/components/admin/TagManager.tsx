@@ -1,6 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface TagRecord {
+	id: string;
+	publication_id: string;
+	name: string;
+	slug: string;
+}
+
+interface PublicationOption {
 	id: string;
 	name: string;
 	slug: string;
@@ -30,6 +37,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export default function TagManager() {
 	const [tags, setTags] = useState<TagRecord[] | null>(null);
+	const [publications, setPublications] = useState<PublicationOption[]>([]);
+	const [publicationId, setPublicationId] = useState('');
 	const [name, setName] = useState('');
 	const [editing, setEditing] = useState<TagRecord | null>(null);
 	const [error, setError] = useState<string | null>(null);
@@ -38,9 +47,17 @@ export default function TagManager() {
 
 	useEffect(() => {
 		let cancelled = false;
-		request<{ tags: TagRecord[] }>('/api/admin/tags')
-			.then((result) => {
-				if (!cancelled) setTags(result.tags);
+		Promise.all([
+			request<{ tags: TagRecord[] }>('/api/admin/tags'),
+			request<{ publications: PublicationOption[] }>('/api/admin/posts/meta'),
+		])
+			.then(([tagsResult, meta]) => {
+				if (cancelled) return;
+				setTags(tagsResult.tags);
+				setPublications(meta.publications);
+				if (meta.publications.length > 0) {
+					setPublicationId(meta.publications[0].id);
+				}
 			})
 			.catch((reason: unknown) => {
 				if (!cancelled) setError(reason instanceof Error ? reason.message : 'Failed to load tags.');
@@ -50,12 +67,22 @@ export default function TagManager() {
 		};
 	}, []);
 
+	const tagsByPublication = useMemo(() => {
+		if (!tags) return [];
+		if (!publicationId) return tags;
+		return tags.filter((tag) => tag.publication_id === publicationId);
+	}, [tags, publicationId]);
+
 	async function refresh() {
 		const result = await request<{ tags: TagRecord[] }>('/api/admin/tags');
 		setTags(result.tags);
 	}
 
 	async function submit() {
+		if (!publicationId) {
+			setError('Select a publication.');
+			return;
+		}
 		setBusy(true);
 		setError(null);
 		setNotice(null);
@@ -71,7 +98,7 @@ export default function TagManager() {
 				await request('/api/admin/tags', {
 					method: 'POST',
 					headers: { 'content-type': 'application/json' },
-					body: JSON.stringify({ name }),
+					body: JSON.stringify({ publicationId, name }),
 				});
 				setNotice('Tag created.');
 			}
@@ -116,8 +143,26 @@ export default function TagManager() {
 
 			<div className="rounded-xl border border-border bg-surface p-5">
 				<h2 className="text-base font-semibold text-foreground">{editing ? `Edit "${editing.name}"` : 'New tag'}</h2>
-				<div className="mt-4 flex gap-4">
-					<div className="max-w-md flex-1">
+				<div className="mt-4 grid gap-4 sm:grid-cols-[220px_minmax(0,1fr)_auto]">
+					<div>
+						<label htmlFor="tag-publication" className="block text-sm font-medium text-foreground">
+							Publication
+						</label>
+						<select
+							id="tag-publication"
+							value={publicationId}
+							onChange={(event) => setPublicationId(event.target.value)}
+							className={inputClass}
+							disabled={Boolean(editing)}
+						>
+							{publications.map((publication) => (
+								<option key={publication.id} value={publication.id}>
+									{publication.name}
+								</option>
+							))}
+						</select>
+					</div>
+					<div>
 						<label htmlFor="tag-name" className="block text-sm font-medium text-foreground">
 							Name
 						</label>
@@ -155,12 +200,41 @@ export default function TagManager() {
 			</div>
 
 			<div className="rounded-xl border border-border bg-surface">
-				<h2 className="border-b border-border px-5 py-4 text-base font-semibold text-foreground">Tags</h2>
-				{tags.length === 0 ? (
+				<div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
+					<h2 className="text-base font-semibold text-foreground">Tags</h2>
+					<div className="flex gap-1 text-sm">
+						<button
+							type="button"
+							onClick={() => setPublicationId('')}
+							className={`rounded-full px-3 py-1 ${
+								publicationId === ''
+									? 'bg-accent-soft text-accent-foreground'
+									: 'text-muted-foreground hover:bg-surface-elevated hover:text-foreground'
+							}`}
+						>
+							All
+						</button>
+						{publications.map((publication) => (
+							<button
+								key={publication.id}
+								type="button"
+								onClick={() => setPublicationId(publication.id)}
+								className={`rounded-full px-3 py-1 ${
+									publicationId === publication.id
+										? 'bg-accent-soft text-accent-foreground'
+										: 'text-muted-foreground hover:bg-surface-elevated hover:text-foreground'
+								}`}
+							>
+								{publication.name}
+							</button>
+						))}
+					</div>
+				</div>
+				{tagsByPublication.length === 0 ? (
 					<p className="px-5 py-8 text-sm text-muted-foreground">No tags yet.</p>
 				) : (
 					<ul className="divide-y divide-border">
-						{tags.map((tag) => (
+						{tagsByPublication.map((tag) => (
 							<li key={tag.id} className="flex items-center justify-between gap-4 px-5 py-3">
 								<div className="min-w-0">
 									<p className="truncate font-medium text-foreground">{tag.name}</p>
@@ -172,6 +246,7 @@ export default function TagManager() {
 										onClick={() => {
 											setEditing(tag);
 											setName(tag.name);
+											setPublicationId(tag.publication_id);
 										}}
 										className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-foreground hover:bg-surface-elevated"
 									>

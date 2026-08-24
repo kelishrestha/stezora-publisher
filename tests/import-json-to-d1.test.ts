@@ -7,8 +7,7 @@ function record(overrides: Partial<PostRecord>): PostRecord {
 		title: 'Hello World',
 		excerpt: 'An excerpt.',
 		publication: 'the-sore-transition',
-		category: 'Change',
-		tags: ['Reflection'],
+		tags: ['Reflection', 'Change'],
 		pubDate: '2024-01-15T10:00:00.000Z',
 		status: 'published',
 		content: '<p>Body text.</p>',
@@ -23,16 +22,16 @@ const NOW = '2024-02-01T00:00:00.000Z';
 describe('buildBackfillSql', () => {
 	it('emits idempotent upserts for a non-Blogger post', () => {
 		const sql = buildBackfillSql(
-			[{ filePath: 'src/content/posts/the-sore-transition-hello-world.json', record: record({}) }],
+			[{ filePath: 'the-sore-transition-hello-world.json', record: record({}) }],
 			{ now: NOW }
 		);
 
-		expect(sql).toContain('INSERT INTO categories');
-		expect(sql).toContain('ON CONFLICT (publication_id, slug) DO NOTHING;');
+		expect(sql).not.toContain('INSERT INTO categories');
 		expect(sql).toContain('INSERT INTO posts');
+		expect(sql).toContain("INSERT INTO posts (id, publication_id, title");
 		expect(sql).toContain('ON CONFLICT (publication_id, slug) DO UPDATE SET');
 		expect(sql).toContain('INSERT INTO tags');
-		expect(sql).toContain('ON CONFLICT (slug) DO NOTHING;');
+		expect(sql).toContain('ON CONFLICT (publication_id, slug) DO NOTHING;');
 		expect(sql).toContain('INSERT INTO post_tags');
 		expect(sql).toContain('ON CONFLICT (post_id, tag_id) DO NOTHING;');
 	});
@@ -97,10 +96,9 @@ describe('buildBackfillSql', () => {
 		const sql = buildBackfillSql(
 			[
 				{
-					filePath: 'src/content/posts/the-sore-transition-its-a-post.json',
+					filePath: 'the-sore-transition-its-a-post.json',
 					record: record({
 						title: "It's a test",
-						category: "People's Stories",
 						tags: ["two's", 'other'],
 						content: "<p>Can't stop.</p>",
 					}),
@@ -110,7 +108,6 @@ describe('buildBackfillSql', () => {
 		);
 
 		expect(sql).toContain("'It''s a test'");
-		expect(sql).toContain("'People''s Stories'");
 		expect(sql).toContain("'two''s'");
 		expect(sql).toContain("<p>Can''t stop.</p>");
 	});

@@ -94,12 +94,13 @@ async function seedPost(options: {
 		.run();
 }
 
-async function seedMedia(id: string, postId: string | null, r2Key: string): Promise<void> {
+async function seedMedia(id: string, postId: string, r2Key: string): Promise<void> {
+	const publicationId = postId?.startsWith('p-a-') ? 'pub-a' : 'pub-r';
 	await db
 		.prepare(
-			'INSERT INTO media (id, post_id, r2_key, filename, mime_type, size, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+			'INSERT INTO media (id, post_id, publication_id, r2_key, filename, mime_type, size, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
 		)
-		.bind(id, postId, r2Key, `${id}.png`, 'image/png', 1024, new Date().toISOString())
+		.bind(id, postId, publicationId, r2Key, `${id}.png`, 'image/png', 1024, new Date().toISOString())
 		.run();
 }
 
@@ -154,7 +155,7 @@ describe('GET /api/admin/stats', () => {
 			updatedAt: '2026-01-14T00:00:00.000Z',
 		});
 		await seedMedia('m-a-1', 'p-a-1', 'a/one.png');
-		await seedMedia('m-a-2', null, 'a/two.png');
+		await seedMedia('m-a-2', 'p-a-2', 'a/two.png');
 
 		const cookie = await signInAndCookies();
 		const response = await fetchWorker('/api/admin/stats', { headers: { cookie } });

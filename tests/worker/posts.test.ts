@@ -70,8 +70,6 @@ interface PostBody {
 	excerpt: string;
 	content: string;
 	contentMarkdown: string;
-	categoryId: string | null;
-	category: string | null;
 	tags: string[];
 	status: string;
 	publishedAt: string | null;
@@ -86,7 +84,7 @@ interface PostBody {
 
 interface Envelope {
 	success: boolean;
-	data?: { post?: PostBody; posts?: PostBody[]; html?: string; title?: string; publications?: unknown[]; categories?: unknown[]; tags?: unknown[] };
+	data?: { post?: PostBody; posts?: PostBody[]; html?: string; title?: string; publications?: unknown[]; tags?: unknown[] };
 	error?: { code: string; message: string };
 }
 
@@ -121,7 +119,7 @@ describe('admin posts editor API', () => {
 		expect(create.status).toBe(401);
 	});
 
-	it('exposes editor metadata (publications, categories, tags)', async () => {
+	it('exposes editor metadata (publications, tags)', async () => {
 		const response = await fetchWorker('/api/admin/posts/meta', { headers: { cookie } });
 		expect(response.status).toBe(200);
 		const body = (await response.json()) as Envelope;

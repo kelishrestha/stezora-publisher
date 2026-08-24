@@ -6,6 +6,6 @@ export default [
 	...tseslint.configs.recommended,
 	...eslintPluginAstro.configs['flat/recommended'],
 	{
-		ignores: ['dist/**', '.astro/**', 'node_modules/**', 'public/**', 'worker-configuration.d.ts'],
+		ignores: ['dist/**', '.astro/**', 'node_modules/**', 'public/**', 'worker-configuration.d.ts', '.wrangler/**'],
 	},
 ];

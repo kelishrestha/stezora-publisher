@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 interface MediaItem {
 	id: string;
 	postId: string | null;
+	publicationId: string | null;
 	filename: string;
 	mimeType: string;
 	size: number;
@@ -10,11 +11,27 @@ interface MediaItem {
 	createdAt: string;
 }
 
+interface PostOption {
+	id: string;
+	title: string;
+	slug: string;
+	publicationId: string;
+}
+
+interface PublicationOption {
+	id: string;
+	name: string;
+	slug: string;
+}
+
 interface Envelope<T> {
 	success: boolean;
 	data?: T;
 	error?: { code?: string; message?: string };
 }
+
+const inputClass =
+	'mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
 	const response = await fetch(path, { credentials: 'same-origin', ...init });
@@ -47,15 +64,29 @@ function isImage(mimeType: string): boolean {
 
 export default function MediaManager() {
 	const [items, setItems] = useState<MediaItem[] | null>(null);
+	const [posts, setPosts] = useState<PostOption[] | null>(null);
+	const [publications, setPublications] = useState<PublicationOption[]>([]);
+	const [publicationId, setPublicationId] = useState('');
+	const [postId, setPostId] = useState('');
 	const [uploading, setUploading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [notice, setNotice] = useState<string | null>(null);
 
 	useEffect(() => {
 		let cancelled = false;
-		request<{ media: MediaItem[] }>('/api/admin/media')
-			.then((result) => {
-				if (!cancelled) setItems(result.media);
+		Promise.all([
+			request<{ media: MediaItem[] }>('/api/admin/media'),
+			request<{ posts: PostOption[] }>('/api/admin/posts?limit=100'),
+			request<{ publications: PublicationOption[] }>('/api/admin/posts/meta'),
+		])
+			.then(([mediaResult, postsResult, meta]) => {
+				if (cancelled) return;
+				setItems(mediaResult.media);
+				setPosts(postsResult.posts);
+				setPublications(meta.publications);
+				if (meta.publications.length > 0) {
+					setPublicationId(meta.publications[0].id);
+				}
 			})
 			.catch((reason: unknown) => {
 				if (!cancelled) setError(reason instanceof Error ? reason.message : 'Failed to load media.');
@@ -65,13 +96,25 @@ export default function MediaManager() {
 		};
 	}, []);
 
+	const postsForPublication = (posts ?? []).filter((post) => post.publicationId === publicationId);
+
 	async function upload(file: File) {
+		if (!postId) {
+			setError('Select a post to attach the media to.');
+			return;
+		}
+		if (!publicationId) {
+			setError('Select a publication.');
+			return;
+		}
 		setUploading(true);
 		setError(null);
 		setNotice(null);
 		try {
 			const formData = new FormData();
 			formData.append('file', file);
+			formData.append('postId', postId);
+			formData.append('publicationId', publicationId);
 			const result = await request<{ media: MediaItem }>('/api/admin/media', {
 				method: 'POST',
 				body: formData,
@@ -89,6 +132,9 @@ export default function MediaManager() {
 		return <p className="text-sm text-muted-foreground">Loading…</p>;
 	}
 
+	const publicationName = (id: string | null) => publications.find((p) => p.id === id)?.name ?? '—';
+	const postTitle = (id: string | null) => posts?.find((p) => p.id === id)?.title ?? '—';
+
 	return (
 		<div className="space-y-6">
 			{error && (
@@ -100,6 +146,49 @@ export default function MediaManager() {
 
 			<div className="rounded-xl border border-border bg-surface p-5">
 				<h2 className="text-base font-semibold text-foreground">Upload</h2>
+				<p className="mt-1 text-sm text-muted-foreground">
+					Media belongs to a post and that post's publication (one media item per post).
+				</p>
+				<div className="mt-4 grid gap-4 sm:grid-cols-2">
+					<div>
+						<label htmlFor="media-publication" className="block text-sm font-medium text-foreground">
+							Publication
+						</label>
+						<select
+							id="media-publication"
+							value={publicationId}
+							onChange={(event) => {
+								setPublicationId(event.target.value);
+								setPostId('');
+							}}
+							className={inputClass}
+						>
+							{publications.map((publication) => (
+								<option key={publication.id} value={publication.id}>
+									{publication.name}
+								</option>
+							))}
+						</select>
+					</div>
+					<div>
+						<label htmlFor="media-post" className="block text-sm font-medium text-foreground">
+							Post
+						</label>
+						<select
+							id="media-post"
+							value={postId}
+							onChange={(event) => setPostId(event.target.value)}
+							className={inputClass}
+						>
+							<option value="">—</option>
+							{postsForPublication.map((post) => (
+								<option key={post.id} value={post.id}>
+									{post.title}
+								</option>
+							))}
+						</select>
+					</div>
+				</div>
 				<label className="mt-4 flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border px-6 py-10 text-center hover:bg-surface-elevated">
 					<span className="text-sm font-medium text-foreground">{uploading ? 'Uploading…' : 'Choose a file to upload'}</span>
 					<span className="text-xs text-muted-foreground">Images (JPEG, PNG, GIF, WebP, AVIF) or PDF · up to 10 MB</span>
@@ -145,6 +234,9 @@ export default function MediaManager() {
 									</p>
 									<p className="text-xs text-muted-foreground">
 										{formatSize(item.size)} · {formatDate(item.createdAt)}
+									</p>
+									<p className="truncate text-xs text-muted-foreground" title={`${publicationName(item.publicationId)} / ${postTitle(item.postId)}`}>
+										{publicationName(item.publicationId)} / {postTitle(item.postId)}
 									</p>
 								</div>
 							</li>

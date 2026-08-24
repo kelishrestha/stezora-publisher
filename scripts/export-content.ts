@@ -15,7 +15,6 @@ export interface ContentPost {
 	title: string;
 	excerpt: string;
 	publication: string;
-	category: string;
 	tags: string[];
 	pubDate: string;
 	updatedDate?: string;
@@ -168,7 +167,6 @@ interface ExportRecord {
 	title: string;
 	excerpt: string;
 	publication: string;
-	category: string;
 	tags: string[];
 	pubDate: string;
 	updatedDate?: string;
@@ -183,7 +181,6 @@ function toPostRecord(post: ContentPost): PostRecord {
 		title: post.title,
 		excerpt: post.excerpt,
 		publication: post.publication,
-		category: post.category,
 		tags: post.tags,
 		pubDate: post.pubDate,
 		status: 'published',

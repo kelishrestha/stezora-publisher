@@ -10,6 +10,42 @@ function makeService(): MediaService {
 	return new MediaService(env.MEDIA, new MediaRepository(db));
 }
 
+const seeded = new Map<string, { postId: string; publicationId: string }>();
+
+async function seedPostTarget(label: string): Promise<{ postId: string; publicationId: string }> {
+	const existing = seeded.get(label);
+	if (existing) {
+		return existing;
+	}
+	const publicationId = `pub-${label}`;
+	const postId = `post-${label}`;
+	const now = new Date().toISOString();
+	await db
+		.prepare('INSERT OR IGNORE INTO publications (id, name, slug, description, created_at) VALUES (?, ?, ?, NULL, ?)')
+		.bind(publicationId, `Pub ${label}`, publicationId, now)
+		.run();
+	await db
+		.prepare(
+			`INSERT OR IGNORE INTO posts (id, publication_id, title, slug, excerpt, content, status, published_at, updated_at, created_at)
+			 VALUES (?, ?, ?, ?, ?, '<p>b</p>', 'published', ?, ?, ?)`
+		)
+		.bind(postId, publicationId, `T ${label}`, `s-${label}`, `e-${label}`, now, now, now)
+		.run();
+	const target = { postId, publicationId };
+	seeded.set(label, target);
+	return target;
+}
+
+async function putTarget(service: MediaService, label: string, input: { filename: string; contentType: string; body: ArrayBuffer | ArrayBufferView | string | Blob }) {
+	const target = await seedPostTarget(label);
+	return service.put({
+		...input,
+		postId: target.postId,
+		publicationId: target.publicationId,
+	});
+}
+
+
 describe('sanitizeFilename', () => {
 	it('strips directory components', () => {
 		expect(sanitizeFilename('../../etc/passwd')).toBe('passwd');
@@ -44,10 +80,23 @@ describe('mediaKey', () => {
 describe('MediaService against emulated R2 and D1', () => {
 	it('puts an object into R2 and a row into D1', async () => {
 		const service = makeService();
+		await db
+			.prepare('INSERT INTO publications (id, name, slug, description, created_at) VALUES (?, ?, ?, NULL, ?)')
+			.bind('pub-put', 'Pub Put', 'pub-put', new Date().toISOString())
+			.run();
+		await db
+			.prepare(
+				`INSERT INTO posts (id, publication_id, title, slug, excerpt, content, status, published_at, updated_at, created_at)
+				 VALUES ('post-put', 'pub-put', 'T', 's', 'e', '<p>b</p>', 'published', ?, ?, ?)`
+			)
+			.bind(new Date().toISOString(), new Date().toISOString(), new Date().toISOString())
+			.run();
 		const row = await service.put({
 			filename: 'header.png',
 			contentType: 'image/png',
 			body: new TextEncoder().encode('png-bytes'),
+			postId: 'post-put',
+			publicationId: 'pub-put',
 		});
 
 		expect(row.filename).toBe('header.png');
@@ -68,8 +117,8 @@ describe('MediaService against emulated R2 and D1', () => {
 			.run();
 		await db
 			.prepare(
-				`INSERT INTO posts (id, publication_id, category_id, title, slug, excerpt, content, status, published_at, updated_at, created_at)
-				 VALUES ('post-1', 'pub-1', NULL, 'T', 's', 'e', '<p>b</p>', 'published', ?, ?, ?)`
+				`INSERT INTO posts (id, publication_id, title, slug, excerpt, content, status, published_at, updated_at, created_at)
+				 VALUES ('post-1', 'pub-1', 'T', 's', 'e', '<p>b</p>', 'published', ?, ?, ?)`
 			)
 			.bind(new Date().toISOString(), new Date().toISOString(), new Date().toISOString())
 			.run();
@@ -80,6 +129,7 @@ describe('MediaService against emulated R2 and D1', () => {
 			contentType: 'application/pdf',
 			body: new TextEncoder().encode('%PDF-1.4'),
 			postId: 'post-1',
+			publicationId: 'pub-1',
 		});
 
 		const found = await service.get(key);
@@ -90,7 +140,7 @@ describe('MediaService against emulated R2 and D1', () => {
 
 	it('sanitizes the filename before storing', async () => {
 		const service = makeService();
-		const row = await service.put({
+		const row = await putTarget(service, 'sanitize', {
 			filename: '../../safe/hero.png',
 			contentType: 'image/png',
 			body: new TextEncoder().encode('png-bytes'),
@@ -106,6 +156,8 @@ describe('MediaService against emulated R2 and D1', () => {
 				filename: 'no spaces here.png',
 				contentType: 'image/png',
 				body: new TextEncoder().encode('x'),
+				postId: 'post-put',
+				publicationId: 'pub-put',
 			})
 		).rejects.toMatchObject({ status: 400, code: 'INVALID_FILENAME' });
 	});
@@ -117,6 +169,8 @@ describe('MediaService against emulated R2 and D1', () => {
 				filename: 'page.html',
 				contentType: 'text/html',
 				body: new TextEncoder().encode('<p>hi</p>'),
+				postId: 'post-put',
+				publicationId: 'pub-put',
 			})
 		).rejects.toMatchObject({ status: 415, code: 'UNSUPPORTED_MEDIA_TYPE' });
 	});
@@ -135,6 +189,8 @@ describe('MediaService against emulated R2 and D1', () => {
 				filename: 'orphan.png',
 				contentType: 'image/png',
 				body: new TextEncoder().encode('x'),
+				postId: 'post-put',
+				publicationId: 'pub-put',
 			})
 		).rejects.toThrow('D1 write failed');
 
@@ -152,7 +208,7 @@ describe('MediaService against emulated R2 and D1', () => {
 
 	it('deletes both the object and the row', async () => {
 		const service = makeService();
-		const { r2_key: key } = await service.put({
+		const { r2_key: key } = await putTarget(service, 'delete', {
 			filename: 'todelete.png',
 			contentType: 'image/png',
 			body: new TextEncoder().encode('x'),
@@ -177,7 +233,7 @@ describe('GET /media/:key route', () => {
 
 	it('serves the object with immutable cache headers', async () => {
 		const service = makeService();
-		const { r2_key: key } = await service.put({
+		const { r2_key: key } = await putTarget(service, 'serve', {
 			filename: 'hero.webp',
 			contentType: 'image/webp',
 			body: new TextEncoder().encode('webp-data'),
@@ -200,7 +256,7 @@ describe('GET /media/:key route', () => {
 
 	it('returns 404 when the object is missing but a row exists', async () => {
 		const service = makeService();
-		const { r2_key: key } = await service.put({
+		const { r2_key: key } = await putTarget(service, 'phantom', {
 			filename: 'phantom.png',
 			contentType: 'image/png',
 			body: new TextEncoder().encode('y'),

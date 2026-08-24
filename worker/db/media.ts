@@ -4,7 +4,8 @@ import { media } from './schema';
 
 export interface MediaRow {
 	id: string;
-	post_id: string | null;
+	post_id: string;
+	publication_id: string;
 	r2_key: string;
 	filename: string;
 	mime_type: string;
@@ -14,7 +15,8 @@ export interface MediaRow {
 
 export interface NewMediaRow {
 	id: string;
-	post_id?: string | null;
+	post_id: string;
+	publication_id: string;
 	r2_key: string;
 	filename: string;
 	mime_type: string;

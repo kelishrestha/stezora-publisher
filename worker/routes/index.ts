@@ -4,7 +4,6 @@ import { media } from './media';
 import { requireAdmin, withBodyLimit } from '../lib/middleware';
 import { adminStats } from './admin/stats';
 import { createPost, deletePost, editorMeta, getPost, listPosts, previewPost, publishPost, updatePost } from './admin/posts';
-import { createCategory, deleteCategory, listCategories, updateCategory } from './admin/categories';
 import { createTag, deleteTag, listTags, updateTag } from './admin/tags';
 import { listAdminMedia, uploadMedia } from './admin/media';
 
@@ -25,13 +24,7 @@ routes.get('/api/admin/posts/:id', requireAdmin(getPost));
 routes.put('/api/admin/posts/:id', requireAdmin(withBodyLimit(updatePost)));
 routes.delete('/api/admin/posts/:id', requireAdmin(deletePost));
 
-// Categories (publication-scoped, §10).
-routes.get('/api/admin/categories', requireAdmin(listCategories));
-routes.post('/api/admin/categories', requireAdmin(withBodyLimit(createCategory)));
-routes.put('/api/admin/categories/:id', requireAdmin(withBodyLimit(updateCategory)));
-routes.delete('/api/admin/categories/:id', requireAdmin(deleteCategory));
-
-// Tags (shared across publications, §10).
+// Tags (per-publication, §10).
 routes.get('/api/admin/tags', requireAdmin(listTags));
 routes.post('/api/admin/tags', requireAdmin(withBodyLimit(createTag)));
 routes.put('/api/admin/tags/:id', requireAdmin(withBodyLimit(updateTag)));

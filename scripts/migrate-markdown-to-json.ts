@@ -15,7 +15,6 @@ interface PostRecord {
 	title: string;
 	excerpt: string;
 	publication: string;
-	category: string;
 	tags: string[];
 	pubDate: string;
 	updatedDate?: string;
@@ -57,7 +56,6 @@ async function migrate(): Promise<void> {
 			title: String(data.title ?? ''),
 			excerpt: String(data.excerpt ?? ''),
 			publication: String(data.publication ?? ''),
-			category: String(data.category ?? ''),
 			tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
 			pubDate: toIsoDate(data.pubDate),
 			status: data.status === 'draft' ? 'draft' : 'published',

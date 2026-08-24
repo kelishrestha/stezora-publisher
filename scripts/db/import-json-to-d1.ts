@@ -21,7 +21,6 @@ export interface BackfillOptions {
 const POST_COLUMNS = [
 	'id',
 	'publication_id',
-	'category_id',
 	'title',
 	'slug',
 	'excerpt',
@@ -45,7 +44,6 @@ const POST_UPSERT_COLUMNS = [
 	'canonical_url',
 	'blogger_blog_id',
 	'blogger_post_id',
-	'category_id',
 ];
 
 export function buildBackfillSql(records: BackfillInput[], options: BackfillOptions = {}): string {
@@ -71,34 +69,24 @@ export function buildBackfillSql(records: BackfillInput[], options: BackfillOpti
 		const postSlug = basename.slice(prefix.length);
 		const postId = `p-${publicationId}-${postSlug}`;
 
-		const categorySlug = slugify(record.category) || 'uncategorized';
-		const categoryId = `c-${publicationId}-${categorySlug}`;
-
 		const blogId = blogIds.get(record.publication);
 		const hasBloggerId = Boolean(record.bloggerPostId && blogId);
 		const bloggerPostId = hasBloggerId ? record.bloggerPostId : null;
 		const bloggerBlogId = hasBloggerId ? blogId : null;
-
-		lines.push(
-			[
-				'INSERT INTO categories (id, publication_id, name, slug)',
-				`VALUES (${sqlString(categoryId)}, ${sqlString(publicationId)}, ${sqlString(record.category)}, ${sqlString(categorySlug)})`,
-				'ON CONFLICT (publication_id, slug) DO NOTHING;',
-			].join('\n')
-		);
 
 		for (const tag of record.tags) {
 			const tagSlug = slugify(tag);
 			if (!tagSlug) {
 				continue;
 			}
-			if (!emittedTagSlugs.has(tagSlug)) {
-				emittedTagSlugs.add(tagSlug);
+			const tagId = `t-${publicationId}-${tagSlug}`;
+			if (!emittedTagSlugs.has(tagId)) {
+				emittedTagSlugs.add(tagId);
 				lines.push(
 					[
-						'INSERT INTO tags (id, name, slug)',
-						`VALUES (${sqlString(`t-${tagSlug}`)}, ${sqlString(tag)}, ${sqlString(tagSlug)})`,
-						'ON CONFLICT (slug) DO NOTHING;',
+						'INSERT INTO tags (id, publication_id, name, slug)',
+						`VALUES (${sqlString(tagId)}, ${sqlString(publicationId)}, ${sqlString(tag)}, ${sqlString(tagSlug)})`,
+						'ON CONFLICT (publication_id, slug) DO NOTHING;',
 					].join('\n')
 				);
 			}
@@ -127,7 +115,6 @@ export function buildBackfillSql(records: BackfillInput[], options: BackfillOpti
 					'VALUES (',
 					sqlString(postId),
 					`, ${sqlString(publicationId)}`,
-					`, (SELECT id FROM categories WHERE publication_id = ${sqlString(publicationId)} AND slug = ${sqlString(categorySlug)})`,
 					`, ${sqlString(record.title)}`,
 					`, ${sqlString(postSlug)}`,
 					`, ${sqlNullable(record.excerpt)}`,
@@ -153,7 +140,7 @@ export function buildBackfillSql(records: BackfillInput[], options: BackfillOpti
 			lines.push(
 				[
 					'INSERT INTO post_tags (post_id, tag_id)',
-					`SELECT ${sqlString(postId)}, id FROM tags WHERE slug = ${sqlString(tagSlug)}`,
+					`SELECT ${sqlString(postId)}, id FROM tags WHERE publication_id = ${sqlString(publicationId)} AND slug = ${sqlString(tagSlug)}`,
 					'ON CONFLICT (post_id, tag_id) DO NOTHING;',
 				].join('\n')
 			);

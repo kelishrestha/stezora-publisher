@@ -58,7 +58,8 @@ export interface PutMediaInput {
 	filename: string;
 	body: ArrayBuffer | ArrayBufferView | string | Blob;
 	contentType: string;
-	postId?: string | null;
+	postId: string;
+	publicationId: string;
 }
 
 export class MediaService {
@@ -95,7 +96,8 @@ export class MediaService {
 
 		const row: MediaRow = {
 			id: crypto.randomUUID(),
-			post_id: input.postId ?? null,
+			post_id: input.postId,
+			publication_id: input.publicationId,
 			r2_key: key,
 			filename: safeFilename,
 			mime_type: input.contentType,

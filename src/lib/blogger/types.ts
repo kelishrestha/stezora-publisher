@@ -47,7 +47,6 @@ export interface PostRecord {
 	title: string;
 	excerpt: string;
 	publication: string;
-	category: string;
 	tags: string[];
 	pubDate: string;
 	updatedDate?: string;

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
 	PUBLICATIONS_PATH,
-	categoryPath,
 	getPublication,
 	getPublications,
 	postPath,
@@ -58,9 +57,8 @@ describe('publication path helpers', () => {
 		expect(publicationPath('a')).toBe('/publications/a');
 	});
 
-	it('builds post, category and tag paths', () => {
+	it('builds post and tag paths', () => {
 		expect(postPath('a', 'b')).toBe('/publications/a/posts/b');
-		expect(categoryPath('a', 'b')).toBe('/publications/a/categories/b');
 		expect(tagPath('a', 'b')).toBe('/publications/a/tags/b');
 	});
 });

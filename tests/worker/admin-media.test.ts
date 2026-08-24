@@ -57,11 +57,35 @@ function uploadBody(file: Blob, filename: string): FormData {
 	return form;
 }
 
+async function seedPublicationAndPost(): Promise<void> {
+	const now = new Date().toISOString();
+	await db
+		.prepare('INSERT OR IGNORE INTO publications (id, name, slug, description, created_at) VALUES (?, ?, ?, NULL, ?)')
+		.bind('pub-media', 'Media Pub', 'media-pub', now)
+		.run();
+	await db
+		.prepare(
+			`INSERT OR IGNORE INTO posts (id, publication_id, title, slug, excerpt, content, status, published_at, updated_at, created_at)
+			 VALUES ('post-media', 'pub-media', 'Media post', 'media-post', '', '<p>b</p>', 'draft', ?, ?, ?)`
+		)
+		.bind(now, now, now)
+		.run();
+}
+
+function uploadBodyWithPost(file: Blob, filename: string): FormData {
+	const form = uploadBody(file, filename);
+	form.append('postId', 'post-media');
+	form.append('publicationId', 'pub-media');
+	return form;
+}
+
+
 describe('admin media API', () => {
 	let cookie: string;
 
 	beforeAll(async () => {
 		await seedAdminUser();
+		await seedPublicationAndPost();
 		cookie = await signInAndCookies();
 	});
 
@@ -82,14 +106,16 @@ describe('admin media API', () => {
 	});
 
 	it('uploads a PNG and returns public URL metadata', async () => {
-		const form = uploadBody(new Blob(['png-bytes'], { type: 'image/png' }), 'header.png');
+		const form = uploadBodyWithPost(new Blob(['png-bytes'], { type: 'image/png' }), 'header.png');
 		const response = await fetchWorker('/api/admin/media', { method: 'POST', headers: { cookie }, body: form });
 		expect(response.status).toBe(201);
 		const body = (await response.json()) as Envelope;
-		const media = body.data?.media as { id: string; filename: string; mimeType: string; size: number; url: string } | undefined;
+		const media = body.data?.media as { id: string; filename: string; mimeType: string; size: number; url: string; postId: string; publicationId: string } | undefined;
 		expect(media?.filename).toBe('header.png');
 		expect(media?.mimeType).toBe('image/png');
 		expect(media?.size).toBe('png-bytes'.length);
+		expect(media?.postId).toBe('post-media');
+		expect(media?.publicationId).toBe('pub-media');
 		expect(media?.url).toMatch(/^\/media\/[0-9a-f-]{36}-header\.png$/);
 
 		// The public URL serves the object.
@@ -103,14 +129,14 @@ describe('admin media API', () => {
 	});
 
 	it('rejects a disallowed MIME type with 415', async () => {
-		const form = uploadBody(new Blob(['<script>1</script>'], { type: 'text/html' }), 'page.html');
+		const form = uploadBodyWithPost(new Blob(['<script>1</script>'], { type: 'text/html' }), 'page.html');
 		const response = await fetchWorker('/api/admin/media', { method: 'POST', headers: { cookie }, body: form });
 		expect(response.status).toBe(415);
 		expect(((await response.json()) as Envelope).error?.code).toBe('UNSUPPORTED_MEDIA_TYPE');
 	});
 
 	it('rejects an unsafe filename with 400', async () => {
-		const form = uploadBody(new Blob(['x'], { type: 'image/png' }), 'no spaces here.png');
+		const form = uploadBodyWithPost(new Blob(['x'], { type: 'image/png' }), 'no spaces here.png');
 		const response = await fetchWorker('/api/admin/media', { method: 'POST', headers: { cookie }, body: form });
 		expect(response.status).toBe(400);
 		expect(((await response.json()) as Envelope).error?.code).toBe('INVALID_FILENAME');
@@ -118,7 +144,7 @@ describe('admin media API', () => {
 
 	it('rejects an oversized upload with 413', async () => {
 		const big = new Blob(['y'.repeat(11 * 1024 * 1024)], { type: 'image/png' });
-		const form = uploadBody(big, 'huge.png');
+		const form = uploadBodyWithPost(big, 'huge.png');
 		const response = await fetchWorker('/api/admin/media', { method: 'POST', headers: { cookie }, body: form });
 		expect(response.status).toBe(413);
 		expect(((await response.json()) as Envelope).error?.code).toBe('PAYLOAD_TOO_LARGE');

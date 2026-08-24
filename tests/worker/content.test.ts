@@ -9,7 +9,6 @@ const contentPostSchema = z.object({
 	title: z.string(),
 	excerpt: z.string(),
 	publication: z.string(),
-	category: z.string(),
 	tags: z.array(z.string()).default([]),
 	pubDate: z.coerce.date(),
 	updatedDate: z.coerce.date().optional(),
@@ -22,8 +21,7 @@ const contentPostSchema = z.object({
 interface ContentResponse {
 	publications: Array<{ id: string; name: string; slug: string; description: string | null; accent: string | null }>;
 	posts: Array<Record<string, unknown>>;
-	categories: Array<{ id: string; publication_id: string; name: string; slug: string }>;
-	tags: Array<{ id: string; name: string; slug: string }>;
+	tags: Array<{ id: string; publication_id: string; name: string; slug: string }>;
 }
 
 async function seedPublication(id: string, slug = id, accent: string | null = null): Promise<void> {
@@ -40,21 +38,19 @@ async function seedPost(options: {
 	slug: string;
 	status: string;
 	publishedAt: string;
-	categoryId?: string;
 	bloggerPostId?: string;
 	canonicalUrl?: string;
 	tagSlugs?: string[];
 }): Promise<void> {
-	const { publication, slug, status, publishedAt, categoryId } = options;
+	const { publication, slug, status, publishedAt } = options;
 	await db
 		.prepare(
-			`INSERT INTO posts (id, publication_id, category_id, title, slug, excerpt, content, status, published_at, updated_at, canonical_url, blogger_post_id, created_at)
-			 VALUES (?, ?, ?, ?, ?, ?, '<p>body</p>', ?, ?, ?, ?, ?, ?)`
+			`INSERT INTO posts (id, publication_id, title, slug, excerpt, content, status, published_at, updated_at, canonical_url, blogger_post_id, created_at)
+			 VALUES (?, ?, ?, ?, ?, '<p>body</p>', ?, ?, ?, ?, ?, ?)`
 		)
 		.bind(
 			`p-${publication}-${slug}`,
 			publication,
-			categoryId ?? null,
 			`Title ${slug}`,
 			slug,
 			`Excerpt ${slug}`,
@@ -69,12 +65,12 @@ async function seedPost(options: {
 
 	for (const tagSlug of options.tagSlugs ?? []) {
 		await db
-			.prepare('INSERT OR IGNORE INTO tags (id, name, slug) VALUES (?, ?, ?)')
-			.bind(`t-${tagSlug}`, `Tag ${tagSlug}`, tagSlug)
+			.prepare('INSERT OR IGNORE INTO tags (id, publication_id, name, slug) VALUES (?, ?, ?, ?)')
+			.bind(`t-${publication}-${tagSlug}`, publication, `Tag ${tagSlug}`, tagSlug)
 			.run();
 		await db
 			.prepare('INSERT INTO post_tags (post_id, tag_id) VALUES (?, ?)')
-			.bind(`p-${publication}-${slug}`, `t-${tagSlug}`)
+			.bind(`p-${publication}-${slug}`, `t-${publication}-${tagSlug}`)
 			.run();
 	}
 }
@@ -114,18 +110,11 @@ describe('GET /api/content', () => {
 
 	it('returns published posts in the content schema shape', async () => {
 		await seedPublication('pub-shape');
-		await db
-			.prepare(
-				'INSERT INTO categories (id, publication_id, name, slug) VALUES (?, ?, ?, ?)'
-			)
-			.bind('c-pub-shape-endings', 'pub-shape', 'Endings', 'endings')
-			.run();
 		await seedPost({
 			publication: 'pub-shape',
 			slug: 'hello-world',
 			status: 'published',
 			publishedAt: new Date('2026-01-01T00:00:00Z').toISOString(),
-			categoryId: 'c-pub-shape-endings',
 			bloggerPostId: 'blog-123',
 			canonicalUrl: 'https://example.com/hello-world.html',
 			tagSlugs: ['poetry', 'endings'],
@@ -140,7 +129,6 @@ describe('GET /api/content', () => {
 		expect(post.title).toBe('Title hello-world');
 		expect(post.excerpt).toBe('Excerpt hello-world');
 		expect(post.publication).toBe('pub-shape');
-		expect(post.category).toBe('Endings');
 		expect(post.tags).toEqual(['Tag poetry', 'Tag endings']);
 		expect(post.pubDate.toISOString()).toBe(new Date('2026-01-01T00:00:00Z').toISOString());
 		expect(post.updatedDate?.toISOString()).toBe(new Date('2026-01-01T00:00:00Z').toISOString());
@@ -150,7 +138,7 @@ describe('GET /api/content', () => {
 		expect(post.bloggerUrl).toBe('https://example.com/hello-world.html');
 	});
 
-	it('excludes drafts and scheduled-future posts', async () => {
+	it('excludes drafts, scheduled-future, and archived posts', async () => {
 		await seedPublication('pub-filter');
 		await seedPost({
 			publication: 'pub-filter',
@@ -169,6 +157,12 @@ describe('GET /api/content', () => {
 			slug: 'future',
 			status: 'published',
 			publishedAt: new Date('2099-01-01T00:00:00Z').toISOString(),
+		});
+		await seedPost({
+			publication: 'pub-filter',
+			slug: 'archived',
+			status: 'archived',
+			publishedAt: new Date('2025-01-01T00:00:00Z').toISOString(),
 		});
 
 		const body = await fetchContent();
@@ -189,16 +183,18 @@ describe('GET /api/content', () => {
 		).toMatchObject({ accent: 'rose' });
 	});
 
-	it('returns categories and tags for the CMS', async () => {
+	it('returns tags scoped to their publication for the CMS', async () => {
 		await seedPublication('pub-cms');
-		await db
-			.prepare(
-				'INSERT INTO categories (id, publication_id, name, slug) VALUES (?, ?, ?, ?)'
-			)
-			.bind('c-pub-cms-endings', 'pub-cms', 'Endings', 'endings')
-			.run();
+		await seedPublication('pub-other');
 		await seedPost({
 			publication: 'pub-cms',
+			slug: 'tagged',
+			status: 'published',
+			publishedAt: new Date('2026-01-01T00:00:00Z').toISOString(),
+			tagSlugs: ['poetry', 'endings'],
+		});
+		await seedPost({
+			publication: 'pub-other',
 			slug: 'tagged',
 			status: 'published',
 			publishedAt: new Date('2026-01-01T00:00:00Z').toISOString(),
@@ -208,12 +204,13 @@ describe('GET /api/content', () => {
 		const body = await fetchContent();
 
 		expect(
-			body.categories.filter((category) => category.publication_id === 'pub-cms')
+			body.tags.filter((tag) => tag.publication_id === 'pub-cms')
 		).toEqual([
-			{ id: 'c-pub-cms-endings', publication_id: 'pub-cms', name: 'Endings', slug: 'endings' },
+			{ id: 't-pub-cms-endings', publication_id: 'pub-cms', name: 'Tag endings', slug: 'endings' },
+			{ id: 't-pub-cms-poetry', publication_id: 'pub-cms', name: 'Tag poetry', slug: 'poetry' },
 		]);
-		expect(body.tags.filter((tag) => tag.slug === 'poetry')).toEqual([
-			{ id: 't-poetry', name: 'Tag poetry', slug: 'poetry' },
-		]);
+		expect(body.tags).not.toContainEqual(
+			expect.objectContaining({ id: 't-pub-cms-poetry', publication_id: 'pub-other' })
+		);
 	});
 });

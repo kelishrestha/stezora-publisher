@@ -20,15 +20,6 @@ export interface TermCount {
 	count: number;
 }
 
-export async function getCategoriesForPublication(publicationSlug: string): Promise<TermCount[]> {
-	const posts = await getPostsForPublication(publicationSlug);
-	const counts = new Map<string, number>();
-	for (const post of posts) {
-		counts.set(post.data.category, (counts.get(post.data.category) ?? 0) + 1);
-	}
-	return toTermCounts(counts);
-}
-
 export async function getTagsForPublication(publicationSlug: string): Promise<TermCount[]> {
 	const posts = await getPostsForPublication(publicationSlug);
 	const counts = new Map<string, number>();
@@ -38,11 +29,6 @@ export async function getTagsForPublication(publicationSlug: string): Promise<Te
 		}
 	}
 	return toTermCounts(counts);
-}
-
-export async function getPostsByCategory(publicationSlug: string, categoryName: string): Promise<Post[]> {
-	const posts = await getPostsForPublication(publicationSlug);
-	return posts.filter((post) => post.data.category === categoryName);
 }
 
 export async function getPostsByTag(publicationSlug: string, tagName: string): Promise<Post[]> {

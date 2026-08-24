@@ -48,10 +48,6 @@ export function postPath(publicationSlug: string, postSlug: string): string {
 	return `${PUBLICATIONS_PATH}/${publicationSlug}/posts/${postSlug}`;
 }
 
-export function categoryPath(publicationSlug: string, category: string): string {
-	return `${PUBLICATIONS_PATH}/${publicationSlug}/categories/${category}`;
-}
-
 export function tagPath(publicationSlug: string, tag: string): string {
 	return `${PUBLICATIONS_PATH}/${publicationSlug}/tags/${tag}`;
 }

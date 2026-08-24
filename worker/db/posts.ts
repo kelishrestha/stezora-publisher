@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, inArray, ne } from 'drizzle-orm';
 import { createDb, type Db } from './client';
-import { categories, posts, postTags, publications, tags } from './schema';
+import { posts, postTags, publications, tags } from './schema';
 
 export type PostStatus = 'draft' | 'scheduled' | 'published' | 'archived';
 
@@ -19,8 +19,6 @@ export interface AdminPost {
 	excerpt: string;
 	content: string;
 	contentMarkdown: string;
-	categoryId: string | null;
-	category: string | null;
 	tags: string[];
 	status: PostStatus;
 	publishedAt: string | null;
@@ -35,7 +33,6 @@ export interface AdminPost {
 
 export interface NewPost {
 	publicationId: string;
-	categoryId: string | null;
 	title: string;
 	slug: string;
 	excerpt: string;
@@ -58,8 +55,6 @@ interface PostRow {
 	excerpt: string | null;
 	content: string;
 	content_markdown: string | null;
-	category_id: string | null;
-	category: string | null;
 	status: string;
 	published_at: string | null;
 	updated_at: string | null;
@@ -106,8 +101,6 @@ export class PostRepository {
 				excerpt: posts.excerpt,
 				content: posts.content,
 				content_markdown: posts.content_markdown,
-				category_id: posts.category_id,
-				category: categories.name,
 				status: posts.status,
 				published_at: posts.published_at,
 				updated_at: posts.updated_at,
@@ -120,7 +113,6 @@ export class PostRepository {
 			})
 			.from(posts)
 			.innerJoin(publications, eq(posts.publication_id, publications.id))
-			.leftJoin(categories, eq(posts.category_id, categories.id))
 			.where(conditions.length ? and(...conditions) : undefined)
 			.orderBy(desc(posts.updated_at), desc(posts.created_at))
 			.limit(options.limit)
@@ -139,8 +131,6 @@ export class PostRepository {
 				excerpt: posts.excerpt,
 				content: posts.content,
 				content_markdown: posts.content_markdown,
-				category_id: posts.category_id,
-				category: categories.name,
 				status: posts.status,
 				published_at: posts.published_at,
 				updated_at: posts.updated_at,
@@ -153,7 +143,6 @@ export class PostRepository {
 			})
 			.from(posts)
 			.innerJoin(publications, eq(posts.publication_id, publications.id))
-			.leftJoin(categories, eq(posts.category_id, categories.id))
 			.where(eq(posts.id, id))
 			.limit(1);
 		if (rows.length === 0) {
@@ -184,7 +173,6 @@ export class PostRepository {
 			.values({
 				id,
 				publication_id: post.publicationId,
-				category_id: post.categoryId,
 				title: post.title,
 				slug: post.slug,
 				excerpt: post.excerpt,
@@ -197,7 +185,7 @@ export class PostRepository {
 				created_at: now,
 				updated_at: now,
 			});
-		await this.replaceTags(id, post.tagNames);
+		await this.replaceTags(id, post.publicationId, post.tagNames);
 		const created = await this.getById(id);
 		if (!created) {
 			throw new Error('Failed to load created post.');
@@ -215,7 +203,6 @@ export class PostRepository {
 		}
 		const values: Record<string, unknown> = { updated_at: changes.updatedAt };
 		if (changes.publicationId !== undefined) values.publication_id = changes.publicationId;
-		if (changes.categoryId !== undefined) values.category_id = changes.categoryId;
 		if (changes.title !== undefined) values.title = changes.title;
 		if (changes.slug !== undefined) values.slug = changes.slug;
 		if (changes.excerpt !== undefined) values.excerpt = changes.excerpt;
@@ -227,7 +214,7 @@ export class PostRepository {
 		if (changes.publishedAt !== undefined) values.published_at = changes.publishedAt;
 		await this.db.update(posts).set(values).where(eq(posts.id, id));
 		if (changes.tagNames !== undefined) {
-			await this.replaceTags(id, changes.tagNames);
+			await this.replaceTags(id, changes.publicationId ?? existing.publicationId, changes.tagNames);
 		}
 		const updated = await this.getById(id);
 		if (!updated) {
@@ -263,7 +250,7 @@ export class PostRepository {
 		return updated;
 	}
 
-	private async replaceTags(postId: string, tagNames: string[]): Promise<void> {
+	private async replaceTags(postId: string, publicationId: string, tagNames: string[]): Promise<void> {
 		const names = [...new Set(tagNames.map((name) => name.trim()).filter(Boolean))];
 		await this.db.delete(postTags).where(eq(postTags.post_id, postId));
 		if (names.length === 0) {
@@ -274,13 +261,18 @@ export class PostRepository {
 		const existingRows = await this.db
 			.select({ id: tags.id, slug: tags.slug })
 			.from(tags)
-			.where(inArray(tags.slug, normalized.map((n) => n.slug)));
+			.where(and(eq(tags.publication_id, publicationId), inArray(tags.slug, normalized.map((n) => n.slug))));
 
 		const existingBySlug = new Map(existingRows.map((row) => [row.slug, row.id]));
 		const toInsert = normalized.filter((n) => !existingBySlug.has(n.slug));
 		for (const item of toInsert) {
 			const id = crypto.randomUUID();
-			await this.db.insert(tags).values({ id, name: item.name, slug: item.slug });
+			await this.db.insert(tags).values({
+				id,
+				publication_id: publicationId,
+				name: item.name,
+				slug: item.slug,
+			});
 			existingBySlug.set(item.slug, id);
 		}
 
@@ -317,8 +309,6 @@ export class PostRepository {
 			excerpt: row.excerpt ?? '',
 			content: row.content,
 			contentMarkdown: row.content_markdown ?? '',
-			categoryId: row.category_id,
-			category: row.category,
 			tags: tagsByPost.get(row.id) ?? [],
 			status: row.status as PostStatus,
 			publishedAt: row.published_at,
@@ -332,19 +322,16 @@ export class PostRepository {
 		}));
 	}
 
-	async listCategories(publicationId?: string): Promise<Array<{ id: string; publication_id: string; name: string; slug: string }>> {
+	async listTags(publicationId?: string): Promise<Array<{ id: string; publication_id: string; name: string; slug: string }>> {
 		const rows = await this.db
-			.select({ id: categories.id, publication_id: categories.publication_id, name: categories.name, slug: categories.slug })
-			.from(categories)
-			.where(publicationId ? eq(categories.publication_id, publicationId) : undefined)
-			.orderBy(asc(categories.name));
-		return rows;
-	}
-
-	async listTags(): Promise<Array<{ id: string; name: string; slug: string }>> {
-		const rows = await this.db
-			.select({ id: tags.id, name: tags.name, slug: tags.slug })
+			.select({
+				id: tags.id,
+				publication_id: tags.publication_id,
+				name: tags.name,
+				slug: tags.slug,
+			})
 			.from(tags)
+			.where(publicationId ? eq(tags.publication_id, publicationId) : undefined)
 			.orderBy(asc(tags.name));
 		return rows;
 	}

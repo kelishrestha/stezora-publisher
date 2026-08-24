@@ -4,19 +4,22 @@ import { postTags, tags } from './schema';
 
 export interface TagRow {
 	id: string;
+	publication_id: string;
 	name: string;
 	slug: string;
 }
 
 export interface NewTag {
+	publicationId: string;
 	name: string;
 	slug: string;
 }
 
 /**
- * TagRepository: tags are shared across publications (`tags.slug` globally
- * unique, DEVELOPER.md §10). Deletion is blocked while any post still uses the
- * tag (409 IN_USE) — never silent reassignment.
+ * TagRepository: tags belong to a publication (`unique(publication_id, slug)`,
+ * DEVELOPER.md §10). The same tag name may exist in different publications as
+ * separate rows. Deletion is blocked while any post in that publication still
+ * uses the tag (409 IN_USE) — never silent reassignment.
  */
 export class TagRepository {
 	private readonly db: Db;
@@ -25,24 +28,25 @@ export class TagRepository {
 		this.db = createDb(binding);
 	}
 
-	async list(): Promise<TagRow[]> {
+	async list(publicationId?: string): Promise<TagRow[]> {
 		return this.db
-			.select({ id: tags.id, name: tags.name, slug: tags.slug })
+			.select({ id: tags.id, publication_id: tags.publication_id, name: tags.name, slug: tags.slug })
 			.from(tags)
+			.where(publicationId ? eq(tags.publication_id, publicationId) : undefined)
 			.orderBy(asc(tags.name));
 	}
 
 	async getById(id: string): Promise<TagRow | null> {
 		const rows = await this.db
-			.select({ id: tags.id, name: tags.name, slug: tags.slug })
+			.select({ id: tags.id, publication_id: tags.publication_id, name: tags.name, slug: tags.slug })
 			.from(tags)
 			.where(eq(tags.id, id))
 			.limit(1);
 		return rows[0] ?? null;
 	}
 
-	async existsBySlug(slug: string, excludeId?: string): Promise<boolean> {
-		const conditions = [eq(tags.slug, slug)];
+	async existsBySlug(publicationId: string, slug: string, excludeId?: string): Promise<boolean> {
+		const conditions = [eq(tags.publication_id, publicationId), eq(tags.slug, slug)];
 		if (excludeId) {
 			conditions.push(ne(tags.id, excludeId));
 		}
@@ -57,6 +61,7 @@ export class TagRepository {
 	async create(input: NewTag): Promise<TagRow> {
 		const row: TagRow = {
 			id: crypto.randomUUID(),
+			publication_id: input.publicationId,
 			name: input.name,
 			slug: input.slug,
 		};
@@ -64,7 +69,7 @@ export class TagRepository {
 		return row;
 	}
 
-	async update(id: string, changes: Partial<NewTag>): Promise<TagRow | null> {
+	async update(id: string, changes: Partial<Omit<NewTag, 'publicationId'>>): Promise<TagRow | null> {
 		const existing = await this.getById(id);
 		if (!existing) {
 			return null;

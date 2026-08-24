@@ -25,8 +25,7 @@ describe('blogger mapper', () => {
 
 		expect(record.title).toBe('My Post');
 		expect(record.publication).toBe('the-sore-transition');
-		expect(record.category).toBe('Essays');
-		expect(record.tags).toEqual(['change', 'hope']);
+		expect(record.tags).toEqual(['Essays', 'change', 'hope']);
 		expect(record.status).toBe('published');
 		expect(record.bloggerPostId).toBe('123');
 		expect(record.pubDate).toBe('2024-03-08T09:00:00.000Z');
@@ -34,9 +33,8 @@ describe('blogger mapper', () => {
 		expect(baseSlug).toBe('my-post');
 	});
 
-	it('uses a fallback category and tag list when labels are missing', () => {
+	it('uses an empty tag list when labels are missing', () => {
 		const { record } = mapPost(dto({ labels: undefined }), { publicationSlug: 'the-sore-transition' });
-		expect(record.category).toBe('Uncategorized');
 		expect(record.tags).toEqual([]);
 	});
 

@@ -17,19 +17,6 @@ export const publications = sqliteTable(
 	(table) => [uniqueIndex('publications_slug_unique').on(table.slug)]
 );
 
-export const categories = sqliteTable(
-	'categories',
-	{
-		id: text('id').primaryKey(),
-		publication_id: text('publication_id')
-			.notNull()
-			.references(() => publications.id),
-		name: text('name').notNull(),
-		slug: text('slug').notNull(),
-	},
-	(table) => [uniqueIndex('categories_publication_slug_unique').on(table.publication_id, table.slug)]
-);
-
 export const posts = sqliteTable(
 	'posts',
 	{
@@ -37,7 +24,6 @@ export const posts = sqliteTable(
 		publication_id: text('publication_id')
 			.notNull()
 			.references(() => publications.id),
-		category_id: text('category_id').references(() => categories.id),
 		title: text('title').notNull(),
 		slug: text('slug').notNull(),
 		excerpt: text('excerpt'),
@@ -64,10 +50,13 @@ export const tags = sqliteTable(
 	'tags',
 	{
 		id: text('id').primaryKey(),
+		publication_id: text('publication_id')
+			.notNull()
+			.references(() => publications.id),
 		name: text('name').notNull(),
 		slug: text('slug').notNull(),
 	},
-	(table) => [uniqueIndex('tags_slug_unique').on(table.slug)]
+	(table) => [uniqueIndex('tags_publication_slug_unique').on(table.publication_id, table.slug)]
 );
 
 export const postTags = sqliteTable(
@@ -87,7 +76,12 @@ export const media = sqliteTable(
 	'media',
 	{
 		id: text('id').primaryKey(),
-		post_id: text('post_id').references(() => posts.id),
+		post_id: text('post_id')
+			.notNull()
+			.references(() => posts.id),
+		publication_id: text('publication_id')
+			.notNull()
+			.references(() => publications.id),
 		r2_key: text('r2_key').notNull(),
 		filename: text('filename').notNull(),
 		mime_type: text('mime_type').notNull(),
@@ -96,7 +90,8 @@ export const media = sqliteTable(
 	},
 	(table) => [
 		uniqueIndex('media_r2_key_unique').on(table.r2_key),
-		index('idx_media_post').on(table.post_id),
+		uniqueIndex('media_post_id_unique').on(table.post_id),
+		index('idx_media_publication').on(table.publication_id),
 	]
 );
 
@@ -118,6 +113,5 @@ export const bloggerSync = sqliteTable(
 
 export type Publication = typeof publications.$inferSelect;
 export type Post = typeof posts.$inferSelect;
-export type Category = typeof categories.$inferSelect;
 export type Tag = typeof tags.$inferSelect;
 export type Media = typeof media.$inferSelect;

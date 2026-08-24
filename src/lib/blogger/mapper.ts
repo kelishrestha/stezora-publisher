@@ -16,8 +16,7 @@ export function mapPost(dto: BloggerPostDto, options: MapPostOptions): MappedPos
 	const pubDate = new Date(dto.published).toISOString();
 	const updatedDate = new Date(dto.updated).toISOString();
 
-	const category = dto.labels?.[0] ?? 'Uncategorized';
-	const tags = (dto.labels ?? []).slice(1);
+	const tags = dto.labels ?? [];
 
 	const status: PostStatus = dto.status === 'DRAFT' ? 'draft' : 'published';
 	if (status === 'draft' && !options.includeDrafts) {
@@ -38,7 +37,6 @@ export function mapPost(dto: BloggerPostDto, options: MapPostOptions): MappedPos
 			title: dto.title,
 			excerpt,
 			publication: options.publicationSlug,
-			category,
 			tags,
 			pubDate,
 			updatedDate,

@@ -1,19 +1,17 @@
 ---
 import type { Publication } from '../../lib/publications/types';
 import type { TermCount } from '../../lib/publications/collections';
-import { categoryPath, publicationPath, publicationRssPath, tagPath } from '../../lib/publications';
+import { publicationPath, publicationRssPath, tagPath } from '../../lib/publications';
 
 interface Props {
 	publication: Publication;
-	categories: TermCount[];
 	tags: TermCount[];
 }
 
-const { publication, categories, tags } = Astro.props;
+const { publication, tags } = Astro.props;
 
 const links = [
 	{ href: publicationPath(publication.slug), label: 'Articles' },
-	{ href: `${publicationPath(publication.slug)}/categories`, label: 'Categories' },
 	{ href: `${publicationPath(publication.slug)}/tags`, label: 'Tags' },
 	{ href: publicationRssPath(publication.slug), label: 'RSS' },
 ];
@@ -40,21 +38,8 @@ const links = [
 			</ul>
 		</nav>
 
-		{categories.length > 0 && (
-			<div class="mt-5 flex flex-wrap gap-2">
-				{categories.map((category) => (
-					<a
-						href={categoryPath(publication.slug, category.slug)}
-						class="rounded-full border border-transparent bg-accent-soft px-3 py-1 text-xs font-medium text-accent-foreground transition-colors hover:opacity-80"
-					>
-						{category.name}
-					</a>
-				))}
-			</div>
-		)}
-
 		{tags.length > 0 && (
-			<div class="mt-2 flex flex-wrap gap-2">
+			<div class="mt-5 flex flex-wrap gap-2">
 				{tags.map((tag) => (
 					<a
 						href={tagPath(publication.slug, tag.slug)}

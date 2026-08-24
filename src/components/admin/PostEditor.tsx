@@ -7,22 +7,15 @@ interface PublicationOption {
 	accent: string | null;
 }
 
-interface CategoryOption {
+interface TagOption {
 	id: string;
 	publication_id: string;
 	name: string;
 	slug: string;
 }
 
-interface TagOption {
-	id: string;
-	name: string;
-	slug: string;
-}
-
 interface EditorMeta {
 	publications: PublicationOption[];
-	categories: CategoryOption[];
 	tags: TagOption[];
 }
 
@@ -35,8 +28,6 @@ interface PostRecord {
 	excerpt: string;
 	content: string;
 	contentMarkdown: string;
-	categoryId: string | null;
-	category: string | null;
 	tags: string[];
 	status: string;
 	publishedAt: string | null;
@@ -90,7 +81,16 @@ interface PostEditorProps {
 	postId?: string;
 }
 
+function postIdFromPath(): string | undefined {
+	const match = window.location.pathname.match(/^\/admin\/posts\/([^/]+)\/edit$/);
+	return match?.[1];
+}
+
 export default function PostEditor({ postId }: PostEditorProps) {
+	// The edit page is a static shell: the Worker proxies /admin/posts/:id/edit
+	// onto it, so the id must be read from the URL on the client. Accepting the
+	// prop keeps new.astro and any direct prop-based usage working unchanged.
+	const [editingPostId, setEditingPostId] = useState(postId);
 	const [meta, setMeta] = useState<EditorMeta | null>(null);
 	const [loading, setLoading] = useState(Boolean(postId));
 	const [saving, setSaving] = useState(false);
@@ -103,15 +103,14 @@ export default function PostEditor({ postId }: PostEditorProps) {
 	const [slug, setSlug] = useState('');
 	const [excerpt, setExcerpt] = useState('');
 	const [contentMarkdown, setContentMarkdown] = useState('');
-	const [categoryId, setCategoryId] = useState('');
 	const [tags, setTags] = useState('');
 	const [status, setStatus] = useState('draft');
 	const [publishedAt, setPublishedAt] = useState('');
 	const [seoTitle, setSeoTitle] = useState('');
 	const [seoDescription, setSeoDescription] = useState('');
 
-	const categoryOptions = useMemo(
-		() => meta?.categories.filter((category) => category.publication_id === publicationId) ?? [],
+	const tagOptions = useMemo(
+		() => meta?.tags.filter((tag) => tag.publication_id === publicationId) ?? [],
 		[meta, publicationId]
 	);
 
@@ -126,19 +125,18 @@ export default function PostEditor({ postId }: PostEditorProps) {
 			setError(reason instanceof Error ? reason.message : 'Failed to load editor data.');
 		}
 
-		if (!postId) {
+		if (!editingPostId) {
 			setLoading(false);
 			return;
 		}
 
 		try {
-			const { post } = await json<{ post: PostRecord }>(`/api/admin/posts/${postId}`);
+			const { post } = await json<{ post: PostRecord }>(`/api/admin/posts/${editingPostId}`);
 			setTitle(post.title);
 			setPublicationId(post.publicationId);
 			setSlug(post.slug);
 			setExcerpt(post.excerpt);
 			setContentMarkdown(post.contentMarkdown);
-			setCategoryId(post.categoryId ?? '');
 			setTags(post.tags.join(', '));
 			setStatus(post.status);
 			setPublishedAt(toDateTimeLocal(post.publishedAt));
@@ -149,7 +147,13 @@ export default function PostEditor({ postId }: PostEditorProps) {
 		} finally {
 			setLoading(false);
 		}
-	}, [postId, publicationId]);
+	}, [editingPostId, publicationId]);
+
+	useEffect(() => {
+		if (!postId) {
+			setEditingPostId(postIdFromPath());
+		}
+	}, [postId]);
 
 	useEffect(() => {
 		void load();
@@ -174,21 +178,20 @@ export default function PostEditor({ postId }: PostEditorProps) {
 				slug,
 				excerpt,
 				contentMarkdown,
-				categoryId: categoryId || null,
 				tagNames: tags.split(',').map((tag) => tag.trim()).filter(Boolean),
 				status,
 				publishedAt: publishedAt ? new Date(publishedAt).toISOString() : null,
 				seoTitle: seoTitle || null,
 				seoDescription: seoDescription || null,
 			};
-			const path = postId ? `/api/admin/posts/${postId}` : '/api/admin/posts';
+			const path = editingPostId ? `/api/admin/posts/${editingPostId}` : '/api/admin/posts';
 			await json<{ post: PostRecord }>(path, {
-				method: postId ? 'PUT' : 'POST',
+				method: editingPostId ? 'PUT' : 'POST',
 				headers: { 'content-type': 'application/json' },
 				body: JSON.stringify(payload),
 			});
 			setNotice('Post saved.');
-			if (!postId) {
+			if (!editingPostId) {
 				// Created — refresh to the new edit page (payload id unknown until
 				// the response, so reload the list instead).
 				window.location.href = '/admin/posts';
@@ -201,13 +204,13 @@ export default function PostEditor({ postId }: PostEditorProps) {
 	}
 
 	async function runPreview() {
-		if (!postId) {
+		if (!editingPostId) {
 			setError('Save the post before previewing.');
 			return;
 		}
 		setError(null);
 		try {
-			const result = await json<{ html: string; title: string }>(`/api/admin/posts/${postId}/preview`, {
+			const result = await json<{ html: string; title: string }>(`/api/admin/posts/${editingPostId}/preview`, {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
 				body: JSON.stringify({ contentMarkdown }),
@@ -258,10 +261,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 							<select
 								id="post-publication"
 								value={publicationId}
-								onChange={(event) => {
-									setPublicationId(event.target.value);
-									setCategoryId('');
-								}}
+								onChange={(event) => setPublicationId(event.target.value)}
 								className={inputClass}
 							>
 								{meta.publications.map((publication) => (
@@ -326,24 +326,6 @@ export default function PostEditor({ postId }: PostEditorProps) {
 
 					<div className="grid gap-4 sm:grid-cols-2">
 						<div>
-							<label htmlFor="post-category" className="block text-sm font-medium text-foreground">
-								Category
-							</label>
-							<select
-								id="post-category"
-								value={categoryId}
-								onChange={(event) => setCategoryId(event.target.value)}
-								className={inputClass}
-							>
-								<option value="">—</option>
-								{categoryOptions.map((category) => (
-									<option key={category.id} value={category.id}>
-										{category.name}
-									</option>
-								))}
-							</select>
-						</div>
-						<div>
 							<label htmlFor="post-tags" className="block text-sm font-medium text-foreground">
 								Tags
 							</label>
@@ -354,6 +336,37 @@ export default function PostEditor({ postId }: PostEditorProps) {
 								className={inputClass}
 								placeholder="comma, separated, tags"
 							/>
+							{tagOptions.length > 0 && (
+								<div className="mt-2 flex flex-wrap gap-1.5">
+									{tagOptions.map((tag) => (
+										<button
+											key={tag.id}
+											type="button"
+											onClick={() => {
+												const current = tags.split(',').map((t) => t.trim()).filter(Boolean);
+												if (!current.includes(tag.name)) {
+													setTags([...current, tag.name].join(', '));
+												}
+											}}
+											className="rounded-full bg-accent-soft px-2.5 py-1 text-xs text-accent-foreground transition-colors hover:opacity-80"
+										>
+											#{tag.name}
+										</button>
+									))}
+								</div>
+							)}
+						</div>
+						<div>
+							<label className="block text-sm font-medium text-foreground">
+								Media
+							</label>
+							<p className="mt-1 text-sm text-muted-foreground">
+								Media is attached per post. Upload one image or document for this post in the{' '}
+								<a href="/admin/media" className="text-accent-foreground hover:underline">
+									Media manager
+								</a>
+								.
+							</p>
 						</div>
 					</div>
 				</div>
@@ -424,7 +437,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 						<button
 							type="button"
 							onClick={() => void runPreview()}
-							disabled={!postId}
+							disabled={!editingPostId}
 							className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground hover:bg-surface-elevated disabled:cursor-not-allowed disabled:opacity-50"
 						>
 							Preview

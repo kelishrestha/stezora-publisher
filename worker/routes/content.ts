@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, lte } from 'drizzle-orm';
 import { createDb } from '../db/client';
-import { categories, posts, postTags, publications, tags } from '../db/schema';
+import { posts, postTags, publications, tags } from '../db/schema';
 import type { RouteHandler } from '../router';
 
 interface ContentPublication {
@@ -11,15 +11,9 @@ interface ContentPublication {
 	accent: string | null;
 }
 
-interface ContentCategory {
-	id: string;
-	publication_id: string;
-	name: string;
-	slug: string;
-}
-
 interface ContentTag {
 	id: string;
+	publication_id: string;
 	name: string;
 	slug: string;
 }
@@ -29,7 +23,6 @@ export interface ContentPost {
 	title: string;
 	excerpt: string;
 	publication: string;
-	category: string;
 	tags: string[];
 	pubDate: string;
 	updatedDate?: string;
@@ -42,7 +35,6 @@ export interface ContentPost {
 interface ContentResponse {
 	publications: ContentPublication[];
 	posts: ContentPost[];
-	categories: ContentCategory[];
 	tags: ContentTag[];
 }
 
@@ -50,7 +42,7 @@ export const content: RouteHandler = async ({ env }) => {
 	const db = createDb(env.DB);
 	const now = new Date().toISOString();
 
-	const [publicationsResult, categoriesResult, tagsResult, postsResult, postTagsResult] = await Promise.all([
+	const [publicationsResult, tagsResult, postsResult, postTagsResult] = await Promise.all([
 		db
 			.select({
 				id: publications.id,
@@ -63,15 +55,11 @@ export const content: RouteHandler = async ({ env }) => {
 			.orderBy(asc(publications.slug)),
 		db
 			.select({
-				id: categories.id,
-				publication_id: categories.publication_id,
-				name: categories.name,
-				slug: categories.slug,
+				id: tags.id,
+				publication_id: tags.publication_id,
+				name: tags.name,
+				slug: tags.slug,
 			})
-			.from(categories)
-			.orderBy(asc(categories.name)),
-		db
-			.select({ id: tags.id, name: tags.name, slug: tags.slug })
 			.from(tags)
 			.orderBy(asc(tags.name)),
 		db
@@ -85,11 +73,9 @@ export const content: RouteHandler = async ({ env }) => {
 				blogger_post_id: posts.blogger_post_id,
 				canonical_url: posts.canonical_url,
 				publication: publications.slug,
-				category: categories.name,
 			})
 			.from(posts)
 			.innerJoin(publications, eq(posts.publication_id, publications.id))
-			.leftJoin(categories, eq(posts.category_id, categories.id))
 			.where(and(eq(posts.status, 'published'), lte(posts.published_at, now)))
 			.orderBy(desc(posts.published_at)),
 		db
@@ -122,7 +108,6 @@ export const content: RouteHandler = async ({ env }) => {
 			title: row.title,
 			excerpt: row.excerpt ?? '',
 			publication: row.publication,
-			category: row.category ?? '',
 			tags: tagsByPost.get(`${row.publication}/${row.slug}`) ?? [],
 			pubDate: row.pub_date ?? '',
 			status: 'published',
@@ -143,7 +128,6 @@ export const content: RouteHandler = async ({ env }) => {
 	const response: ContentResponse = {
 		publications: publicationsResult,
 		posts: contentPosts,
-		categories: categoriesResult,
 		tags: tagsResult,
 	};
 
