@@ -7,6 +7,22 @@
  */
 export const ADMIN_LOGIN_PREFIX = '/admin/login';
 
+/**
+ * The admin edit and view pages are static shells
+ * (`src/pages/admin/posts/edit.astro`, `src/pages/admin/posts/view.astro`),
+ * so `/admin/posts/:id/edit` and `/admin/posts/:id/view` map to those shells'
+ * assets instead of a per-post file. `PostEditor`/`PostView` read the id from
+ * the URL path on the client (DEVELOPER.md §70). Other admin paths map to
+ * their own built `index.html`.
+ */
+export function isAdminEditPath(pathname: string): boolean {
+	return /^\/admin\/posts\/[^/]+\/edit$/.test(pathname);
+}
+
+export function isAdminViewPath(pathname: string): boolean {
+	return /^\/admin\/posts\/[^/]+\/view$/.test(pathname);
+}
+
 export function isAdminAssetRequest(pathname: string): boolean {
 	return (
 		pathname.startsWith('/admin') &&
@@ -17,9 +33,17 @@ export function isAdminAssetRequest(pathname: string): boolean {
 
 /**
  * Astro emits static pages as `index.html`, so the browser path `/admin/posts`
- * maps to the asset `/admin/posts/index.html`.
+ * maps to the asset `/admin/posts/index.html`. Like `POST /api/admin/posts`,
+ * `/admin/posts/:id/edit` needs no per-post asset; it intentionally maps every
+ * id onto the one static editor shell. The same applies to `/admin/posts/:id/view`.
  */
 export function adminAssetPath(pathname: string): string {
 	const withoutTrailingSlash = pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+	if (isAdminEditPath(withoutTrailingSlash)) {
+		return '/admin/posts/edit/index.html';
+	}
+	if (isAdminViewPath(withoutTrailingSlash)) {
+		return '/admin/posts/view/index.html';
+	}
 	return `${withoutTrailingSlash || '/admin'}/index.html`;
 }

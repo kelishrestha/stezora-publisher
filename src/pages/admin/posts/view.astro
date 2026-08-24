@@ -1,0 +1,20 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import PostView from '../../../components/admin/PostView';
+
+const title = 'View post';
+const description = 'View a post.';
+---
+
+<!--
+	Static shell. The post id is read from the URL by PostView on the client
+	(Worker rewrites /admin/posts/:id/view to this asset, DEVELOPER.md §70),
+	so the URL scheme /admin/posts/:id/view stays intact.
+-->
+<AdminLayout title={title} description={description} path="/admin/posts">
+	<h1 class="text-2xl font-semibold tracking-tight text-foreground">View post</h1>
+	<p class="mt-1 text-sm text-muted-foreground">Read-only view of a post.</p>
+	<div class="mt-6">
+		<PostView client:load />
+	</div>
+</AdminLayout>

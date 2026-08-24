@@ -115,23 +115,32 @@ export default function PostList() {
 			) : (
 				<ul className="divide-y divide-border">
 					{visible.map((post) => (
-						<li key={post.id}>
-							<a
-								href={`/admin/posts/${post.id}/edit`}
-								className="flex items-center justify-between gap-4 px-5 py-3 hover:bg-surface-elevated"
-							>
-								<div className="min-w-0">
-									<p className="truncate font-medium text-foreground">{post.title}</p>
-									<p className="text-xs text-muted-foreground">
-										{post.publication} · /{post.slug} · updated {formatDate(post.updatedAt)}
-									</p>
-								</div>
+						<li key={post.id} className="flex items-center justify-between gap-4 px-5 py-3 hover:bg-surface-elevated">
+							<a href={`/admin/posts/${post.id}/view`} className="min-w-0 flex-1">
+								<p className="truncate font-medium text-foreground">{post.title}</p>
+								<p className="text-xs text-muted-foreground">
+									{post.publication} · /{post.slug} · updated {formatDate(post.updatedAt)}
+								</p>
+							</a>
+							<div className="flex shrink-0 items-center gap-2">
 								<span
-									className={`inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${statusClass(post.status)}`}
+									className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusClass(post.status)}`}
 								>
 									{STATUS_LABELS[post.status] ?? post.status}
 								</span>
-							</a>
+								<a
+									href={`/admin/posts/${post.id}/view`}
+									className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-foreground hover:bg-surface-elevated"
+								>
+									View
+								</a>
+								<a
+									href={`/admin/posts/${post.id}/edit`}
+									className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-foreground hover:bg-surface-elevated"
+								>
+									Edit
+								</a>
+							</div>
 						</li>
 					))}
 				</ul>
