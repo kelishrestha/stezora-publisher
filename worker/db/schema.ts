@@ -1,4 +1,4 @@
-import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { index, integer, primaryKey, sqliteTable, text, uniqueIndex, type AnySQLiteColumn } from 'drizzle-orm/sqlite-core';
 
 export * from './auth-schema';
 
@@ -37,6 +37,9 @@ export const posts = sqliteTable(
 		canonical_url: text('canonical_url'),
 		blogger_blog_id: text('blogger_blog_id'),
 		blogger_post_id: text('blogger_post_id'),
+		// AnySQLiteColumn breaks the posts ↔ media type cycle (media.post_id
+		// references posts; this column references media).
+		featured_image_id: text('featured_image_id').references((): AnySQLiteColumn => media.id),
 		created_at: text('created_at').notNull(),
 	},
 	(table) => [

@@ -17,7 +17,10 @@ const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 export const listAdminMedia: AuthenticatedHandler = async ({ env, request }) => {
 	const url = new URL(request.url);
 	const pagination = validatePagination(Object.fromEntries(url.searchParams.entries()));
-	const rows = await new MediaRepository(env.DB).list(pagination.limit, pagination.offset);
+	// Optional publication scoping so the editor's media picker only offers
+	// uploads belonging to the post's publication (§55).
+	const publicationId = url.searchParams.get('publicationId') ?? undefined;
+	const rows = await new MediaRepository(env.DB).list(pagination.limit, pagination.offset, publicationId);
 	const items = rows.map((row) => ({
 		id: row.id,
 		postId: row.post_id,

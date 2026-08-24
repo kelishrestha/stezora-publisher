@@ -45,10 +45,12 @@ export class MediaRepository {
 		return rows[0] ?? null;
 	}
 
-	async list(limit = 50, offset = 0): Promise<MediaRow[]> {
+	async list(limit = 50, offset = 0, publicationId?: string): Promise<MediaRow[]> {
+		const conditions = publicationId ? [eq(media.publication_id, publicationId)] : [];
 		return this.db
 			.select()
 			.from(media)
+			.where(conditions.length ? conditions[0] : undefined)
 			.orderBy(desc(media.created_at))
 			.limit(limit)
 			.offset(offset);

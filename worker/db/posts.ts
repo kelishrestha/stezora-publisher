@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, inArray, ne } from 'drizzle-orm';
 import { createDb, type Db } from './client';
-import { posts, postTags, publications, tags } from './schema';
+import { posts, postTags, publications, tags, media } from './schema';
 
 export type PostStatus = 'draft' | 'scheduled' | 'published' | 'archived';
 
@@ -8,6 +8,13 @@ export const POST_STATUSES: readonly PostStatus[] = ['draft', 'scheduled', 'publ
 
 export function isPostStatus(value: string): value is PostStatus {
 	return (POST_STATUSES as readonly string[]).includes(value);
+}
+
+export interface FeaturedImage {
+	id: string;
+	url: string;
+	filename: string;
+	mimeType: string;
 }
 
 export interface AdminPost {
@@ -28,6 +35,8 @@ export interface AdminPost {
 	canonicalUrl: string | null;
 	bloggerBlogId: string | null;
 	bloggerPostId: string | null;
+	featuredImageId: string | null;
+	featuredImage: FeaturedImage | null;
 	createdAt: string;
 }
 
@@ -43,6 +52,7 @@ export interface NewPost {
 	status: PostStatus;
 	publishedAt: string | null;
 	tagNames: string[];
+	featuredImageId?: string | null;
 	createdAt: string;
 }
 
@@ -63,6 +73,7 @@ interface PostRow {
 	canonical_url: string | null;
 	blogger_blog_id: string | null;
 	blogger_post_id: string | null;
+	featured_image_id: string | null;
 	created_at: string;
 }
 
@@ -109,6 +120,7 @@ export class PostRepository {
 				canonical_url: posts.canonical_url,
 				blogger_blog_id: posts.blogger_blog_id,
 				blogger_post_id: posts.blogger_post_id,
+				featured_image_id: posts.featured_image_id,
 				created_at: posts.created_at,
 			})
 			.from(posts)
@@ -117,7 +129,7 @@ export class PostRepository {
 			.orderBy(desc(posts.updated_at), desc(posts.created_at))
 			.limit(options.limit)
 			.offset(options.offset);
-		return this.withTags(rows);
+		return this.hydrate(rows);
 	}
 
 	async getById(id: string): Promise<AdminPost | null> {
@@ -139,6 +151,7 @@ export class PostRepository {
 				canonical_url: posts.canonical_url,
 				blogger_blog_id: posts.blogger_blog_id,
 				blogger_post_id: posts.blogger_post_id,
+				featured_image_id: posts.featured_image_id,
 				created_at: posts.created_at,
 			})
 			.from(posts)
@@ -148,7 +161,7 @@ export class PostRepository {
 		if (rows.length === 0) {
 			return null;
 		}
-		const tagged = await this.withTags(rows);
+		const tagged = await this.hydrate(rows);
 		return tagged[0];
 	}
 
@@ -182,6 +195,7 @@ export class PostRepository {
 				seo_description: post.seoDescription,
 				status: post.status,
 				published_at: post.publishedAt,
+				featured_image_id: post.featuredImageId ?? null,
 				created_at: now,
 				updated_at: now,
 			});
@@ -212,6 +226,7 @@ export class PostRepository {
 		if (changes.seoDescription !== undefined) values.seo_description = changes.seoDescription;
 		if (changes.status !== undefined) values.status = changes.status;
 		if (changes.publishedAt !== undefined) values.published_at = changes.publishedAt;
+		if (changes.featuredImageId !== undefined) values.featured_image_id = changes.featuredImageId;
 		await this.db.update(posts).set(values).where(eq(posts.id, id));
 		if (changes.tagNames !== undefined) {
 			await this.replaceTags(id, changes.publicationId ?? existing.publicationId, changes.tagNames);
@@ -284,21 +299,43 @@ export class PostRepository {
 		}
 	}
 
-	private async withTags(rows: PostRow[]): Promise<AdminPost[]> {
+	private async hydrate(rows: PostRow[]): Promise<AdminPost[]> {
 		if (rows.length === 0) {
 			return [];
 		}
 		const postIds = rows.map((row) => row.id);
-		const tagRows = await this.db
-			.select({ post_id: postTags.post_id, tag_name: tags.name })
-			.from(postTags)
-			.innerJoin(tags, eq(postTags.tag_id, tags.id))
-			.where(inArray(postTags.post_id, postIds));
+		const tagRows = await this.tagRowsFor(postIds);
 		const tagsByPost = new Map<string, string[]>();
 		for (const row of tagRows as TagRow[]) {
 			const current = tagsByPost.get(row.post_id) ?? [];
 			current.push(row.tag_name);
 			tagsByPost.set(row.post_id, current);
+		}
+		// Media rows are post-owned (§28): a post's featured image is its own
+		// attached media row, so the lookup keys on media.post_id.
+		const featuredIds = [
+			...new Set(rows.map((row) => row.featured_image_id).filter((id): id is string => id !== null))
+		];
+		const imagesByPost = new Map<string, FeaturedImage>();
+		if (featuredIds.length > 0) {
+			const mediaRows = await this.db
+				.select({
+					id: media.id,
+					post_id: media.post_id,
+					r2_key: media.r2_key,
+					filename: media.filename,
+					mime_type: media.mime_type,
+				})
+				.from(media)
+				.where(inArray(media.id, featuredIds));
+			for (const row of mediaRows) {
+				imagesByPost.set(row.post_id, {
+					id: row.id,
+					url: `/media/${row.r2_key}`,
+					filename: row.filename,
+					mimeType: row.mime_type,
+				});
+			}
 		}
 		return rows.map((row) => ({
 			id: row.id,
@@ -318,8 +355,18 @@ export class PostRepository {
 			canonicalUrl: row.canonical_url,
 			bloggerBlogId: row.blogger_blog_id,
 			bloggerPostId: row.blogger_post_id,
+			featuredImageId: row.featured_image_id,
+			featuredImage: (row.featured_image_id && imagesByPost.get(row.id)) || null,
 			createdAt: row.created_at,
 		}));
+	}
+
+	private async tagRowsFor(postIds: string[]) {
+		return this.db
+			.select({ post_id: postTags.post_id, tag_name: tags.name })
+			.from(postTags)
+			.innerJoin(tags, eq(postTags.tag_id, tags.id))
+			.where(inArray(postTags.post_id, postIds));
 	}
 
 	async listTags(publicationId?: string): Promise<Array<{ id: string; publication_id: string; name: string; slug: string }>> {

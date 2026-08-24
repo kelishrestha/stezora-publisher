@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { createDb } from '../../db/client';
-import { publications } from '../../db/schema';
+import { media, publications } from '../../db/schema';
 import { PostRepository, isPostStatus, type PostStatus } from '../../db/posts';
 import { ApiError } from '../../lib/errors';
 import { ok } from '../../lib/http';
@@ -24,6 +24,7 @@ const postPayload = z.object({
 	publishedAt: z.string().nullable().optional(),
 	seoTitle: z.string().max(200).nullable().optional(),
 	seoDescription: z.string().max(400).nullable().optional(),
+	featuredImageId: z.string().nullable().optional(),
 });
 
 type PostPayload = z.infer<typeof postPayload>;
@@ -98,6 +99,16 @@ export const createPost: AuthenticatedHandler = async ({ env, request }) => {
 	const publishedAt =
 		status === 'published' ? body.publishedAt ?? now : body.publishedAt ?? null;
 
+	// Media is post-owned (§28): a post has no media rows before it exists, so
+	// a featured image can only be attached by a later update.
+	if (body.featuredImageId) {
+		throw new ApiError(
+			400,
+			'VALIDATION_ERROR',
+			'Save the post before setting a featured image.'
+		);
+	}
+
 	const post = await repository.create({
 		publicationId: publication.id,
 		title: body.title,
@@ -110,6 +121,7 @@ export const createPost: AuthenticatedHandler = async ({ env, request }) => {
 		status,
 		publishedAt,
 		tagNames: body.tagNames,
+		featuredImageId: null,
 		createdAt: now,
 	});
 
@@ -152,6 +164,11 @@ export const updatePost: AuthenticatedHandler = async ({ env, request, params })
 
 	const now = new Date().toISOString();
 	const publishedAt = body.publishedAt ?? existing.publishedAt;
+	const featuredImageId = await resolveFeaturedImage(
+		env.DB,
+		body.featuredImageId,
+		existing.id
+	);
 
 	const post = await repository.update(existing.id, {
 		publicationId: publication.id,
@@ -165,6 +182,7 @@ export const updatePost: AuthenticatedHandler = async ({ env, request, params })
 		status,
 		publishedAt,
 		tagNames: body.tagNames,
+		featuredImageId,
 		updatedAt: now,
 	});
 
@@ -214,6 +232,39 @@ export const previewPost: AuthenticatedHandler = async ({ env, request, params }
 
 	return ok({ html, title: existing.title });
 };
+
+/**
+ * Resolves the featured-image media id for an update. Media is post-owned
+ * (§28): the referenced row must exist and belong to this post, so a post can
+ * never feature another post's upload. `null` clears the featured image.
+ */
+async function resolveFeaturedImage(
+	binding: D1Database,
+	featuredImageId: string | null | undefined,
+	postId: string
+): Promise<string | null> {
+	if (!featuredImageId) {
+		return null;
+	}
+	const db = createDb(binding);
+	const rows = await db
+		.select({ id: media.id, post_id: media.post_id })
+		.from(media)
+		.where(eq(media.id, featuredImageId))
+		.limit(1);
+	const found = rows[0];
+	if (!found) {
+		throw new ApiError(400, 'UNKNOWN_MEDIA', `Media '${featuredImageId}' does not exist.`);
+	}
+	if (found.post_id !== postId) {
+		throw new ApiError(
+			400,
+			'PUBLICATION_MISMATCH',
+			'The featured image must be media attached to this post.'
+		);
+	}
+	return found.id;
+}
 
 /**
  * Resolves a publication by id, failing fast when it does not exist so a post

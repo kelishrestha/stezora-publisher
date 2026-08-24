@@ -171,11 +171,25 @@ export default function Dashboard() {
 										{post.publication} · {formatDate(post.publishedAt)}
 									</p>
 								</div>
-								<span
-									className={`inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${statusClass(post.status)}`}
-								>
-									{STATUS_LABELS[post.status] ?? post.status}
-								</span>
+								<div className="flex shrink-0 items-center gap-2">
+									<span
+										className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusClass(post.status)}`}
+									>
+										{STATUS_LABELS[post.status] ?? post.status}
+									</span>
+									<a
+										href={`/admin/posts/${post.id}/view`}
+										className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-foreground hover:bg-surface-elevated"
+									>
+										View
+									</a>
+									<a
+										href={`/admin/posts/${post.id}/edit`}
+										className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-foreground hover:bg-surface-elevated"
+									>
+										Edit
+									</a>
+								</div>
 							</li>
 						))}
 					</ul>

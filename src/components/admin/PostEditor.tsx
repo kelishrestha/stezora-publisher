@@ -19,6 +19,13 @@ interface EditorMeta {
 	tags: TagOption[];
 }
 
+interface FeaturedImage {
+	id: string;
+	url: string;
+	filename: string;
+	mimeType: string;
+}
+
 interface PostRecord {
 	id: string;
 	publicationId: string;
@@ -37,6 +44,19 @@ interface PostRecord {
 	canonicalUrl: string | null;
 	bloggerBlogId: string | null;
 	bloggerPostId: string | null;
+	featuredImageId: string | null;
+	featuredImage: FeaturedImage | null;
+	createdAt: string;
+}
+
+interface MediaItem {
+	id: string;
+	postId: string;
+	publicationId: string;
+	filename: string;
+	mimeType: string;
+	size: number;
+	url: string;
 	createdAt: string;
 }
 
@@ -108,6 +128,11 @@ export default function PostEditor({ postId }: PostEditorProps) {
 	const [publishedAt, setPublishedAt] = useState('');
 	const [seoTitle, setSeoTitle] = useState('');
 	const [seoDescription, setSeoDescription] = useState('');
+	// Media is post-owned (§28): one attachment per post, optionally marked as
+	// the featured image. The attachment is fetched from the media list.
+	const [attachedMedia, setAttachedMedia] = useState<MediaItem | null>(null);
+	const [featuredImageId, setFeaturedImageId] = useState<string | null>(null);
+	const [uploadingMedia, setUploadingMedia] = useState(false);
 
 	const tagOptions = useMemo(
 		() => meta?.tags.filter((tag) => tag.publication_id === publicationId) ?? [],
@@ -142,6 +167,8 @@ export default function PostEditor({ postId }: PostEditorProps) {
 			setPublishedAt(toDateTimeLocal(post.publishedAt));
 			setSeoTitle(post.seoTitle ?? '');
 			setSeoDescription(post.seoDescription ?? '');
+			setFeaturedImageId(post.featuredImageId);
+			await loadAttachment(post.publicationId, post.id);
 		} catch (reason) {
 			setError(reason instanceof Error ? reason.message : 'Failed to load post.');
 		} finally {
@@ -183,6 +210,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 				publishedAt: publishedAt ? new Date(publishedAt).toISOString() : null,
 				seoTitle: seoTitle || null,
 				seoDescription: seoDescription || null,
+				featuredImageId: editingPostId ? featuredImageId : null,
 			};
 			const path = editingPostId ? `/api/admin/posts/${editingPostId}` : '/api/admin/posts';
 			await json<{ post: PostRecord }>(path, {
@@ -219,6 +247,56 @@ export default function PostEditor({ postId }: PostEditorProps) {
 		} catch (reason) {
 			setError(reason instanceof Error ? reason.message : 'Failed to render preview.');
 		}
+	}
+
+	/**
+	 * Loads this post's single attached media row (§28: one per post) by
+	 * scanning the publication-scoped media list.
+	 */
+	async function loadAttachment(publicationIdOfPost: string, postIdOfPost: string) {
+		try {
+			const result = await json<{ media: MediaItem[] }>(
+				`/api/admin/media?publicationId=${encodeURIComponent(publicationIdOfPost)}&limit=100`
+			);
+			setAttachedMedia(result.media.find((item) => item.postId === postIdOfPost) ?? null);
+		} catch {
+			// Attachment display is best-effort; saving/editing still works.
+			setAttachedMedia(null);
+		}
+	}
+
+	async function handleUpload(file: File) {
+		if (!editingPostId || !publicationId) return;
+		setUploadingMedia(true);
+		setError(null);
+		try {
+			const form = new FormData();
+			form.append('file', file);
+			form.append('postId', editingPostId);
+			form.append('publicationId', publicationId);
+			const result = await json<{ media: MediaItem }>('/api/admin/media', {
+				method: 'POST',
+				body: form,
+			});
+			setAttachedMedia(result.media);
+			// A fresh upload becomes the featured image candidate; it persists
+			// with the next Save (PLAN P4.6.5).
+			setFeaturedImageId(result.media.id);
+			setNotice('Media uploaded. It becomes the featured image when you save.');
+		} catch (reason) {
+			setError(reason instanceof Error ? reason.message : 'Upload failed.');
+		} finally {
+			setUploadingMedia(false);
+		}
+	}
+
+	function insertIntoContent(snippet: string) {
+		const el = document.getElementById('post-content') as HTMLTextAreaElement | null;
+		const start = el?.selectionStart ?? contentMarkdown.length;
+		const end = el?.selectionEnd ?? contentMarkdown.length;
+		const alt = attachedMedia ? attachedMedia.filename.replace(/\.[a-z0-9]+$/i, '') : 'image';
+		const next = `${contentMarkdown.slice(0, start)}${snippet.replace('{alt}', alt)}${contentMarkdown.slice(end)}`;
+		setContentMarkdown(next);
 	}
 
 	if (loading) {
@@ -357,16 +435,68 @@ export default function PostEditor({ postId }: PostEditorProps) {
 							)}
 						</div>
 						<div>
-							<label className="block text-sm font-medium text-foreground">
-								Media
-							</label>
-							<p className="mt-1 text-sm text-muted-foreground">
-								Media is attached per post. Upload one image or document for this post in the{' '}
-								<a href="/admin/media" className="text-accent-foreground hover:underline">
-									Media manager
-								</a>
-								.
-							</p>
+							<label className="block text-sm font-medium text-foreground">Media</label>
+							{!editingPostId ? (
+								<p className="mt-1 text-sm text-muted-foreground">
+									Save the post first — media is attached to a saved post.
+								</p>
+							) : attachedMedia ? (
+								<div className="mt-2 space-y-2">
+									<img
+										src={attachedMedia.url}
+										alt={attachedMedia.filename}
+										className="max-h-40 w-full rounded-md border border-border object-cover"
+									/>
+									<p className="text-xs text-muted-foreground">
+										{attachedMedia.filename} · {Math.round(attachedMedia.size / 1024)} KB ·{' '}
+										{attachedMedia.mimeType}
+									</p>
+									<div className="flex flex-wrap gap-2">
+										{featuredImageId === attachedMedia.id ? (
+											<button
+												type="button"
+												onClick={() => setFeaturedImageId(null)}
+												className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-foreground hover:bg-surface-elevated"
+											>
+												Remove as featured
+											</button>
+										) : (
+											<button
+												type="button"
+												onClick={() => setFeaturedImageId(attachedMedia.id)}
+												className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-on-accent hover:opacity-90"
+											>
+												Use as featured image
+											</button>
+										)}
+										<button
+											type="button"
+											onClick={() =>
+												insertIntoContent(`\n![{alt}](${attachedMedia.url})\n`)
+											}
+											className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-foreground hover:bg-surface-elevated"
+										>
+											Insert into content
+										</button>
+									</div>
+									<p className="text-xs text-muted-foreground">Featured image applies on save.</p>
+								</div>
+							) : (
+								<div className="mt-2 space-y-2">
+									<input
+										type="file"
+										accept="image/*,.pdf"
+										disabled={uploadingMedia}
+										onChange={(event) => {
+											const file = event.target.files?.[0];
+											if (file) void handleUpload(file);
+											event.target.value = '';
+										}}
+										className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-accent-soft file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-accent-foreground hover:file:opacity-80"
+									/>
+									{uploadingMedia && <p className="text-xs text-muted-foreground">Uploading…</p>}
+								</div>
+							)}
 						</div>
 					</div>
 				</div>

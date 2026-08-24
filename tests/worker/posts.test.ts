@@ -61,6 +61,13 @@ async function seedPublications(): Promise<void> {
 	}
 }
 
+interface FeaturedImageBody {
+	id: string;
+	url: string;
+	filename: string;
+	mimeType: string;
+}
+
 interface PostBody {
 	id: string;
 	publicationId: string;
@@ -79,6 +86,8 @@ interface PostBody {
 	canonicalUrl: string | null;
 	bloggerBlogId: string | null;
 	bloggerPostId: string | null;
+	featuredImageId: string | null;
+	featuredImage: FeaturedImageBody | null;
 	createdAt: string;
 }
 
@@ -311,5 +320,103 @@ describe('admin posts editor API', () => {
 
 		const getResponse = await fetchWorker(`/api/admin/posts/${id}`, { headers: { cookie } });
 		expect(getResponse.status).toBe(404);
+	});
+
+	it('rejects a featured image on create (media needs a saved post)', async () => {
+		const response = await fetchWorker('/api/admin/posts', {
+			method: 'POST',
+			headers: { cookie, 'content-type': 'application/json' },
+			body: JSON.stringify(postPayload({ title: 'Too early', featuredImageId: 'media-x' })),
+		});
+		expect(response.status).toBe(400);
+		expect(((await response.json()) as Envelope).error?.code).toBe('VALIDATION_ERROR');
+	});
+
+	describe('featured images', () => {
+		function seedMedia(id: string, postId: string, publicationId: string): void {
+			void db
+				.prepare(
+					`INSERT OR IGNORE INTO media (id, post_id, publication_id, r2_key, filename, mime_type, size, created_at)
+					 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+				)
+				.bind(id, postId, publicationId, `seed-${id}.png`, `${id}.png`, 'image/png', 4, new Date().toISOString())
+				.run();
+		}
+
+		async function createPost(title: string): Promise<PostBody> {
+			const response = await fetchWorker('/api/admin/posts', {
+				method: 'POST',
+				headers: { cookie, 'content-type': 'application/json' },
+				body: JSON.stringify(postPayload({ title })),
+			});
+			expect(response.status).toBe(201);
+			return ((await response.json()) as Envelope).data?.post as PostBody;
+		}
+
+		it('sets, returns, and clears the post-owned featured image', async () => {
+			const post = await createPost('Featured image target');
+			seedMedia('media-own', post.id, post.publicationId);
+
+			const setResponse = await fetchWorker(`/api/admin/posts/${post.id}`, {
+				method: 'PUT',
+				headers: { cookie, 'content-type': 'application/json' },
+				body: JSON.stringify(postPayload({ title: post.title, slug: post.slug, featuredImageId: 'media-own' })),
+			});
+			expect(setResponse.status).toBe(200);
+			const updated = ((await setResponse.json()) as Envelope).data?.post as PostBody;
+			expect(updated.featuredImageId).toBe('media-own');
+			expect(updated.featuredImage).toMatchObject({
+				id: 'media-own',
+				url: '/media/seed-media-own.png',
+				filename: 'media-own.png',
+				mimeType: 'image/png',
+			});
+
+			// GET reflects the same shape.
+			const getResponse = await fetchWorker(`/api/admin/posts/${post.id}`, { headers: { cookie } });
+			const fetched = ((await getResponse.json()) as Envelope).data?.post as PostBody;
+			expect(fetched.featuredImage?.url).toBe('/media/seed-media-own.png');
+
+			// Clearing works.
+			const clearResponse = await fetchWorker(`/api/admin/posts/${post.id}`, {
+				method: 'PUT',
+				headers: { cookie, 'content-type': 'application/json' },
+				body: JSON.stringify(
+					postPayload({ title: post.title, slug: post.slug, contentMarkdown: '## Heading\n\nSome **bold** text.', tagNames: ['poetry', 'draft'], featuredImageId: null })
+				),
+			});
+			expect(clearResponse.status).toBe(200);
+			expect((((await clearResponse.json()) as Envelope).data?.post as PostBody).featuredImageId).toBeNull();
+		});
+
+		it('rejects unknown and foreign media ids', async () => {
+			const postA = await createPost('Featured isolation A');
+			seedMedia('media-a', postA.id, postA.publicationId);
+			const postB = await createPost('Featured isolation B');
+
+			const unknown = await fetchWorker(`/api/admin/posts/${postA.id}`, {
+				method: 'PUT',
+				headers: { cookie, 'content-type': 'application/json' },
+				body: JSON.stringify(
+					postPayload({ title: postA.title, slug: postA.slug, featuredImageId: 'media-missing' })
+				),
+			});
+			expect(unknown.status).toBe(400);
+			expect(((await unknown.json()) as Envelope).error?.code).toBe('UNKNOWN_MEDIA');
+
+			// Post B cannot feature post A's media (§28 media is post-owned).
+			const foreign = await fetchWorker(`/api/admin/posts/${postB.id}`, {
+				method: 'PUT',
+				headers: { cookie, 'content-type': 'application/json' },
+				body: JSON.stringify(
+					postPayload({ title: postB.title, slug: postB.slug, featuredImageId: 'media-a' })
+				),
+			});
+			expect(foreign.status).toBe(400);
+			expect(((await foreign.json()) as Envelope).error?.code).toBe('PUBLICATION_MISMATCH');
+
+			const unchanged = await fetchWorker(`/api/admin/posts/${postB.id}`, { headers: { cookie } });
+			expect((((await unchanged.json()) as Envelope).data?.post as PostBody).featuredImageId).toBeNull();
+		});
 	});
 });

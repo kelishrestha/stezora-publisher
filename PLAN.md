@@ -32,7 +32,7 @@ Never claim a check passed without running it.
 
 ## 1. Current state (assumptions this plan is built on)
 
-> Last updated: M0–M5 and M6 P4.1–P4.6 shipped (P4.1–P4.3 + P4.5 committed; P4.4 + P4.6 uncommitted). P4.3 note: the admin edit page is no longer a build blocker — it is a static shell (`src/pages/admin/posts/edit.astro`) the Worker proxies `/admin/posts/:id/edit` onto, and `pnpm build` is green (see P4.3 note; DEVELOPER.md §70).
+> Last updated: M0–M5 and all of M6 (P4.1–P4.6) shipped **and committed**, including the deferred P4.6 step 5: featured-image selection (`posts.featured_image_id`, migration `0004_freezing_phantom_reporter.sql`), the static edit/view shells (`/admin/posts/:id/edit|view` proxied onto single shells, `worker/lib/gate.ts`), the sitemap `/admin` exclusion, and in-editor media upload/insert. Categories are removed entirely; tags are scoped per publication; media is post-owned (`0003_spooky_iron_fist.sql`). Test suite: 177 passed (22 files).
 
 | Area | Current state |
 | --- | --- |
@@ -63,7 +63,7 @@ Never claim a check passed without running it.
 | M3 | API framework | 5 | Response envelope, error mapper, validation, middleware (auth guard via BetterAuth) | ✅ done |
 | M4 | R2 media service | 5 | Put/get/delete service (Drizzle repository) + public serving route | ✅ done |
 | M5 | Theme — COLORS.md tokens + per-publication accents | 1 | Semantic Tailwind theme, public-component refactor, publication themes | ✅ done |
-| M6 | Phase 4 CMS features | 4 | BetterAuth auth, dashboard, editor, drafts, categories/tags, media UI | in progress |
+| M6 | Phase 4 CMS features | 4 | BetterAuth auth, dashboard, editor, drafts, categories/tags, media UI | ✅ done |
 | M7 | Production configuration | 5 | Manual deploy + GitHub Actions, secrets, docs, checklist | pending |
 | M8 | Security check & hardening | — | Audit, security headers, secret scan, `docs/security.md`, pre-deploy gate | pending |
 
@@ -546,11 +546,16 @@ blocked while referenced (409 `IN_USE`). `worker/db/tags.ts` repository,
 
 ### P4.6 — Media manager UI
 
-**Status: shipped.** Upload validates server-side (size, MIME allowlist,
+**Status: done.** Upload validates server-side (size, MIME allowlist,
 extension) in `worker/routes/admin/media.ts` via `MediaService`; admin page
 `src/pages/admin/media/index.astro` + `src/components/admin/MediaManager.tsx`.
-Verified by `tests/worker/admin-media.test.ts`. P4.6 step 4 (featured-image
-selection) is deferred: keep schema minimal until a migration is required.
+Featured-image selection (step 5) is implemented: `posts.featured_image_id`
+(migration `0004`) references the post's own media row; `PUT /api/admin/posts/:id`
+validates it (`UNKNOWN_MEDIA`, `PUBLICATION_MISMATCH`) and `AdminPost` carries a
+resolved `featuredImage` object. The editor sidebar uploads media for the saved
+post, marks/clears it as featured, and inserts `![alt](url)` into the content;
+the dashboard's recent posts link to view/edit.
+Verified by `tests/worker/admin-media.test.ts` and `tests/worker/posts.test.ts`.
 
 **Goal:** upload, list, select, reuse, view metadata, insert into article (DEVELOPER.md §29, §62).
 

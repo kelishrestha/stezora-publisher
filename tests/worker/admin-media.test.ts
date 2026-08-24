@@ -70,6 +70,18 @@ async function seedPublicationAndPost(): Promise<void> {
 		)
 		.bind(now, now, now)
 		.run();
+	// A second publication + post so the list can be filtered by publication.
+	await db
+		.prepare('INSERT OR IGNORE INTO publications (id, name, slug, description, created_at) VALUES (?, ?, ?, NULL, ?)')
+		.bind('pub-other', 'Other Pub', 'other-pub', now)
+		.run();
+	await db
+		.prepare(
+			`INSERT OR IGNORE INTO posts (id, publication_id, title, slug, excerpt, content, status, published_at, updated_at, created_at)
+			 VALUES ('post-other', 'pub-other', 'Other post', 'other-post', '', '<p>o</p>', 'draft', ?, ?, ?)`
+		)
+		.bind(now, now, now)
+		.run();
 }
 
 function uploadBodyWithPost(file: Blob, filename: string): FormData {
@@ -126,6 +138,23 @@ describe('admin media API', () => {
 		// It now appears in the admin list.
 		const list = await fetchWorker('/api/admin/media', { headers: { cookie } });
 		expect((await list.json()) as Envelope).toMatchObject({ data: { media: [{ filename: 'header.png' }] } });
+
+		// A second publication's upload stays out of the first publication's
+		// filtered list (§55) — used by the editor's media section.
+		const otherForm = new FormData();
+		otherForm.append('file', new Blob(['other-bytes'], { type: 'image/png' }), 'other.png');
+		otherForm.append('postId', 'post-other');
+		otherForm.append('publicationId', 'pub-other');
+		const otherUpload = await fetchWorker('/api/admin/media', { method: 'POST', headers: { cookie }, body: otherForm });
+		expect(otherUpload.status).toBe(201);
+
+		const scoped = await fetchWorker('/api/admin/media?publicationId=pub-media', { headers: { cookie } });
+		const scopedBody = (await scoped.json()) as Envelope;
+		expect((scopedBody.data?.media as Array<{ filename: string }>).map((m) => m.filename)).toEqual(['header.png']);
+
+		const otherScoped = await fetchWorker('/api/admin/media?publicationId=pub-other', { headers: { cookie } });
+		const otherBody = (await otherScoped.json()) as Envelope;
+		expect((otherBody.data?.media as Array<{ filename: string }>).map((m) => m.filename)).toEqual(['other.png']);
 	});
 
 	it('rejects a disallowed MIME type with 415', async () => {
