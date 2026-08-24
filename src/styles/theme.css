@@ -93,8 +93,14 @@
 
 /* Light mode is the :root default above; `color-scheme` is handled in global.css. */
 .dark {
-	/* COLORS.md dark mode rules. */
-	--color-background: var(--color-space-indigo-700);
+	/*
+	 * COLORS.md dark mode rules, with two documented derivations for
+	 * readability/elevation (§64): background uses space-indigo-900 so surfaces
+	 * (space-indigo-700/800) sit visibly above the page, and accent uses
+	 * dark-amaranth-300 because the on-spec shade (100) is too pale against
+	 * dark surfaces. Primary/secondary/muted follow COLORS.md exactly.
+	 */
+	--color-background: var(--color-space-indigo-900);
 	--color-foreground: var(--color-ocean-deep-50);
 	--color-muted-foreground: var(--color-ocean-deep-200);
 	--color-surface: var(--color-space-indigo-700);
@@ -104,7 +110,7 @@
 	--color-on-primary: var(--color-space-indigo-950);
 	--color-secondary: var(--color-bright-amber-100);
 	--color-on-secondary: var(--color-space-indigo-950);
-	--color-accent: var(--color-dark-amaranth-100);
+	--color-accent: var(--color-dark-amaranth-300);
 	--color-accent-foreground: var(--color-dark-amaranth-200);
 	--color-accent-soft: var(--color-dark-amaranth-800);
 	--color-muted: var(--color-bright-amber-50);

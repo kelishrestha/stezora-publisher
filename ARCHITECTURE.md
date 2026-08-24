@@ -142,14 +142,9 @@ posts
 ├── blogger_post_id
 └── created_at
 
-categories
-├── id
-├── publication_id
-├── name
-└── slug
-
 tags
 ├── id
+├── publication_id
 ├── name
 └── slug
 
@@ -160,6 +155,7 @@ post_tags
 media
 ├── id
 ├── post_id
+├── publication_id
 ├── r2_key
 ├── filename
 ├── mime_type

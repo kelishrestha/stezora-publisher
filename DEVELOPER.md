@@ -249,21 +249,18 @@ Recommended:
 ```text
 /publication-a
 /publication-a/post-slug
-/publication-a/category/category-slug
 /publication-a/tag/tag-slug
 ```
 
 ```text
 /publication-b
 /publication-b/post-slug
-/publication-b/category/category-slug
 /publication-b/tag/tag-slug
 ```
 
 ```text
 /publication-c
 /publication-c/post-slug
-/publication-c/category/category-slug
 /publication-c/tag/tag-slug
 ```
 
@@ -356,29 +353,27 @@ Do not use arbitrary status strings throughout the application.
 
 ---
 
-# 10. Categories and Tags
+# 10. Tags
 
-Categories belong to publications.
+Posts are organized by tags only. There are no categories.
 
-Tags may be shared across publications unless a concrete requirement says otherwise.
-
-Recommended:
+Tags belong to the post's publication:
 
 ```text
 Publication
    │
-   └── Categories
-```
-
-and:
-
-```text
-Post
-   │
    └── Tags
+
+Post
+   └── Tags (scoped to its publication)
 ```
 
-Do not duplicate tags unnecessarily.
+A tag's slug must be unique within its publication; the same tag name may
+exist as a separate row under a different publication. Deleting a tag that is
+still referenced by a post is blocked (409 `IN_USE`).
+
+Artworks/poems keep any legacy Blogger labels as tags during migration
+(instead of promoting the first label to a category).
 
 ---
 
@@ -391,11 +386,11 @@ Recommended routes:
 /admin/posts
 /admin/posts/new
 /admin/posts/:id
+/admin/posts/:id/view
 /admin/posts/:id/edit
 /admin/drafts
 /admin/media
 /admin/publications
-/admin/categories
 /admin/tags
 /admin/analytics
 /admin/subscribers
@@ -467,7 +462,6 @@ The editor should support:
 - publication
 - slug
 - excerpt
-- category
 - tags
 - featured image
 - SEO title
@@ -733,7 +727,6 @@ Core tables:
 users
 publications
 posts
-categories
 tags
 post_tags
 media
@@ -823,6 +816,8 @@ Example:
 ```text
 D1
 ├── media ID
+├── post ID
+├── publication ID
 ├── filename
 ├── MIME type
 ├── size
@@ -831,6 +826,10 @@ D1
 R2
 └── actual file
 ```
+
+Media belongs to one post (and therefore to that post's publication).
+`post_id` is unique so each post has at most one media row; the public
+route serves the object bytes from `/media/:key`.
 
 Do not store large binary data directly in D1.
 
@@ -915,7 +914,6 @@ Search should index:
 - article content
 - publication
 - tags
-- categories
 
 ---
 
@@ -1492,7 +1490,6 @@ Drafts must not appear in:
 - sitemap
 - RSS
 - search index
-- public category pages
 - public tag pages
 
 ---
@@ -1777,19 +1774,25 @@ pnpm build && pnpm dev:worker      # wrangler dev → http://localhost:8787
 The CMS is then at `http://localhost:8787/admin` (login → dashboard → posts).
 `BETTER_AUTH_URL` defaults to `http://localhost:8787` in `.dev.vars.example`.
 
-### Current build blocker for the CMS
+### Static admin pages
 
-The admin **edit** page is a dynamic route (`src/pages/admin/posts/[id]/edit.astro`)
-and Astro cannot build it statically without `getStaticPaths` or an SSR adapter.
-The Cloudflare SSR adapter is Phase 5, so the route is intentionally left as-is
-and `pnpm build` stays red until then. When the build goes green (Phase 5 SSR),
-the commands above bring up the full local CMS. The list/new/dashboard admin
-pages build today; only the dynamic edit route blocks the production build.
+The admin **edit** and **view** pages (`src/pages/admin/posts/edit.astro`,
+`src/pages/admin/posts/view.astro`) are intentionally **static** — the post id
+is read from the URL on the client. The Worker proxies `/admin/posts/:id/edit`
+onto the single static edit shell (`/admin/posts/edit/index.html`, see
+`worker/lib/gate.ts`) and `/admin/posts/:id/view` onto the single static view
+shell (`/admin/posts/view/index.html`), so the documented URL scheme stays
+intact. `PostEditor`/`PostView`
+(`src/components/admin/PostEditor.tsx`, `src/components/admin/PostView.tsx`)
+parse the id from `window.location.pathname` to load the post via
+`GET /api/admin/posts/:id`. The pages need no Server-side rendering, so the
+site remains fully static and `pnpm build` is green. `pnpm dev:cms` (build +
+Worker) brings up the full local CMS at `http://localhost:8787/admin`.
 
 ### Convenience
 
 ```bash
-pnpm dev:cms   # pnpm build && pnpm dev:worker  (full stack; see blocker above)
+pnpm dev:cms   # pnpm build && pnpm dev:worker  (full local CMS)
 ```
 
 Database/Cloudflare development should use local tooling where appropriate.

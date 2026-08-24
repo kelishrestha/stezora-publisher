@@ -44,10 +44,13 @@ describe('COLORS.md → theme.css', () => {
 	});
 
 	it('defines dark-mode semantic rules from COLORS.md', () => {
-		expect(themeCss).toContain('--color-background: var(--color-space-indigo-700);');
+		// Background (space-indigo-900) and accent (dark-amaranth-300) are
+		// documented contrast derivations of the COLORS.md rules; see the .dark
+		// block in theme.css. The remaining tokens follow COLORS.md exactly.
+		expect(themeCss).toContain('--color-background: var(--color-space-indigo-900);');
 		expect(themeCss).toContain('--color-primary: var(--color-soft-periwinkle-50);');
 		expect(themeCss).toContain('--color-secondary: var(--color-bright-amber-100);');
-		expect(themeCss).toContain('--color-accent: var(--color-dark-amaranth-100);');
+		expect(themeCss).toContain('--color-accent: var(--color-dark-amaranth-300);');
 		expect(themeCss).toContain('--color-muted: var(--color-bright-amber-50);');
 	});
 
