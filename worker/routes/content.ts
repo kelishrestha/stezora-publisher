@@ -28,6 +28,9 @@ export interface ContentPost {
 	updatedDate?: string;
 	status: 'published';
 	content: string;
+	seoTitle?: string;
+	seoDescription?: string;
+	bloggerBlogId?: string;
 	bloggerPostId?: string;
 	bloggerUrl?: string;
 }
@@ -54,13 +57,16 @@ export const content: RouteHandler = async ({ env }) => {
 			.from(publications)
 			.orderBy(asc(publications.slug)),
 		db
-			.select({
+			.selectDistinct({
 				id: tags.id,
 				publication_id: tags.publication_id,
 				name: tags.name,
 				slug: tags.slug,
 			})
 			.from(tags)
+			.innerJoin(postTags, eq(postTags.tag_id, tags.id))
+			.innerJoin(posts, eq(postTags.post_id, posts.id))
+			.where(and(eq(posts.status, 'published'), lte(posts.published_at, now)))
 			.orderBy(asc(tags.name)),
 		db
 			.select({
@@ -71,7 +77,10 @@ export const content: RouteHandler = async ({ env }) => {
 				pub_date: posts.published_at,
 				updated_date: posts.updated_at,
 				blogger_post_id: posts.blogger_post_id,
+				blogger_blog_id: posts.blogger_blog_id,
 				canonical_url: posts.canonical_url,
+				seo_title: posts.seo_title,
+				seo_description: posts.seo_description,
 				publication: publications.slug,
 			})
 			.from(posts)
@@ -113,6 +122,15 @@ export const content: RouteHandler = async ({ env }) => {
 			status: 'published',
 			content: row.content,
 		};
+		if (row.seo_title) {
+			post.seoTitle = row.seo_title;
+		}
+		if (row.seo_description) {
+			post.seoDescription = row.seo_description;
+		}
+		if (row.blogger_blog_id) {
+			post.bloggerBlogId = row.blogger_blog_id;
+		}
 		if (row.updated_date) {
 			post.updatedDate = row.updated_date;
 		}

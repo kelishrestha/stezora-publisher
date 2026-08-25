@@ -14,8 +14,8 @@ export interface AuthOptions {
  * so the same configuration drives the Worker (D1) and the schema-generation
  * CLI (a no-op proxy handle).
  *
- * `role` is a non-user-editable additional field defaulting to 'admin' — the
- * authorization layer reads it from the session user (DEVELOPER.md §13).
+ * `role` is a non-user-editable additional field. Accounts are provisioned by
+ * the seed script; public sign-up is disabled.
  */
 export function createAuth(db: AdapterDatabase, options: AuthOptions) {
 	return betterAuth({
@@ -24,7 +24,7 @@ export function createAuth(db: AdapterDatabase, options: AuthOptions) {
 		baseURL: options.baseURL,
 		trustedOrigins: options.trustedOrigins,
 		database: drizzleAdapter(db, { provider: 'sqlite', schema }),
-		emailAndPassword: { enabled: true },
+		emailAndPassword: { enabled: true, disableSignUp: true },
 		user: {
 			additionalFields: {
 				role: { type: 'string', defaultValue: 'admin', input: false },

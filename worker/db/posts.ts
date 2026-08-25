@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, inArray, ne } from 'drizzle-orm';
 import { createDb, type Db } from './client';
-import { posts, postTags, publications, tags, media } from './schema';
+import { bloggerSync, posts, postTags, publications, tags, media } from './schema';
 
 export type PostStatus = 'draft' | 'scheduled' | 'published' | 'archived';
 
@@ -243,9 +243,22 @@ export class PostRepository {
 		if (existing.length === 0) {
 			return false;
 		}
-		await this.db.delete(postTags).where(eq(postTags.post_id, id));
-		await this.db.delete(posts).where(eq(posts.id, id));
+		await this.db.batch([
+			this.db.delete(postTags).where(eq(postTags.post_id, id)),
+			this.db.delete(bloggerSync).where(eq(bloggerSync.post_id, id)),
+			this.db.update(posts).set({ featured_image_id: null }).where(eq(posts.id, id)),
+			this.db.delete(media).where(eq(media.post_id, id)),
+			this.db.delete(posts).where(eq(posts.id, id)),
+		]);
 		return true;
+	}
+
+	async getMediaKeys(id: string): Promise<string[]> {
+		const rows = await this.db
+			.select({ r2_key: media.r2_key })
+			.from(media)
+			.where(eq(media.post_id, id));
+		return rows.map((row) => row.r2_key);
 	}
 
 	async setStatus(id: string, status: PostStatus, now: string): Promise<AdminPost> {

@@ -84,9 +84,13 @@ async function authenticateSession(request: Request, env: Env): Promise<AdminUse
 	if (!session) {
 		return null;
 	}
+	const role = (session.user as { role?: string }).role;
+	if (role !== 'admin') {
+		return null;
+	}
 	return {
 		id: session.user.id,
 		email: session.user.email,
-		role: (session.user as { role?: string }).role ?? 'admin',
+		role,
 	};
 }

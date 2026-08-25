@@ -163,7 +163,10 @@ export const updatePost: AuthenticatedHandler = async ({ env, request, params })
 	}
 
 	const now = new Date().toISOString();
-	const publishedAt = body.publishedAt ?? existing.publishedAt;
+	const publishedAt =
+		status === 'published'
+			? body.publishedAt ?? existing.publishedAt ?? now
+			: body.publishedAt ?? existing.publishedAt;
 	const featuredImageId = await resolveFeaturedImage(
 		env.DB,
 		body.featuredImageId,
@@ -205,6 +208,10 @@ export const publishPost: AuthenticatedHandler = async ({ env, params }) => {
  */
 export const deletePost: AuthenticatedHandler = async ({ env, params }) => {
 	const repository = new PostRepository(env.DB);
+	const mediaKeys = await repository.getMediaKeys(params.id);
+	// Clean up R2 first. If this fails, the D1 rows remain and the operation can
+	// be retried without losing the reference to the object.
+	await Promise.all(mediaKeys.map((key) => env.MEDIA.delete(key)));
 	const deleted = await repository.delete(params.id);
 	if (!deleted) {
 		throw new ApiError(404, 'POST_NOT_FOUND', 'Post was not found.');

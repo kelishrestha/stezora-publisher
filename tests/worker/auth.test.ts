@@ -91,6 +91,20 @@ describe('admin authentication', () => {
 		expect(body.error?.code).toBe('UNAUTHORIZED');
 	});
 
+	it('does not allow public account registration', async () => {
+		const response = await fetchWorker('/api/auth/sign-up/email', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({
+				name: 'Unauthorized',
+				email: 'unauthorized@example.com',
+				password: 'correct-horse-battery-staple',
+			}),
+		});
+
+		expect(response.status).not.toBe(200);
+	});
+
 	it('returns 401 from /api/admin/stats with an invalid session cookie', async () => {
 		const response = await fetchWorker('/api/admin/stats', {
 			headers: { cookie: 'better-auth.session_token=forged-token' },

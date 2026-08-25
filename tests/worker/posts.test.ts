@@ -256,6 +256,7 @@ describe('admin posts editor API', () => {
 			headers: { cookie, 'content-type': 'application/json' },
 			body: JSON.stringify(postPayload({ title: 'Publish me', status: 'draft' })),
 		});
+
 		const createdBody = (await created.json()) as Envelope;
 		const id = createdBody.data?.post?.id as string;
 
@@ -276,6 +277,27 @@ describe('admin posts editor API', () => {
 		const publicResponse = await fetchWorker('/api/content');
 		const publicBody = (await publicResponse.json()) as { posts: Array<{ slug: string }> };
 		expect(publicBody.posts.map((p) => p.slug)).toContain('publish-me');
+	});
+
+	it('stamps a publish date when editing a draft to published', async () => {
+		const created = await fetchWorker('/api/admin/posts', {
+			method: 'POST',
+			headers: { cookie, 'content-type': 'application/json' },
+			body: JSON.stringify(postPayload({ title: 'Publish on save', status: 'draft' })),
+		});
+		const createdBody = (await created.json()) as Envelope;
+		const id = createdBody.data?.post?.id as string;
+
+		const response = await fetchWorker(`/api/admin/posts/${id}`, {
+			method: 'PUT',
+			headers: { cookie, 'content-type': 'application/json' },
+			body: JSON.stringify(postPayload({ title: 'Publish on save', status: 'published', publishedAt: null })),
+		});
+
+		expect(response.status).toBe(200);
+		const body = (await response.json()) as Envelope;
+		expect(body.data?.post?.status).toBe('published');
+		expect(body.data?.post?.publishedAt).toBeTruthy();
 	});
 
 	it('previews draft content through the shared pipeline with auth', async () => {

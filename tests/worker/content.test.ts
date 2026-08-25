@@ -146,6 +146,7 @@ describe('GET /api/content', () => {
 			status: 'published',
 			publishedAt: new Date('2026-01-01T00:00:00Z').toISOString(),
 		});
+
 		await seedPost({
 			publication: 'pub-filter',
 			slug: 'draft',
@@ -171,6 +172,25 @@ describe('GET /api/content', () => {
 		expect(posts).toHaveLength(1);
 		const post = contentPostSchema.parse(posts[0]);
 		expect(post.title).toBe('Title live');
+	});
+
+	it('excludes tags used only by non-public posts', async () => {
+		await seedPublication('pub-private-tags');
+		await seedPost({
+			publication: 'pub-private-tags',
+			slug: 'draft',
+			status: 'draft',
+			publishedAt: new Date('2026-01-01T00:00:00Z').toISOString(),
+			tagSlugs: ['internal'],
+		});
+
+		const body = await fetchContent();
+
+		expect(body.tags).not.toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ publication_id: 'pub-private-tags', slug: 'internal' }),
+			])
+		);
 	});
 
 	it('includes the per-publication accent theme on publication feeds', async () => {
