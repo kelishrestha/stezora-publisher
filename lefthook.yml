@@ -1,0 +1,20 @@
+pre-commit:
+  commands:
+    no-em-dash:
+      run: |
+        # Reject U+2014 (em dash) in any staged file.
+        if git diff --cached --name-only | xargs -I{} sh -c '[ -f "{}" ] && /usr/bin/grep -Pl "\xe2\x80\x94" "{}" 2>/dev/null' | grep -q .; then
+          echo "[lefthook] ERROR: staged file(s) contain em dash (U+2014). Replace with a period, comma, colon, or parentheses." >&2
+          git diff --cached --name-only | xargs -I{} sh -c '[ -f "{}" ] && /usr/bin/grep -Pln "\xe2\x80\x94" "{}" 2>/dev/null' >&2
+          exit 1
+        fi
+
+commit-msg:
+  commands:
+    no-attribution-trailers:
+      run: |
+        if /usr/bin/grep -Eiq '^(Co-authored-by|Signed-off-by):' "{1}"; then
+          echo "[lefthook] ERROR: commit messages must not contain Co-authored-by or Signed-off-by trailers." >&2
+          /usr/bin/grep -Ein '^(Co-authored-by|Signed-off-by):' "{1}" >&2
+          exit 1
+        fi
