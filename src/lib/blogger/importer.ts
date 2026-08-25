@@ -42,14 +42,23 @@ export async function importPosts(options: ImportOptions): Promise<ImportReport>
 		reporter.recordFound();
 		count += 1;
 
-		const existingPath = existing.byBloggerPostId.get(dto.id);
+		const identity = `${blogId}:${dto.id}`;
+		const legacyPath = existing.byPublicationPostId.get(`${publicationSlug}:${dto.id}`);
+		const legacyRecord = legacyPath ? existing.byFile.get(legacyPath) : undefined;
+		const existingPath =
+			existing.byBloggerIdentity.get(identity) ??
+			(legacyRecord &&
+			legacyRecord.publication === publicationSlug &&
+			(!legacyRecord.bloggerBlogId || legacyRecord.bloggerBlogId === blogId)
+				? legacyPath
+				: undefined);
 		if (existingPath && !update) {
-			reporter.recordSkipped(dto, 'already imported (bloggerPostId match)');
+			reporter.recordSkipped(dto, 'already imported (blogger blog/post id match)');
 			continue;
 		}
 
 		try {
-			const mapped = mapPost(dto, { publicationSlug, includeDrafts });
+			const mapped = mapPost(dto, { publicationSlug, blogId, includeDrafts });
 			const record: PostRecord = {
 				...mapped.record,
 				content: sanitizeBloggerHtml(mapped.record.content, { normalizeProtocolRelativeUrls: true }),

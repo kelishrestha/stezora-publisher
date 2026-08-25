@@ -28,6 +28,7 @@ const record = (overrides: Partial<PostRecord> = {}): PostRecord => ({
 	status: 'published',
 	content: '<p>Hello</p>',
 	bloggerPostId: '123',
+	bloggerBlogId: 'blog-id',
 	bloggerUrl: 'https://example.blogspot.com/2024/03/my-post.html',
 	...overrides,
 });
@@ -43,6 +44,8 @@ describe('blogger storage', () => {
 
 		const existing = await readExistingPosts(dir);
 		expect(existing.byBloggerPostId.get('123')).toBe(filePath);
+		expect(existing.byPublicationPostId.get('the-sore-transition:123')).toBe(filePath);
+		expect(existing.byBloggerIdentity.get('blog-id:123')).toBe(filePath);
 		expect(existing.byFile.has(filePath)).toBe(true);
 	});
 
@@ -116,6 +119,7 @@ describe('blogger importer', () => {
 			publicationSlug: 'the-sore-transition',
 			blogId: 'blog-id',
 		});
+
 		expect(report.skipped).toBe(1);
 		expect(report.imported).toBe(0);
 
@@ -127,6 +131,27 @@ describe('blogger importer', () => {
 			update: true,
 		});
 		expect(updated.imported).toBe(1);
+	});
+
+	it('does not treat the same post id in another Blogger blog as a duplicate', async () => {
+		const dir = await tempDir();
+		await writePost(dir, 'the-sore-transition', 'my-post', record());
+
+		const client = {
+			fetchAllPosts: async function* () {
+				yield dto({ id: '123', blog: { id: 'other-blog' } });
+			},
+		} as never;
+
+		const report = await importPosts({
+			client,
+			outputDir: dir,
+			publicationSlug: 'the-rebellious-flame',
+			blogId: 'other-blog',
+		});
+
+		expect(report.imported).toBe(1);
+		expect(report.skipped).toBe(0);
 	});
 
 	it('updates an existing post in place without creating a duplicate file', async () => {

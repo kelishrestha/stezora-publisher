@@ -27,6 +27,7 @@ describe('blogger mapper', () => {
 		expect(record.publication).toBe('the-sore-transition');
 		expect(record.tags).toEqual(['Essays', 'change', 'hope']);
 		expect(record.status).toBe('published');
+		expect(record.bloggerBlogId).toBe('blog-id');
 		expect(record.bloggerPostId).toBe('123');
 		expect(record.pubDate).toBe('2024-03-08T09:00:00.000Z');
 		expect(record.updatedDate).toBe('2024-03-09T10:00:00.000Z');

@@ -4,6 +4,7 @@ import type { BloggerPostDto, PostRecord, PostStatus } from './types';
 
 export interface MapPostOptions {
 	publicationSlug: string;
+	blogId?: string;
 	includeDrafts?: boolean;
 }
 
@@ -42,6 +43,7 @@ export function mapPost(dto: BloggerPostDto, options: MapPostOptions): MappedPos
 			updatedDate,
 			status,
 			content: dto.content,
+			bloggerBlogId: options.blogId ?? dto.blog.id,
 			bloggerPostId: dto.id,
 			bloggerUrl,
 		},

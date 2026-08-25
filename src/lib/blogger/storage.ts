@@ -4,18 +4,22 @@ import type { PostRecord } from './types';
 
 export interface ExistingPosts {
 	byBloggerPostId: Map<string, string>;
+	byPublicationPostId: Map<string, string>;
+	byBloggerIdentity: Map<string, string>;
 	byFile: Map<string, PostRecord>;
 }
 
 export async function readExistingPosts(dir: string): Promise<ExistingPosts> {
 	const byBloggerPostId = new Map<string, string>();
+	const byPublicationPostId = new Map<string, string>();
+	const byBloggerIdentity = new Map<string, string>();
 	const byFile = new Map<string, PostRecord>();
 
 	let files: string[] = [];
 	try {
 		files = await fs.readdir(dir);
 	} catch {
-		return { byBloggerPostId, byFile };
+		return { byBloggerPostId, byPublicationPostId, byBloggerIdentity, byFile };
 	}
 
 	for (const file of files) {
@@ -29,13 +33,17 @@ export async function readExistingPosts(dir: string): Promise<ExistingPosts> {
 			byFile.set(filePath, record);
 			if (record.bloggerPostId) {
 				byBloggerPostId.set(record.bloggerPostId, filePath);
+				byPublicationPostId.set(`${record.publication}:${record.bloggerPostId}`, filePath);
+			}
+			if (record.bloggerBlogId && record.bloggerPostId) {
+				byBloggerIdentity.set(`${record.bloggerBlogId}:${record.bloggerPostId}`, filePath);
 			}
 		} catch (error) {
 			console.warn(`Skipping unreadable post file ${file}: ${error instanceof Error ? error.message : error}`);
 		}
 	}
 
-	return { byBloggerPostId, byFile };
+	return { byBloggerPostId, byPublicationPostId, byBloggerIdentity, byFile };
 }
 
 const SAFE_SLUG = /^[a-z0-9][a-z0-9-]*$/;
@@ -58,4 +66,3 @@ export async function writePost(dir: string, publicationSlug: string, postSlug: 
 	await fs.writeFile(filePath, `${JSON.stringify(record, null, 2)}\n`, 'utf-8');
 	return filePath;
 }
-

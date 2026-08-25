@@ -5,7 +5,7 @@ import path from 'node:path';
 
 const AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
-const SCOPE = 'https://www.googleapis.com/auth/blogger';
+const SCOPE = 'https://www.googleapis.com/auth/blogger.readonly';
 const PORT = Number(process.env.BLOGGER_OAUTH_PORT ?? 8765);
 const REDIRECT_URI = `http://localhost:${PORT}/`;
 const ENV_FILE = path.join(process.cwd(), '.env.development');
