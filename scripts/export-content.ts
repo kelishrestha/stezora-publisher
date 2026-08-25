@@ -20,6 +20,9 @@ export interface ContentPost {
 	updatedDate?: string;
 	status: 'published';
 	content: string;
+	seoTitle?: string;
+	seoDescription?: string;
+	bloggerBlogId?: string;
 	bloggerPostId?: string;
 	bloggerUrl?: string;
 }
@@ -27,7 +30,6 @@ export interface ContentPost {
 export interface ContentResponse {
 	publications: unknown[];
 	posts: ContentPost[];
-	categories: unknown[];
 	tags: unknown[];
 }
 
@@ -172,6 +174,9 @@ interface ExportRecord {
 	updatedDate?: string;
 	status: 'published';
 	content: string;
+	seoTitle?: string;
+	seoDescription?: string;
+	bloggerBlogId?: string;
 	bloggerPostId?: string;
 	bloggerUrl?: string;
 }
@@ -188,6 +193,15 @@ function toPostRecord(post: ContentPost): PostRecord {
 		bloggerPostId: post.bloggerPostId || undefined,
 		bloggerUrl: post.bloggerUrl || undefined,
 	};
+	if (post.seoTitle) {
+		record.seoTitle = post.seoTitle;
+	}
+	if (post.seoDescription) {
+		record.seoDescription = post.seoDescription;
+	}
+	if (post.bloggerBlogId) {
+		record.bloggerBlogId = post.bloggerBlogId;
+	}
 	if (post.updatedDate) {
 		record.updatedDate = post.updatedDate;
 	}

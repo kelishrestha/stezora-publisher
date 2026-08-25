@@ -22,7 +22,6 @@ afterEach(async () => {
 function fixtureResponse(): ContentResponse {
 	return {
 		publications: [{ id: 'pub-a', name: 'Pub A', slug: 'pub-a', description: 'Desc' }],
-		categories: [],
 		tags: [],
 		posts: [
 			{
@@ -35,6 +34,8 @@ function fixtureResponse(): ContentResponse {
 				updatedDate: '2026-01-02T00:00:00.000Z',
 				status: 'published',
 				content: '<p>body</p>',
+				seoTitle: 'Search title',
+				seoDescription: 'Search description',
 				bloggerPostId: '123',
 				bloggerUrl: 'https://example.com/hello.html',
 			},
@@ -72,6 +73,8 @@ describe('export-content writeExport', () => {
 			updatedDate: '2026-01-02T00:00:00.000Z',
 			status: 'published',
 			content: '<p>body</p>',
+			seoTitle: 'Search title',
+			seoDescription: 'Search description',
 			bloggerPostId: '123',
 			bloggerUrl: 'https://example.com/hello.html',
 		});
@@ -121,7 +124,7 @@ describe('export-content writeExport', () => {
 	it('rejects a response without a posts array', async () => {
 		const dir = await makeTmpDir();
 		await expect(
-			writeExport(dir, { publications: [], posts: undefined as never, categories: [], tags: [] })
+			writeExport(dir, { publications: [], posts: undefined as never, tags: [] })
 		).rejects.toThrow('expected a posts array');
 	});
 
@@ -129,7 +132,7 @@ describe('export-content writeExport', () => {
 		const dir = await makeTmpDir();
 		await writeExport(dir, fixtureResponse());
 		await expect(
-			writeExport(dir, { publications: [], posts: [], categories: [], tags: [] })
+			writeExport(dir, { publications: [], posts: [], tags: [] })
 		).rejects.toThrow(/Refusing to delete existing content/);
 		expect((await fs.readdir(dir)).sort()).toEqual([
 			'pub-a-hello-world.json',
@@ -139,7 +142,7 @@ describe('export-content writeExport', () => {
 
 	it('fails on an empty export into an empty directory unless allowEmpty is set', async () => {
 		const dir = await makeTmpDir();
-		const empty = { publications: [], posts: [], categories: [], tags: [] };
+		const empty = { publications: [], posts: [], tags: [] };
 
 		await expect(writeExport(dir, empty)).rejects.toThrow(/An empty site is a deployment failure/);
 		expect(await fs.readdir(dir)).toEqual([]);
@@ -182,7 +185,7 @@ describe('export-content writeExport', () => {
 
 	it('writes an empty directory when the export has no posts and allowEmpty is set', async () => {
 		const dir = await makeTmpDir();
-		await writeExport(dir, { publications: [], posts: [], categories: [], tags: [] }, { allowEmpty: true });
+		await writeExport(dir, { publications: [], posts: [], tags: [] }, { allowEmpty: true });
 		expect(await fs.readdir(dir)).toEqual([]);
 	});
 });

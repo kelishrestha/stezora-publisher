@@ -24,7 +24,8 @@ const breadcrumbs = [
 
 <BaseLayout
 	title={post.data.title}
-	description={post.data.excerpt}
+	description={post.data.seoDescription ?? post.data.excerpt}
+	seoTitle={post.data.seoTitle}
 	path={path}
 	type="article"
 	publishedAt={post.data.pubDate}

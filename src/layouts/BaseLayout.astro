@@ -17,6 +17,7 @@ import type { PublicationAccent } from '../lib/publications/types';
 
 export interface Props {
 	title?: string;
+	seoTitle?: string;
 	description?: string;
 	path?: string;
 	image?: string;
@@ -30,6 +31,7 @@ export interface Props {
 
 const {
 	title,
+	seoTitle,
 	description = SITE.description,
 	path = '/',
 	image = SITE.defaultImage,
@@ -41,7 +43,7 @@ const {
 	accent,
 } = Astro.props;
 
-const pageTitle = title ? `${title} | ${SITE.name}` : `${SITE.name} — ${SITE.description}`;
+const pageTitle = seoTitle ? `${seoTitle} | ${SITE.name}` : title ? `${title} | ${SITE.name}` : `${SITE.name} — ${SITE.description}`;
 const canonical = canonicalUrl(path);
 const ogImage = absoluteUrl(image);
 const published = publishedAt ? formatDate(publishedAt) : undefined;
