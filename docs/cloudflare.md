@@ -8,7 +8,7 @@ update it as commands and policies change.
 
 | Resource | Binding | Purpose |
 | --- | --- | --- |
-| D1 database `stezora-publisher-db` | `DB` | Relational persistent data (users, publications, posts, categories, tags, media, sync state) |
+| D1 database `stezora-publisher-db` | `DB` | Relational persistent data (BetterAuth users/sessions, publications, posts, tags, media, sync state) |
 | R2 bucket `stezora-publisher-media` | `MEDIA` | Uploaded media (images, PDFs) |
 | Worker `stezora-publisher` | — | Serves static assets + `/api/*` |
 | Static assets | `ASSETS` | Astro build output in `./dist` |
@@ -61,12 +61,15 @@ pnpm db:seed:remote   # remote
 - the three publications from `src/lib/publications/data.ts`
   (`INSERT OR IGNORE`, keyed on `slug`, no Blogger ids)
 - the single admin user from `ADMIN_EMAIL` / `ADMIN_INITIAL_PASSWORD`
-  (`.env.development`), stored as a salted PBKDF2-SHA256 hash
-  (`pbkdf2-sha256$<iterations>$<salt>$<hash>`). The statement is
-  `INSERT ... ON CONFLICT (email) DO UPDATE SET password_hash = excluded.password_hash
-  WHERE users.password_hash != excluded.password_hash`, so re-running only
-  rewrites the admin password when `ADMIN_INITIAL_PASSWORD` actually changed.
+  (`.env.development`), stored in BetterAuth's `user` and `account` tables
+  with the BetterAuth-compatible scrypt password hash. The statement updates
+  the existing user's name and role idempotently, and the account password is
+  replaced only when the generated hash differs.
   The plaintext password is never printed.
+
+Public sign-up is disabled. Provision the owner account only through
+`ADMIN_EMAIL` and `ADMIN_INITIAL_PASSWORD`; rotate the password by rerunning
+the seed with the new value.
 
 ### Backfill content into D1
 
@@ -84,7 +87,7 @@ pnpm db:backfill:remote   # remote
 - posts upsert via `ON CONFLICT (blogger_blog_id, blogger_post_id) DO UPDATE`
   when Blogger ids are present, otherwise
   `ON CONFLICT (publication_id, slug) DO UPDATE`
-- categories, tags, and `post_tags` backfilled from post metadata with
+- tags and `post_tags` backfilled from post metadata with
   `ON CONFLICT ... DO NOTHING`
 
 Re-running is a no-op. Blogger `_BLOG_ID` env values (`.env.development`) are
@@ -123,6 +126,8 @@ The endpoint only returns posts with `status = 'published'` and
 exported JSON, the static build, sitemap, or RSS. The export is idempotent and
 removes stale JSON files so the site is always fully reproducible from D1
 (DEVELOPER.md §81).
+SEO title and description fields are included in the export and override the
+default article title and excerpt in public page metadata when present.
 
 The JSON files under `src/content/posts/` double as an untracked backup of D1
 content: they are regenerated from D1 at build time and can restore D1 via
@@ -139,8 +144,10 @@ unchecked regardless of how it entered the database.
 
 ## Schema notes
 
-- `posts.category_id` references `categories(id)` (added in `0001_init.sql`).
-  A post has exactly one category; tags are linked through `post_tags`.
+- Posts are organized by tags only; there is no categories table.
+- `media.post_id` is unique, so each post owns at most one media row.
+- Deleting a post removes its tag links, sync row, and media metadata in one D1
+  batch, then removes the corresponding R2 objects.
 - Two posts with NULL Blogger ids are allowed: the
   `UNIQUE (blogger_blog_id, blogger_post_id)` constraint only applies to
   Blogger-synced posts.
@@ -149,15 +156,18 @@ unchecked regardless of how it entered the database.
   redirect/canonical and sync work. It is **not** the site's canonical — the
   public `<link rel="canonical">` is always derived from `SITE.url` + path
   (`src/lib/seo/seo.ts`). Do not use this column as the public canonical.
-- `migrations/0001_init.sql` is the current schema. New columns/schema changes
-  must be new numbered migration files, never edits to an applied one.
+- `migrations/0000_init.sql` is the base schema. `0001` adds BetterAuth rate
+  limiting, `0002` adds editor Markdown/SEO fields, `0003` scopes tags and
+  makes media post-owned, and `0004` adds `posts.featured_image_id`. New
+  schema changes must be new numbered migration files, never edits to an
+  applied one.
 
 ## Worker API conventions
 
 - Public read endpoints (`GET /api/content`) send an explicit `Cache-Control`
   header so Cloudflare caching is deterministic.
 - `GET /api/content` intentionally returns the raw `{ publications, posts,
-  categories, tags }` payload instead of the `{ success, data }` envelope used
+  tags }` payload instead of the `{ success, data }` envelope used
   by other routes. It is a build-time export endpoint consumed by
   `scripts/export-content.ts`, which reads the bare arrays directly. Keep it
   that way; wrap new admin/API routes in `ok`/`fail` instead.
