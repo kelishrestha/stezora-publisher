@@ -64,16 +64,39 @@ Rules:
 
 **For light mode:**
 
-- Site Background color => ocean-deep-50
+- Main page background color => neutral white
+- Foreground text => neutral gray-950
+- Muted text => neutral gray-600
+- Surfaces => neutral gray-50/gray-200
+- Borders => 10% black
 - Primary => soft-periwinkle-400
-- Secondary => ocean-deep-400
-- Accent => dark-amaranth-400
-- Muted => bright-amber-50
+- Secondary and accent => neutral gray
 
 **For dark mode:**
 
-- Site Background color => space-indigo-700
-- Primary => soft-periwinkle-50
-- Secondary => bright-amber-100
-- Accent => dark-amaranth-100
-- Muted => bright-amber-50
+- Site background color => neutral gray-950
+- Foreground text => neutral gray-50
+- Muted text => neutral gray-400
+- Surfaces => neutral gray-900/gray-800
+- Primary, secondary, and accent => neutral gray
+
+## Publication palettes
+
+Each publication has a distinct background and supporting palette in both
+color modes. The palette is selected by the publication's existing `accent`
+identity and overrides the shared site defaults:
+
+| Publication | Light background | Dark background | Palette |
+| --- | --- | --- | --- |
+| The Sore Transition | neutral grey | space-indigo-950 | grey light mode, blackish dark mode |
+| The Rebellious Flame | dark-amaranth-50 | dark-amaranth-950 | red amaranth |
+| My Soulful Incantations | soft-periwinkle-50 | soft-periwinkle-950 | soft periwinkle |
+
+The main page uses a neutral white light-mode background rather than a colored
+publication background. The app's unthemed dark mode uses ocean-deep tones,
+separate from The Sore Transition's blackish dark palette.
+
+For each publication, surfaces use the next darker ramp steps, foreground text
+uses a high-contrast ramp endpoint, and borders use a middle-dark ramp step.
+This keeps the publication identity visible without reducing article
+readability.
