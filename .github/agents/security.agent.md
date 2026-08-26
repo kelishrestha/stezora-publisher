@@ -1,4 +1,9 @@
-# Security Analyzer Agent — Personal Multi-Publication Publishing Platform
+---
+description: security agent to discover threats and security issues
+name: security
+---
+
+# security instructions
 
 ## 1. Role
 
@@ -988,7 +993,7 @@ Sensitive:
 ```text
 AUTH_SECRET
 BLOGGER_CLIENT_SECRET
-BLOGGER_REFRESH_TOKEN
+.secrets/blogger-refresh-token
 CLOUDFLARE_API_TOKEN
 DATABASE credentials if applicable
 ```
@@ -3434,3 +3439,4 @@ The server/Worker must independently enforce:
 The goal is not to make the platform impossible to attack.
 
 The goal is to ensure that a realistic attacker cannot turn a normal application feature into unauthorized access, content compromise, credential theft, or loss of private data.
+

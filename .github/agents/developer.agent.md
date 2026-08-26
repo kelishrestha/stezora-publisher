@@ -1,4 +1,9 @@
-# Developer Agent — Personal Multi-Publication Publishing Platform
+---
+description: Develops the application features
+name: developer
+---
+
+# developer instructions
 
 ## 1. Role
 
@@ -159,6 +164,24 @@ name
 slug
 description
 ```
+
+Publication visual identity is also data-driven. Keep the main page neutral
+white, and preserve these publication palette assignments in the shared theme:
+
+| Publication | Palette |
+| --- | --- |
+| The Sore Transition | grey light mode, blackish dark mode |
+| The Rebellious Flame | red dark amaranth |
+| My Soulful Incantations | bluish soft periwinkle |
+
+Do not hard-code publication colors in individual page components. Pass the
+publication identity to the shared layout and resolve colors through the
+semantic theme tokens.
+
+The home page may use lightweight, CSS-only motion and static reader
+testimonials to create a personal editorial welcome. Keep animations
+progressive-enhancement only, respect `prefers-reduced-motion`, and avoid
+inventing dynamic CMS behavior for static marketing content.
 
 ---
 
@@ -552,6 +575,12 @@ BLOGGER_MY_SOULFUL_INCANTATIONS_BLOG_URL=...
 Keep these values in `.env.development` (real) and `.env.example` (placeholders).
 
 `BLOGGER_<SLUG>_BLOG_ID` is required for import (numeric string). `BLOGGER_<SLUG>_BLOG_URL` is optional for import — it is only reported when present; its consumers are future redirect/canonical and sync logic.
+
+The OAuth client ID and secret are configured in `.env.development`. Run
+`pnpm blogger:oauth` to authorize access; the resulting refresh token is stored
+in the gitignored `.secrets/blogger-refresh-token` file and is read from there
+by `scripts/blogger/import.ts`. Do not add the refresh token to an environment
+file or commit it.
 
 ---
 
@@ -1239,7 +1268,7 @@ Examples:
 
 ```text
 BLOGGER_CLIENT_SECRET
-BLOGGER_REFRESH_TOKEN
+.secrets/blogger-refresh-token
 AUTH_SECRET
 CLOUDFLARE_API_TOKEN
 ```

@@ -1,4 +1,9 @@
-# UI/UX Agent — Personal Multi-Publication Publishing Platform
+---
+description: UI UX agent for development
+name: uiux
+---
+
+# uiux instructions
 
 ## 1. Role
 
@@ -152,6 +157,27 @@ Dialogs
 ```
 
 Do not invent one-off styles for individual pages.
+
+## Publication color identities
+
+The shared site remains one cohesive system, but each publication must have a
+definite background and a complete supporting palette:
+
+| Publication | Identity | Light background | Dark background |
+| --- | --- | --- | --- |
+| The Sore Transition | grey light mode, blackish dark mode | neutral grey | space-indigo-950 |
+| The Rebellious Flame | urgent red amaranth | dark-amaranth-50 | dark-amaranth-950 |
+| My Soulful Incantations | calm, contemplative periwinkle | soft-periwinkle-50 | soft-periwinkle-950 |
+
+The main page uses a neutral white light-mode background and should not inherit
+a publication's colored background.
+
+The unthemed app dark mode uses ocean-deep tones, while The Sore Transition
+keeps its own blackish dark palette.
+
+Use the assigned ramp for each publication's background, surfaces, borders,
+foreground, and accent states. Keep text contrast strong and avoid relying on
+accent color alone to communicate meaning.
 
 ---
 

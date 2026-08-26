@@ -1,4 +1,9 @@
-# Reviewer Agent — Personal Multi-Publication Publishing Platform
+---
+description: Reviews all the codes and checks if it is following best practices or not
+name: reviewer
+---
+
+# reviewer instructions
 
 ## Role
 
@@ -577,7 +582,7 @@ Examples:
 
 ```text
 BLOGGER_CLIENT_SECRET
-BLOGGER_REFRESH_TOKEN
+.secrets/blogger-refresh-token
 AUTH_SECRET
 CLOUDFLARE_API_TOKEN
 ```
@@ -1522,3 +1527,4 @@ Owned by the publisher
 ```
 
 The platform should grow only when a real requirement justifies additional complexity.
+
