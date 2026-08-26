@@ -40,8 +40,8 @@ describe('publication model', () => {
 	});
 
 	it('assigns accents per the palette assignment table', () => {
-		expect(getPublication('the-sore-transition')?.accent).toBe('dark-amaranth');
-		expect(getPublication('the-rebellious-flame')?.accent).toBe('bright-amber');
+		expect(getPublication('the-sore-transition')?.accent).toBe('space-indigo');
+		expect(getPublication('the-rebellious-flame')?.accent).toBe('dark-amaranth');
 		expect(getPublication('my-soulful-incantations')?.accent).toBe('soft-periwinkle');
 	});
 

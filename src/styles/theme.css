@@ -4,11 +4,24 @@
  * Five oklch ramps are exposed as Tailwind colors. A small set of semantic
  * tokens maps the COLORS.md light/dark mode rules onto utilities, plus derived
  * tokens (foreground, surface, border, accent shades) chosen from the ramps
- * for readable contrast. Per-publication `data-accent` overrides swap only the
- * accent family; background/primary/secondary/muted stay site-wide.
+ * for readable contrast. Per-publication `data-accent` overrides provide each
+ * publication's complete reading palette.
  */
 
 @theme {
+	/* stezora-site neutral gray palette */
+	--color-gray-50: oklch(98.5% 0 0);
+	--color-gray-100: oklch(97% 0 0);
+	--color-gray-200: oklch(95% 0.006 264.53);
+	--color-gray-300: oklch(92.2% 0 0);
+	--color-gray-400: oklch(86% 0 0);
+	--color-gray-500: oklch(75% 0 0);
+	--color-gray-600: oklch(44.5% 0 0);
+	--color-gray-700: oklch(42% 0 0);
+	--color-gray-800: oklch(26.9% 0 0);
+	--color-gray-900: oklch(20.5% 0 0);
+	--color-gray-950: oklch(14.5% 0 0);
+
 	/* space-indigo */
 	--color-space-indigo-50: oklch(95% 0.015 273.85);
 	--color-space-indigo-100: oklch(89.84% 0.032 277.90);
@@ -74,21 +87,21 @@
 	--color-soft-periwinkle-900: oklch(15.88% 0.080 273.91);
 	--color-soft-periwinkle-950: oklch(13.11% 0.063 275.84);
 
-	/* Semantic tokens — light defaults per COLORS.md rules. */
-	--color-background: var(--color-ocean-deep-50);
-	--color-foreground: var(--color-space-indigo-900);
-	--color-muted-foreground: var(--color-space-indigo-600);
-	--color-surface: var(--color-ocean-deep-50);
-	--color-surface-elevated: var(--color-ocean-deep-100);
-	--color-border: var(--color-ocean-deep-200);
+	/* Semantic tokens — light defaults; the main page uses neutral white. */
+	--color-background: oklch(100% 0 0);
+	--color-foreground: var(--color-gray-950);
+	--color-muted-foreground: oklch(44.5% 0 0);
+	--color-surface: oklch(98.5% 0 0);
+	--color-surface-elevated: oklch(95% 0.006 264.53);
 	--color-primary: var(--color-soft-periwinkle-400);
 	--color-on-primary: var(--color-space-indigo-950);
-	--color-secondary: var(--color-ocean-deep-400);
-	--color-on-secondary: var(--color-space-indigo-950);
-	--color-accent: var(--color-dark-amaranth-400);
-	--color-accent-foreground: var(--color-dark-amaranth-600);
-	--color-accent-soft: var(--color-dark-amaranth-100);
-	--color-muted: var(--color-bright-amber-50);
+	--color-secondary: oklch(95% 0.006 264.53);
+	--color-on-secondary: var(--color-gray-950);
+	--color-accent: oklch(91.5% 0 0);
+	--color-accent-foreground: var(--color-gray-950);
+	--color-accent-soft: oklch(95% 0 0);
+	--color-muted: oklch(92% 0 0);
+	--color-border: rgb(0 0 0 / 10%);
 }
 
 /* Light mode is the :root default above; `color-scheme` is handled in global.css. */
@@ -100,53 +113,83 @@
 	 * dark-amaranth-300 because the on-spec shade (100) is too pale against
 	 * dark surfaces. Primary/secondary/muted follow COLORS.md exactly.
 	 */
-	--color-background: var(--color-space-indigo-900);
-	--color-foreground: var(--color-ocean-deep-50);
-	--color-muted-foreground: var(--color-ocean-deep-200);
-	--color-surface: var(--color-space-indigo-700);
+	--color-background: oklch(14.5% 0 0);
+	--color-foreground: oklch(98.5% 0 0);
+	--color-muted-foreground: oklch(70.8% 0 0);
+	--color-surface: oklch(20.5% 0 0);
+	--color-surface-elevated: oklch(26.9% 0 0);
+	--color-border: oklch(26.9% 0 0);
+	--color-primary: oklch(98.5% 0 0);
+	--color-on-primary: oklch(20.5% 0 0);
+	--color-secondary: oklch(26.9% 0 0);
+	--color-on-secondary: oklch(98.5% 0 0);
+	--color-accent: oklch(26.9% 0 0);
+	--color-accent-foreground: oklch(98.5% 0 0);
+	--color-accent-soft: oklch(26.9% 0 0);
+	--color-muted: oklch(26.9% 0 0);
+}
+
+/* The Sore Transition: grey light mode, blackish dark mode. */
+:root:not(.dark)[data-accent='space-indigo'] {
+	--color-background: oklch(96% 0.008 270);
+	--color-foreground: oklch(20% 0.012 270);
+	--color-surface: oklch(99% 0.004 270);
+	--color-surface-elevated: oklch(94% 0.01 270);
+	--color-border: oklch(82% 0.012 270);
+	--color-accent: oklch(40% 0.018 270);
+	--color-accent-foreground: oklch(28% 0.014 270);
+	--color-accent-soft: oklch(90% 0.01 270);
+}
+.dark[data-accent='space-indigo'] {
+	--color-background: var(--color-space-indigo-950);
+	--color-foreground: var(--color-space-indigo-50);
+	--color-surface: var(--color-space-indigo-900);
 	--color-surface-elevated: var(--color-space-indigo-800);
-	--color-border: var(--color-space-indigo-500);
-	--color-primary: var(--color-soft-periwinkle-50);
-	--color-on-primary: var(--color-space-indigo-950);
-	--color-secondary: var(--color-bright-amber-100);
-	--color-on-secondary: var(--color-space-indigo-950);
+	--color-border: var(--color-space-indigo-700);
+	--color-accent: var(--color-space-indigo-300);
+	--color-accent-foreground: var(--color-space-indigo-100);
+	--color-accent-soft: var(--color-space-indigo-800);
+}
+
+/* The Rebellious Flame: red, urgent manifesto palette. */
+:root:not(.dark)[data-accent='dark-amaranth'] {
+	--color-background: var(--color-dark-amaranth-50);
+	--color-foreground: var(--color-dark-amaranth-950);
+	--color-surface: var(--color-dark-amaranth-100);
+	--color-surface-elevated: var(--color-dark-amaranth-200);
+	--color-border: var(--color-dark-amaranth-300);
+	--color-accent: var(--color-dark-amaranth-500);
+	--color-accent-foreground: var(--color-dark-amaranth-700);
+	--color-accent-soft: var(--color-dark-amaranth-200);
+}
+.dark[data-accent='dark-amaranth'] {
+	--color-background: var(--color-dark-amaranth-950);
+	--color-foreground: var(--color-dark-amaranth-50);
+	--color-surface: var(--color-dark-amaranth-900);
+	--color-surface-elevated: var(--color-dark-amaranth-800);
+	--color-border: var(--color-dark-amaranth-700);
 	--color-accent: var(--color-dark-amaranth-300);
 	--color-accent-foreground: var(--color-dark-amaranth-200);
 	--color-accent-soft: var(--color-dark-amaranth-800);
-	--color-muted: var(--color-bright-amber-50);
 }
 
-/* Per-publication accent: dark-amaranth (The Sore Transition). */
-:root:not(.dark)[data-accent='dark-amaranth'] {
-	--color-accent: var(--color-dark-amaranth-400);
-	--color-accent-foreground: var(--color-dark-amaranth-600);
-	--color-accent-soft: var(--color-dark-amaranth-100);
-}
-.dark[data-accent='dark-amaranth'] {
-	--color-accent: var(--color-dark-amaranth-100);
-	--color-accent-foreground: var(--color-dark-amaranth-200);
-	--color-accent-soft: var(--color-dark-amaranth-800);
-}
-
-/* Per-publication accent: bright-amber (The Rebellious Flame). */
-:root:not(.dark)[data-accent='bright-amber'] {
-	--color-accent: var(--color-bright-amber-500);
-	--color-accent-foreground: var(--color-bright-amber-700);
-	--color-accent-soft: var(--color-bright-amber-200);
-}
-.dark[data-accent='bright-amber'] {
-	--color-accent: var(--color-bright-amber-300);
-	--color-accent-foreground: var(--color-bright-amber-200);
-	--color-accent-soft: var(--color-bright-amber-800);
-}
-
-/* Per-publication accent: soft-periwinkle (My Soulful Incantations). */
+/* My Soulful Incantations: contemplative periwinkle poetry palette. */
 :root:not(.dark)[data-accent='soft-periwinkle'] {
+	--color-background: var(--color-soft-periwinkle-50);
+	--color-foreground: var(--color-soft-periwinkle-950);
+	--color-surface: var(--color-soft-periwinkle-100);
+	--color-surface-elevated: var(--color-soft-periwinkle-200);
+	--color-border: var(--color-soft-periwinkle-200);
 	--color-accent: var(--color-soft-periwinkle-500);
 	--color-accent-foreground: var(--color-soft-periwinkle-600);
 	--color-accent-soft: var(--color-soft-periwinkle-100);
 }
 .dark[data-accent='soft-periwinkle'] {
+	--color-background: var(--color-soft-periwinkle-950);
+	--color-foreground: var(--color-soft-periwinkle-50);
+	--color-surface: var(--color-soft-periwinkle-900);
+	--color-surface-elevated: var(--color-soft-periwinkle-800);
+	--color-border: var(--color-soft-periwinkle-700);
 	--color-accent: var(--color-soft-periwinkle-300);
 	--color-accent-foreground: var(--color-soft-periwinkle-200);
 	--color-accent-soft: var(--color-soft-periwinkle-800);

@@ -11,7 +11,7 @@ interface Props {
 const { post, publicationSlug } = Astro.props;
 ---
 
-<article class="group">
+<article class="group border-b border-border pb-8">
 	<h2 class="font-serif text-xl font-semibold leading-snug">
 		<a
 			href={postPath(publicationSlug, post.id)}

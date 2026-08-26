@@ -1,65 +1,233 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Container from '../components/ui/Container.astro';
-import PublicationCard from '../components/publication/PublicationCard.astro';
-import { SITE } from '../lib/seo/config';
-import { getPublishedPosts } from '../lib/publications/collections';
-import { getPublication, getPublications, postPath } from '../lib/publications';
+import { Icon } from 'astro-icon/components';
+const testimonials = [
+	['Sarah Chen', 'San Francisco, CA', "Stezora's words don't just tell a story—they become part of your soul. 'The Rebellious Flame' changed how I see the world around me.", 'The Rebellious Flame', 'October 2024'],
+	['Marcus Rivera', 'Brooklyn, NY', "I've never been one for poetry, but 'The Peach Fall' found me during my darkest hour. These poems were like gentle hands guiding me back to myself.", 'The Peach Fall', 'September 2024'],
+	['Elena Moreau', 'Montreal, QC', "'The Soulful Incantations' is a masterpiece of emotional cartography. I found myself in these pages, and I found hope I didn't know I was looking for.", 'The Soulful Incantations', 'August 2024'],
+	['James Whitmore', 'London, UK', "Reading 'The Rebellious Flame' was like discovering a secret language I'd been trying to speak my whole life.", 'The Rebellious Flame', 'July 2024'],
+	['Priya Sharma', 'Mumbai, India', "'The Peach Fall' reads like a collection of secrets whispered between kindred spirits. Each story resonates with profound truth.", 'The Peach Fall', 'June 2024'],
+	['David Kim', 'Seoul, South Korea', "The depth of emotion in 'The Peach Fall' is breathtaking. Art that heals—this is what literature should be.", 'The Peach Fall', 'May 2024'],
+];
+const books = [
+	{
+		title: 'The Warrior Must Rise',
+		subtitle: 'A Short Story of a Warrior',
+		description: 'The journey of a warrior from cold ashes to rising phoenix.',
+		genre: 'Self-help',
+		pages: 56,
+		rating: 4.8,
+		reviews: 1200,
+		price: '$18.99',
+		image: '/the-warrior-must-rise-cover.png',
+		href: '/publications/the-rebellious-flame',
+	},
+	{
+		title: 'The Peach Fall',
+		subtitle: 'A Story of a Girl',
+		description: 'The inside journey of a girl who struggles to live by her own. Dedicated to all the people suffering from loneliness and depression. Things are not as bad as it seems when you start believe in yourself that you can live by yourself.',
+		genre: 'Self-help',
+		pages: 56,
+		rating: 4.8,
+		reviews: 1200,
+		price: '$14.99',
+		image: '/the-peach-fall-cover.jpg',
+		href: '/publications/the-sore-transition',
+	},
+];
+const poemCollections = [
+	{ title: 'The Sore Transitions', subtitle: 'Reflecting raw truths of soul journey', description: 'A collection of poems that explore the tender spaces between darkness and light, offering solace to those who find themselves awake in the quiet hours.', theme: 'Innocence & Solitude', poemCount: 29, rating: 4.9, reviews: 328, preview: ['The cold breeze swinging by the window', 'The spasmodic flow makes me freeze for a while'], icon: 'lucide:moon', href: '/publications/the-sore-transition' },
+	{ title: 'The Rebellious Flame', subtitle: 'The Rebellious against the world', description: "The poems that chart the unexplored regions of the heart, from first love's trembling shores to the deep valleys of loss and the mountains of healing.", theme: 'Love & Loss', poemCount: 30, rating: 4.8, reviews: 567, preview: ["My shadow's engraved into the shiny road", 'No lights, no sorrows to be afraid of'], icon: 'lucide:heart', href: '/publications/the-rebellious-flame' },
+	{ title: 'The Soulful Incantations', subtitle: 'Poems of Soul Transformation', description: 'Soul-driven profound pieces that explore the liminal spaces of existence—the moments between what was and what might be, where transformation quietly blooms.', theme: 'Change & Growth', poemCount: 12, rating: 4.7, reviews: 234, preview: ['Blue waves from the ocean', 'Makes me stay a little longer on the shore'], icon: 'lucide:feather', href: '/publications/my-soulful-incantations' },
+];
 
-const allPublications = getPublications();
-const latestPosts = (await getPublishedPosts()).slice(0, 5);
-
-function displayDate(date: Date): string {
-	return date.toLocaleDateString('en', { year: 'numeric', month: 'long', day: 'numeric' });
-}
 ---
 
 <BaseLayout path="/">
-	<Container class="py-16">
-		<section class="mb-16 text-center">
-			<h1 class="font-serif text-4xl font-bold tracking-tight sm:text-5xl">{SITE.name}</h1>
-			<p class="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">{SITE.description}</p>
+	<section class="relative flex min-h-[calc(100vh-4.5rem)] items-center overflow-hidden">
+		<div class="absolute inset-0 bg-gradient-to-br from-background via-background to-secondary/10"></div>
+		<div class="home-float absolute left-1/4 top-1/4 h-40 w-40 rounded-full bg-accent-soft/40 blur-3xl"></div>
+		<div class="home-float absolute bottom-1/4 right-1/4 h-56 w-56 rounded-full bg-primary/10 blur-3xl" style="animation-delay: -3s"></div>
+
+		<Container class="relative py-24 text-center">
+			<div class="mx-auto mb-8 flex max-w-xs items-center justify-center gap-4 text-muted-foreground">
+				<span class="h-px flex-1 bg-gradient-to-r from-transparent to-muted-foreground"></span>
+				<Icon name="lucide:sparkles" class="h-5 w-5" aria-hidden="true" />
+				<span class="h-px flex-1 bg-gradient-to-l from-transparent to-muted-foreground"></span>
+			</div>
+			<div class="relative mx-auto mb-6 h-28 w-28">
+				<img src="/stezora-hero-logo-light.png" alt="Stezora" class="home-fade-up absolute inset-0 h-28 w-28 object-contain dark:hidden" />
+				<img src="/stezora-hero-logo-dark.png" alt="" class="home-fade-up absolute inset-0 hidden h-28 w-28 object-contain dark:block" />
+			</div>
+			<p class="home-fade-up text-lg font-light tracking-wider text-muted-foreground">Soul Writer &amp; Keeper of Stories</p>
+			<h1 class="home-fade-up mt-2 font-serif text-5xl tracking-wide md:text-7xl" style="animation-delay: 120ms">Stezora</h1>
+			<p class="home-fade-up mx-auto mt-6 max-w-3xl font-serif text-xl italic leading-relaxed text-foreground/80 md:text-2xl" style="animation-delay: 240ms">Words are the windows to the soul's deepest chambers</p>
+			<a
+				href="#about"
+				class="home-fade-up mt-10 inline-flex items-center gap-3 text-xs font-medium uppercase tracking-[0.25em] text-muted-foreground transition-colors hover:text-accent-foreground"
+				style="animation-delay: 360ms"
+			>
+				<span>Scroll to explore</span>
+				<Icon name="lucide:arrow-down" class="h-4 w-4" aria-hidden="true" />
+			</a>
+		</Container>
+	</section>
+
+	<Container class="space-y-28 py-20 sm:py-28">
+		<section id="about" class="home-fade-up scroll-mt-24">
+			<div class="mx-auto max-w-3xl text-center">
+				<div class="mb-6 flex items-center justify-center gap-3 text-muted-foreground" aria-hidden="true"><span class="h-px w-16 bg-current/40"></span><Icon name="lucide:heart" class="h-5 w-5 animate-pulse" /><span class="h-px w-16 bg-current/40"></span></div>
+				<h2 class="font-serif text-4xl md:text-5xl">About the Writer</h2>
+				<p class="mt-6 max-w-3xl mx-auto font-serif text-lg leading-relaxed text-foreground/90">
+					I write under the name Stezora, a name that holds the essence of my soul's journey—soft,
+					rebellious, mystical, and ever-evolving. Writing has always been my way of breathing through
+					the chaos, of turning silence into meaning.
+				</p>
+			</div>
+
+			<div class="mt-12 grid gap-6 sm:grid-cols-3 mx-32">
+				{[
+					['Mystery', 'Every story holds secrets waiting to be discovered. In shadows and silence, truth reveals itself to those who dare to look deeper.'],
+					['Empathy', 'To write is to feel the heartbeat of humanity. Each character carries a piece of our shared existence, our joys and sorrows intertwined.'],
+					['Soul', "Words are vessels for the soul's journey. Through language, we transcend the ordinary and touch the infinite within us all."],
+				].map(([title, description]) => (
+					<article class="group rounded-lg border border-border bg-surface p-6 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+						<div class="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-surface-elevated text-accent-foreground">
+							<Icon name={title === 'Mystery' ? 'lucide:moon' : title === 'Empathy' ? 'lucide:heart' : 'lucide:sparkles'} class="h-5 w-5" aria-hidden="true" />
+						</div>
+						<h3 class="font-serif text-xl">{title}</h3>
+						<p class="mt-3 p-1 font-light leading-relaxed text-muted-foreground">{description}</p>
+					</article>
+				))}
+			</div>
+			<div class="mt-16 border-t border-border pt-12 mx-32">
+				<div class="text-center">
+					<Icon name="lucide:book-open" class="mx-auto mb-4 h-8 w-8 animate-pulse text-muted-foreground" aria-hidden="true" />
+					<h3 class="font-serif text-2xl">Writing Philosophy</h3>
+				</div>
+				<div class="mt-8 grid gap-8 md:grid-cols-2">
+					<blockquote class="font-serif text-xl italic leading-relaxed text-foreground/80">“I write to understand, to remember, and to share the hidden truths I find between the lines of existence.”</blockquote>
+					<div class="space-y-4 leading-relaxed text-muted-foreground">
+						<p>Writing is not about instruction — it is about invitation. Each word is chosen not to teach, but to reach: the quiet grief, the unspoken longing, the tender parts we often hide.</p>
+						<p>I write slowly, intentionally, so that even one person may feel seen, soothed, or reminded of their own inner voice.</p>
+					</div>
+				</div>
+			</div>
 		</section>
 
-		<section class="mb-16">
-			<h2 class="font-serif text-2xl font-semibold">Publications</h2>
-			<div class="mt-6 grid gap-6 sm:grid-cols-3">
-				{allPublications.map((publication) => (
-					<PublicationCard publication={publication} />
+		<section id="books" class="home-fade-up scroll-mt-24">
+			<div class="mx-auto max-w-3xl text-center">
+				<p class="text-xs font-medium uppercase tracking-[0.25em] text-muted-foreground">Stories That Transform</p>
+				<h2 class="mt-2 font-serif text-4xl md:text-5xl">Published Works</h2>
+				<p class="mt-5 text-muted-foreground">Stories that navigate the depths of human experience, each one a journey into the mysteries of the heart.</p>
+			</div>
+			<div class="mt-10 space-y-12">
+				{books.map((book, index) => (
+					<article class={`group grid items-center gap-10 lg:grid-cols-2 ${index % 2 ? 'lg:grid-flow-col-dense' : ''}`}>
+						<div class={`flex justify-center ${index % 2 ? 'lg:col-start-2' : ''}`}>
+							<div class="relative transition-transform duration-500 group-hover:scale-105">
+								<img src={book.image} alt={`${book.title} cover`} class="h-80 w-64 rounded-lg object-cover shadow-2xl" />
+								<span class="absolute -bottom-4 -right-4 flex h-16 w-16 items-center justify-center rounded-full border-4 border-border bg-background text-red-400 shadow-lg"><Icon name="lucide:heart" class="h-6 w-6 fill-current" aria-hidden="true" /></span>
+							</div>
+						</div>
+						<div class={`space-y-6 ${index % 2 ? 'lg:col-start-1 lg:row-start-1' : ''}`}>
+							<div class="flex items-center gap-4">
+								<span class="rounded-full bg-muted px-3 py-1 text-xs uppercase text-black tracking-widest">{book.genre}</span>
+								<span class="flex items-center gap-1 text-sm text-muted-foreground"><Icon name="lucide:clock-3" class="h-4 w-4" aria-hidden="true" /> {book.pages} pages</span>
+							</div>
+							<h3 class="font-serif text-3xl">{book.title}</h3>
+							<p class="text-lg text-muted-foreground">{book.subtitle}</p>
+							<p class="leading-relaxed text-foreground/80">{book.description}</p>
+							<div class="flex items-center gap-2 text-yellow-500"><span class="flex" aria-label={`${book.rating} out of 5 stars`}>{[1, 2, 3, 4, 5].map(() => <Icon name="lucide:star" class="h-4 w-4 fill-current" aria-hidden="true" />)}</span><span class="text-sm text-foreground">{book.rating} <span class="text-muted-foreground">({book.reviews} reviews)</span></span></div>
+							<div class="flex items-center justify-between border-t border-border pt-4">
+								<span class="font-serif text-2xl">{book.price}</span>
+								<a href={book.href} class="inline-flex items-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm text-background transition-transform duration-300 hover:scale-105">
+									<Icon name="lucide:book-heart" class="h-4 w-4" aria-hidden="true" />
+									Purchase Book 
+								</a>
+							</div>
+						</div>
+					</article>
 				))}
 			</div>
 		</section>
 
-		<section class="mb-16">
-			<h2 class="font-serif text-2xl font-semibold">Latest writing</h2>
-			<ul class="mt-6 space-y-6">
-				{latestPosts.map((post) => {
-					const publication = getPublication(post.data.publication);
-					return (
-						<li class="border-b border-border pb-6 last:border-b-0">
-							<p class="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-								{publication?.name ?? post.data.publication}
-							</p>
-							<h3 class="mt-1 font-serif text-xl font-semibold leading-snug">
-								<a
-									href={postPath(post.data.publication, post.id)}
-									class="transition-colors hover:text-accent-foreground"
-								>
-									{post.data.title}
-								</a>
-							</h3>
-							<p class="mt-2 text-sm leading-relaxed text-muted-foreground">{post.data.excerpt}</p>
-							<time class="mt-2 block text-sm text-muted-foreground" datetime={post.data.pubDate.toISOString()}>
-								{displayDate(post.data.pubDate)}
-							</time>
-						</li>
-					);
-				})}
-			</ul>
+		<section id="poems" class="home-fade-up scroll-mt-24">
+			<div class="mx-auto max-w-3xl text-center">
+				<p class="text-xs font-medium uppercase tracking-[0.25em] text-muted-foreground">Words for the Soul</p>
+				<h2 class="mt-2 font-serif text-4xl md:text-5xl">Poetry Collections</h2>
+				<p class="mt-5 text-muted-foreground">Verses that capture the ineffable moments of human experience, each collection a journey through the landscape of the soul</p>
+			</div>
+			<div class="mt-10 grid gap-12 md:grid-cols-3">
+				{poemCollections.map((collection, index) => (
+					<article class="home-float group relative overflow-hidden rounded-lg border border-border bg-surface p-6 transition-all duration-500 hover:scale-105 hover:shadow-xl" style={`animation-delay: ${index * 400}ms`}>
+						<div class="text-center">
+							<div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted transition-colors group-hover:bg-accent"><Icon name={collection.icon} class="h-6 w-6 text-primary" aria-hidden="true" /></div>
+							<h3 class="font-serif text-2xl">{collection.title}</h3>
+							<p class="mt-2 text-muted-foreground">{collection.subtitle}</p>
+							<div class="mt-3 flex items-center justify-center gap-4 text-sm">
+								<span class="rounded-full bg-secondary px-2 py-1 text-xs">{collection.theme}</span>
+								<span class="text-gray-600">{collection.poemCount} poems</span>
+							</div>
+						</div>
+						<div class="mt-6 rounded-lg bg-secondary/20 p-4"><p class="mb-2 text-xs uppercase tracking-widest text-muted-foreground">Preview</p><div class="space-y-1 font-serif italic text-foreground/70">{collection.preview.map((line) => <p class="text-sm">{line}</p>)}<p class="text-xs text-muted-foreground">Click to read more...</p></div></div>
+						<div class="mt-4 flex items-center gap-2 text-sm text-yellow-500"><span class="flex" aria-label={`${collection.rating} out of 5 stars`}>{[1, 2, 3, 4, 5].map(() => <Icon name="lucide:star" class="h-3 w-3 fill-current" aria-hidden="true" />)}</span><span class="text-foreground">{collection.rating}</span><span class="text-muted-foreground">({collection.reviews} reviews)</span></div>
+						<div class="mt-4 flex justify-end border-t border-border pt-4"><a href={collection.href} class="inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-sm text-background transition-transform duration-300 hover:scale-105">View <Icon name="lucide:book-open-text" class="h-4 w-4" aria-hidden="true" /></a></div>
+						<div class="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent to-secondary/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+					</article>
+				))}
+			</div>
+			<div class="mt-10 text-center"><a href="/publications" class="inline-flex items-center gap-2 rounded-full border border-border px-6 py-3 text-sm transition-colors hover:bg-surface-elevated">See all poetry collections <Icon name="lucide:arrow-right" class="h-4 w-4" aria-hidden="true" /></a></div>
 		</section>
 
-		<section class="border-t border-border pt-10 text-sm text-muted-foreground">
-			<p>Subscribe via <a href="/rss.xml" class="underline decoration-border underline-offset-2 hover:text-accent-foreground">RSS</a>.</p>
+		<section id="testimonials" class="home-fade-up scroll-mt-24">
+			<div class="mx-auto max-w-3xl text-center">
+				<div class="mb-6 flex items-center justify-center gap-3 text-muted-foreground" aria-hidden="true"><span class="h-px w-16 bg-current/40"></span><Icon name="lucide:heart" class="h-5 w-5 animate-pulse" /><span class="h-px w-16 bg-current/40"></span></div>
+				<h2 class="font-serif text-4xl md:text-5xl">Reader Voices</h2>
+				<p class="mt-5 text-muted-foreground">Stories shared by souls who have journeyed through these pages and found pieces of themselves within.</p>
+			</div>
+			<div class="mt-10 rounded-2xl bg-gradient-to-br from-secondary/30 to-accent-soft/20 p-8 text-center md:p-12">
+				<div class="flex justify-center text-yellow-500" aria-label="5 out of 5 stars">{[1, 2, 3, 4, 5].map(() => <Icon name="lucide:star" class="h-6 w-6 fill-current" aria-hidden="true" />)}</div>
+				<blockquote class="mx-auto mt-6 max-w-4xl font-serif text-xl leading-relaxed md:text-2xl">“{testimonials[0][2]}”</blockquote>
+				<p class="mt-8 text-lg">{testimonials[0][0]}</p>
+				<p class="text-muted-foreground">{testimonials[0][1]}</p>
+				<p class="mt-2 text-sm text-muted-foreground">{testimonials[0][3]} · {testimonials[0][4]}</p>
+			</div>
+			<div class="mt-10 grid gap-6 md:grid-cols-3">
+				{testimonials.slice(0, 3).map((testimonial) => (
+					<figure class="rounded-lg border border-border bg-surface p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+						<div class="mb-3 flex text-yellow-500" aria-label="5 out of 5 stars">{[1, 2, 3, 4, 5].map(() => <Icon name="lucide:star" class="h-4 w-4 fill-current" aria-hidden="true" />)}</div>
+						<blockquote class="leading-relaxed text-foreground/80">“{testimonial[2]}”</blockquote>
+						<figcaption class="mt-6 text-sm">
+							<div>{testimonial[0]}</div><div class="text-muted-foreground">{testimonial[1]}</div>
+						</figcaption>
+					</figure>
+				))}
+			</div>
+			<div class="mt-12 text-center"><div class="inline-block rounded-lg bg-surface p-6"><Icon name="lucide:heart" class="mx-auto mb-3 h-8 w-8 animate-pulse text-red-400" aria-hidden="true" /><h3 class="font-serif text-xl">Have you been touched by these words?</h3><p class="mt-2 text-sm text-muted-foreground">Your story matters, and I'd love to hear how these books have become part of your journey.</p></div></div>
+		</section>
+
+		<section id="contact" class="border-y border-border py-16 text-center scroll-mt-24">
+			<div class="mb-6 flex items-center justify-center gap-3 text-muted-foreground" aria-hidden="true"><span class="h-px w-16 bg-current/40"></span><Icon name="lucide:mail" class="h-5 w-5 animate-pulse" /><span class="h-px w-16 bg-current/40"></span></div>
+			<h2 class="font-serif text-4xl md:text-5xl">Connect</h2>
+			<p class="mx-auto mt-4 max-w-xl text-muted-foreground">
+				For literary inquiries, collaboration opportunities, or simply to share how these words have touched your soul.
+			</p>
+			<div class="mx-auto mt-10 grid max-w-3xl gap-8 text-left md:grid-cols-2">
+				<div class="space-y-5 text-sm text-muted-foreground"><p>Every message is read with care and intention. Whether you're a fellow writer, a reader whose heart has been moved, or someone with a story to share, your words are welcome here.</p><p><strong class="text-foreground">Email</strong><br />stezora97@lunarshells.com</p><p><strong class="text-foreground">Location</strong><br />Melbourne, Australia · Response within 48 hours</p></div>
+				<form class="space-y-4 rounded-lg border border-border bg-surface p-6" action="mailto:stezora97@lunarshells.com" method="post" enctype="text/plain">
+					<input name="name" required placeholder="Name" class="w-full rounded-lg border border-border bg-background px-4 py-3" />
+					<input name="email" type="email" required placeholder="Email" class="w-full rounded-lg border border-border bg-background px-4 py-3" />
+					<input name="subject" required placeholder="Subject" class="w-full rounded-lg border border-border bg-background px-4 py-3" />
+					<textarea name="message" required rows="5" placeholder="Message" class="w-full resize-none rounded-lg border border-border bg-background px-4 py-3"></textarea>
+					<button class="flex w-full items-center justify-center gap-2 rounded-lg bg-foreground px-6 py-3 text-background transition-opacity hover:opacity-90" type="submit">Send Message <Icon name="lucide:send" class="h-4 w-4" aria-hidden="true" /></button>
+				</form>
+			</div>
 		</section>
 	</Container>
+	<footer class="px-6 py-16 text-center">
+		<Icon name="lucide:heart" class="mx-auto mt-5 h-7 w-7 fill-current text-red-500" aria-label="With love" />
+		<p class="mx-auto max-w-2xl font-serif text-lg italic text-muted-foreground">To the ones who have felt everything too deeply, who held their breath through pain and kept walking, who questioned everything and still chose love — this is for you.</p>
+	</footer>
 </BaseLayout>

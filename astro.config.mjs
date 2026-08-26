@@ -3,6 +3,7 @@ import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 import sitemap from '@astrojs/sitemap';
 import react from '@astrojs/react';
+import icon from 'astro-icon';
 
 import { SITE } from './src/lib/seo/config';
 
@@ -17,6 +18,7 @@ export default defineConfig({
 			filter: (page) => !new URL(page).pathname.startsWith('/admin'),
 		}),
 		react(),
+		icon(),
 	],
 	vite: {
 		plugins: [tailwindcss()],

@@ -4,15 +4,111 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@font-face {
+	font-family: 'Cormorant Garamond';
+	font-style: normal;
+	font-weight: 300 700;
+	font-display: swap;
+	src: url('/fonts/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYqXtKky2F7g.woff2') format('woff2');
+}
+
+@font-face {
+	font-family: 'Cormorant Garamond';
+	font-style: italic;
+	font-weight: 300 700;
+	font-display: swap;
+	src: url('/fonts/co3ZmX5slCNuHLi8bLeY9MK7whWMhyjYrEtImSqn7B6D.woff2') format('woff2');
+}
+
+@font-face {
+	font-family: 'Libre Baskerville';
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url('/fonts/kmKnZrc3Hgbbcjq75U4uslyuy4kn0qNZaxMaC82U.woff2') format('woff2');
+}
+
+@font-face {
+	font-family: 'Libre Baskerville';
+	font-style: normal;
+	font-weight: 700;
+	font-display: swap;
+	src: url('/fonts/kmKiZrc3Hgbbcjq75U4uslyuy4kn0qviTgY3KcC-wLOj.woff2') format('woff2');
+}
+
+@font-face {
+	font-family: 'Libre Baskerville';
+	font-style: italic;
+	font-weight: 400;
+	font-display: swap;
+	src: url('/fonts/kmKhZrc3Hgbbcjq75U4uslyuy4kn0qNcWxEQDO-Wyrs.woff2') format('woff2');
+}
+
 @theme {
-	--font-sans: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-	--font-serif: ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+	--font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --font-serif: 'Georgia Ref', Georgia, Cambria, "Times New Roman", Times, serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 :root {
 	color-scheme: light dark;
+	--font-size: 14px;
+}
+
+html {
+	scroll-behavior: smooth;
+	font-size: var(--font-size);
 }
 
 html.dark {
 	color-scheme: dark;
+}
+
+@keyframes home-fade-up {
+	from {
+		opacity: 0;
+		transform: translateY(1rem);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes home-float {
+	0%, 100% {
+		transform: translate3d(0, 0, 0) scale(1);
+	}
+	50% {
+		transform: translate3d(0, -1rem, 0) scale(1.05);
+	}
+}
+
+@keyframes home-pulse {
+	0%, 100% {
+		opacity: 0.45;
+	}
+	50% {
+		opacity: 0.9;
+	}
+}
+
+.home-fade-up {
+	animation: home-fade-up 700ms ease-out both;
+}
+
+.home-float {
+	animation: home-float 8s ease-in-out infinite;
+}
+
+.home-pulse {
+	animation: home-pulse 4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.home-fade-up,
+	.home-float,
+	.home-pulse {
+		animation: none;
+	}
 }

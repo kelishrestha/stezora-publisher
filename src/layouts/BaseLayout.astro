@@ -66,6 +66,12 @@ const jsonLd = breadcrumbs.length > 0 ? renderJsonLd(websiteJsonLd(), pageJsonLd
 		<link rel="canonical" href={canonical} />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="icon" href="/favicon.ico" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			 rel="stylesheet"
+			href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&display=swap"
+		/>
 		<link rel="alternate" type="application/rss+xml" title={`${SITE.name} RSS Feed`} href={absoluteUrl('/rss.xml')} />
 		<link rel="sitemap" href={absoluteUrl('/sitemap-index.xml')} />
 		<slot name="head" />

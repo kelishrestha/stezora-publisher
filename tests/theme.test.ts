@@ -36,28 +36,42 @@ describe('COLORS.md → theme.css', () => {
 	});
 
 	it('defines light-mode semantic rules from COLORS.md', () => {
-		expect(themeCss).toContain('--color-background: var(--color-ocean-deep-50);');
+		expect(themeCss).toContain('--color-background: oklch(100% 0 0);');
 		expect(themeCss).toContain('--color-primary: var(--color-soft-periwinkle-400);');
-		expect(themeCss).toContain('--color-secondary: var(--color-ocean-deep-400);');
-		expect(themeCss).toContain('--color-accent: var(--color-dark-amaranth-400);');
-		expect(themeCss).toContain('--color-muted: var(--color-bright-amber-50);');
+		expect(themeCss).toContain('--color-secondary: oklch(95% 0.006 264.53);');
+		expect(themeCss).toContain('--color-accent: oklch(91.5% 0 0);');
+		expect(themeCss).toContain('--color-muted: oklch(92% 0 0);');
 	});
 
 	it('defines dark-mode semantic rules from COLORS.md', () => {
-		// Background (space-indigo-900) and accent (dark-amaranth-300) are
-		// documented contrast derivations of the COLORS.md rules; see the .dark
-		// block in theme.css. The remaining tokens follow COLORS.md exactly.
-		expect(themeCss).toContain('--color-background: var(--color-space-indigo-900);');
-		expect(themeCss).toContain('--color-primary: var(--color-soft-periwinkle-50);');
-		expect(themeCss).toContain('--color-secondary: var(--color-bright-amber-100);');
-		expect(themeCss).toContain('--color-accent: var(--color-dark-amaranth-300);');
-		expect(themeCss).toContain('--color-muted: var(--color-bright-amber-50);');
+		expect(themeCss).toContain('--color-background: oklch(14.5% 0 0);');
+		expect(themeCss).toContain('--color-primary: oklch(98.5% 0 0);');
+		expect(themeCss).toContain('--color-secondary: oklch(26.9% 0 0);');
+		expect(themeCss).toContain('--color-accent: oklch(26.9% 0 0);');
+		expect(themeCss).toContain('--color-muted: oklch(26.9% 0 0);');
 	});
 
 	it('defines the three assigned per-publication accent overrides', () => {
-		for (const accent of ['dark-amaranth', 'bright-amber', 'soft-periwinkle']) {
+		for (const accent of ['space-indigo', 'dark-amaranth', 'soft-periwinkle']) {
 			expect(themeCss).toContain(`[data-accent='${accent}']`);
 		}
+	});
+
+	it('defines distinct light and dark publication backgrounds', () => {
+		for (const [palette, light, dark] of [
+			['space-indigo', 'space-indigo-950', 'space-indigo-950'],
+			['dark-amaranth', 'dark-amaranth-50', 'dark-amaranth-950'],
+			['soft-periwinkle', 'soft-periwinkle-50', 'soft-periwinkle-950'],
+		]) {
+			expect(themeCss).toContain(`:root:not(.dark)[data-accent='${palette}']`);
+			expect(themeCss).toContain(`--color-background: var(--color-${light});`);
+			expect(themeCss).toContain(`.dark[data-accent='${palette}']`);
+			expect(themeCss).toContain(`--color-background: var(--color-${dark});`);
+		}
+	});
+
+	it('uses a neutral light background for the main page', () => {
+		expect(themeCss).toContain('--color-background: oklch(100% 0 0);');
 	});
 });
 

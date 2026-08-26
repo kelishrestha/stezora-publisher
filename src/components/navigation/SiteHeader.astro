@@ -2,19 +2,24 @@
 import ThemeToggle from '../ui/ThemeToggle.astro';
 import Container from '../ui/Container.astro';
 import { SITE } from '../../lib/seo/config';
-import { PUBLICATIONS_PATH } from '../../lib/publications';
 
 const navLinks = [
 	{ href: '/', label: 'Home' },
-	{ href: PUBLICATIONS_PATH, label: 'Publications' },
-	{ href: '/about', label: 'About' },
+	{ href: '/#about', label: 'About' },
+	{ href: '/#books', label: 'Books' },
+	{ href: '/#poems', label: 'Poems' },
+	{ href: '/#testimonials', label: 'Testimonials' },
+	{ href: '/#contact', label: 'Contact' },
 ];
 ---
 
 <header class="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur">
 	<Container class="flex items-center justify-between py-4">
 		<a href="/" class="font-serif text-lg font-semibold tracking-tight" aria-label={`${SITE.name} home`}>
-			{SITE.name}
+			<span class="relative mr-2 inline-block h-8 w-8 align-middle">
+				<img src="/stezora-logo-light.png" alt="Stezora" class="absolute inset-0 h-8 w-8 object-contain dark:hidden" />
+				<img src="/stezora-logo-dark.png" alt="" class="absolute inset-0 hidden h-8 w-8 object-contain dark:block" />
+			</span>
 		</a>
 		<nav aria-label="Main">
 			<ul class="flex items-center gap-6">
