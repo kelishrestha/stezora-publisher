@@ -4,6 +4,7 @@ import { BloggerClient } from '../../src/lib/blogger/client';
 import { bloggerBlogIdForPublication, bloggerUrlForPublication } from '../../src/lib/blogger/config';
 import { importPosts } from '../../src/lib/blogger/importer';
 import { getPublication, getPublications } from '../../src/lib/publications';
+import { readBloggerRefreshToken } from './token-store';
 
 const OUTPUT_DIR = path.join(process.cwd(), 'src/content/posts');
 
@@ -73,7 +74,7 @@ async function runImport(slug: string, options: CliOptions): Promise<void> {
 		blogId,
 		clientId: requireEnv('BLOGGER_CLIENT_ID'),
 		clientSecret: requireEnv('BLOGGER_CLIENT_SECRET'),
-		refreshToken: requireEnv('BLOGGER_REFRESH_TOKEN'),
+		refreshToken: await readBloggerRefreshToken(),
 	});
 
 	const report = await importPosts({

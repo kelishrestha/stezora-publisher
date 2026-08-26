@@ -1,14 +1,13 @@
 import { createServer } from 'node:http';
 import { randomBytes } from 'node:crypto';
-import { promises as fs } from 'node:fs';
-import path from 'node:path';
+import { timingSafeEqual as cryptoTimingSafeEqual } from 'node:crypto';
+import { writeBloggerRefreshToken } from './token-store';
 
 const AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const SCOPE = 'https://www.googleapis.com/auth/blogger.readonly';
 const PORT = Number(process.env.BLOGGER_OAUTH_PORT ?? 8765);
 const REDIRECT_URI = `http://localhost:${PORT}/`;
-const ENV_FILE = path.join(process.cwd(), '.env.development');
 
 function requireEnv(name: string): string {
 	const value = process.env[name];
@@ -35,7 +34,7 @@ function authUrl(clientId: string, state: string): string {
 function timingSafeEqual(a: string, b: string): boolean {
 	const aBytes = Buffer.from(a);
 	const bBytes = Buffer.from(b);
-	return aBytes.length === bBytes.length && Buffer.compare(aBytes, bBytes) === 0;
+	return aBytes.length === bBytes.length && cryptoTimingSafeEqual(aBytes, bBytes);
 }
 
 async function exchangeCode(code: string, clientId: string, clientSecret: string): Promise<{ access_token?: string; refresh_token?: string }> {
@@ -58,20 +57,6 @@ async function exchangeCode(code: string, clientId: string, clientSecret: string
 	}
 
 	return (await response.json()) as { access_token?: string; refresh_token?: string };
-}
-
-async function updateEnvFile(key: string, value: string): Promise<void> {
-	const line = `${key}=${value}`;
-	let contents = '';
-	try {
-		contents = await fs.readFile(ENV_FILE, 'utf-8');
-	} catch {
-		contents = '';
-	}
-	const lines = contents.split('\n').filter((l) => !l.startsWith(`${key}=`));
-	lines.push(line);
-	await fs.writeFile(ENV_FILE, `${lines.join('\n')}\n`, 'utf-8');
-	console.log(`\nWrote ${key} to ${path.relative(process.cwd(), ENV_FILE)}`);
 }
 
 async function main(): Promise<void> {
@@ -121,7 +106,7 @@ async function main(): Promise<void> {
 	}
 
 	console.log('\nRefresh token obtained.');
-	await updateEnvFile('BLOGGER_REFRESH_TOKEN', tokens.refresh_token);
+	await writeBloggerRefreshToken(tokens.refresh_token);
 	console.log('\nYou can now run: pnpm blogger:import --all');
 }
 
