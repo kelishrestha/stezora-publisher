@@ -180,14 +180,14 @@
 
 /* My Soulful Incantations: contemplative periwinkle poetry palette. */
 :root:not(.dark)[data-accent='soft-periwinkle'] {
-	--color-accent: oklch(45% 0.24 300);
+	--color-accent: var(--color-soft-periwinkle-600);
 	--color-on-accent: oklch(98.5% 0 0);
-	--color-accent-foreground: oklch(38% 0.2 300);
-	--color-accent-soft: oklch(92% 0.05 300);
+	--color-accent-foreground: var(--color-soft-periwinkle-700);
+	--color-accent-soft: var(--color-soft-periwinkle-100);
 }
 .dark[data-accent='soft-periwinkle'] {
-	--color-accent: oklch(70% 0.17 300);
-	--color-on-accent: oklch(16% 0.06 300);
-	--color-accent-foreground: oklch(86% 0.08 300);
-	--color-accent-soft: oklch(30% 0.12 300);
+	--color-accent: var(--color-soft-periwinkle-400);
+	--color-on-accent: oklch(98.5% 0 0);
+	--color-accent-foreground: var(--color-soft-periwinkle-300);
+	--color-accent-soft: var(--color-soft-periwinkle-900);
 }
