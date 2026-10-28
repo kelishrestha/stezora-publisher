@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import AdminBreadcrumbs from './AdminBreadcrumbs';
+import LoadingImage from './LoadingImage';
 
 interface PostRecord {
 	id: string;
@@ -23,6 +24,12 @@ interface PostRecord {
 	createdAt: string;
 }
 
+interface PublicationOption {
+	id: string;
+	name: string;
+	slug: string;
+}
+
 const STATUS_LABELS: Record<string, string> = {
 	draft: 'Draft',
 	scheduled: 'Scheduled',
@@ -33,9 +40,9 @@ const STATUS_LABELS: Record<string, string> = {
 function statusClass(status: string): string {
 	switch (status) {
 		case 'published':
-			return 'bg-accent-soft text-accent-foreground';
+			// Published stands out in emerald rather than the theme accent.
+			return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300';
 		case 'scheduled':
-			return 'bg-muted text-muted-foreground';
 		case 'archived':
 			return 'bg-muted text-muted-foreground';
 		default:
@@ -44,7 +51,7 @@ function statusClass(status: string): string {
 }
 
 function formatDate(value: string | null): string {
-	if (!value) return '—';
+	if (!value) return 'Never';
 	const date = new Date(value);
 	if (Number.isNaN(date.getTime())) return value;
 	return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
@@ -55,8 +62,27 @@ function postIdFromPath(): string | undefined {
 	return match?.[1];
 }
 
+function PencilIcon({ className = 'size-4' }: { className?: string }) {
+	return (
+		<svg
+			aria-hidden="true"
+			xmlns="http://www.w3.org/2000/svg"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="2"
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			className={className}
+		>
+			<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+		</svg>
+	);
+}
+
 export default function PostView() {
 	const [post, setPost] = useState<PostRecord | null>(null);
+	const [publicationNames, setPublicationNames] = useState<Record<string, string>>({});
 	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
@@ -86,6 +112,20 @@ export default function PostView() {
 				if (!cancelled) setError(reason instanceof Error ? reason.message : 'Failed to load post.');
 			});
 
+		// Display names for the publication (the post carries its slug).
+		fetch('/api/admin/posts/meta', { credentials: 'same-origin' })
+			.then(async (response) => (response.ok ? ((await response.json()) as { data: { publications: PublicationOption[] } }) : null))
+			.then((body) => {
+				if (!cancelled && body) {
+					setPublicationNames(
+						Object.fromEntries(body.data.publications.flatMap((p) => [[p.slug, p.name], [p.id, p.name]]))
+					);
+				}
+			})
+			.catch(() => {
+				// The name map is cosmetic; the slug remains a usable fallback.
+			});
+
 		return () => {
 			cancelled = true;
 		};
@@ -99,19 +139,28 @@ export default function PostView() {
 		return <p className="text-sm text-muted-foreground">Loading…</p>;
 	}
 
+	const publicationName = publicationNames[post.publication] ?? publicationNames[post.publicationId] ?? post.publication;
+
 	return (
 		<div className="space-y-6">
 			<AdminBreadcrumbs items={[{ name: 'All posts', href: '/admin/posts' }, { name: post.title }]} />
 			<div className="rounded-md border border-border bg-surface shadow-sm p-6">
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<h2 className="font-serif text-2xl font-semibold text-foreground">{post.title}</h2>
-					<span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusClass(post.status)}`}>
-						{STATUS_LABELS[post.status] ?? post.status}
-					</span>
+					<div className="flex items-center gap-2">
+						<span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusClass(post.status)}`}>
+							{STATUS_LABELS[post.status] ?? post.status}
+						</span>
+						<a
+							href={`/admin/posts/${post.id}/edit`}
+							className="inline-flex items-center gap-1.5 rounded-md border border-accent bg-accent-soft px-3 py-1.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent hover:text-on-accent focus:outline-none focus:ring-2 focus:ring-accent"
+						>
+							<PencilIcon />
+							Edit post
+						</a>
+					</div>
 				</div>
-				<p className="mt-1 text-sm text-muted-foreground">
-					{post.publication} · /{post.slug}
-				</p>
+				<p className="mt-1 text-sm text-muted-foreground">{publicationName}</p>
 				{post.excerpt && <p className="mt-3 text-sm text-muted-foreground">{post.excerpt}</p>}
 			</div>
 
@@ -120,24 +169,35 @@ export default function PostView() {
 				<ul className="divide-y divide-border text-sm">
 					<li className="flex flex-wrap gap-x-4 gap-y-1 px-3 py-2">
 						<span className="w-40 shrink-0 text-muted-foreground">Publication</span>
-						<span className="min-w-0 break-words text-foreground">{post.publication}</span>
+						<span className="min-w-0 break-words text-foreground">{publicationName}</span>
 					</li>
 					<li className="flex flex-wrap gap-x-4 gap-y-1 px-3 py-2">
 						<span className="w-40 shrink-0 text-muted-foreground">Slug</span>
 						<span className="min-w-0 break-words text-foreground">/{post.slug}</span>
 					</li>
-					<li className="flex flex-wrap gap-x-4 gap-y-1 px-3 py-2">
+					<li className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-2">
 						<span className="w-40 shrink-0 text-muted-foreground">Tags</span>
-						<span className="min-w-0 break-words text-foreground">
-							{post.tags.length > 0 ? post.tags.map((tag) => `#${tag}`).join(' ') : '—'}
-						</span>
+						{post.tags.length > 0 ? (
+							<span className="flex min-w-0 flex-wrap gap-1.5">
+								{post.tags.map((tag) => (
+									<span
+										key={tag}
+										className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs whitespace-nowrap text-accent-foreground"
+									>
+										{tag}
+									</span>
+								))}
+							</span>
+						) : (
+							<span className="text-muted-foreground">None</span>
+						)}
 					</li>
 					<li className="flex flex-wrap gap-x-4 gap-y-1 px-3 py-2">
-						<span className="w-40 shrink-0 text-muted-foreground">Published</span>
+						<span className="w-40 shrink-0 text-muted-foreground">Published on</span>
 						<span className="min-w-0 break-words text-foreground">{formatDate(post.publishedAt)}</span>
 					</li>
 					<li className="flex flex-wrap gap-x-4 gap-y-1 px-3 py-2">
-						<span className="w-40 shrink-0 text-muted-foreground">Updated</span>
+						<span className="w-40 shrink-0 text-muted-foreground">Updated on</span>
 						<span className="min-w-0 break-words text-foreground">{formatDate(post.updatedAt)}</span>
 					</li>
 					{post.seoTitle && (
@@ -155,7 +215,7 @@ export default function PostView() {
 					{post.canonicalUrl && (
 						<li className="flex flex-wrap gap-x-4 gap-y-1 px-3 py-2">
 							<span className="w-40 shrink-0 text-muted-foreground">Canonical URL</span>
-							<a href={post.canonicalUrl} target="_blank" rel="noopener noreferrer" className="text-accent-foreground hover:underline">
+							<a href={post.canonicalUrl} target="_blank" rel="noopener noreferrer" className="min-w-0 break-all text-accent-foreground hover:underline">
 								{post.canonicalUrl}
 							</a>
 						</li>
@@ -163,34 +223,30 @@ export default function PostView() {
 				</ul>
 			</div>
 
-			<div className="rounded-md border border-border bg-surface shadow-sm">
-				<h3 className="border-b border-border px-5 py-4 text-sm font-semibold uppercase tracking-wide text-foreground">Content</h3>
-				{post.featuredImage && (
-					<img
-						src={post.featuredImage.url}
-						alt={post.featuredImage.filename}
-						className="mx-5 mt-6 max-h-80 rounded-lg border border-border object-cover"
+			{/* Content on the left, the featured image on the right. */}
+			<div className={post.featuredImage ? 'grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]' : ''}>
+				<div className="rounded-md border border-border bg-surface shadow-sm">
+					<h3 className="border-b border-border px-5 py-4 text-sm font-semibold uppercase tracking-wide text-foreground">Content</h3>
+					<article
+						className="prose prose-neutral max-w-none px-5 py-6 dark:prose-invert"
+						dangerouslySetInnerHTML={{ __html: post.content }}
 					/>
+				</div>
+				{post.featuredImage && (
+					<div className="self-start rounded-md border border-border bg-surface shadow-sm lg:sticky lg:top-24">
+						<h3 className="border-b border-border px-5 py-4 text-sm font-semibold uppercase tracking-wide text-foreground">
+							Featured image
+						</h3>
+						<div className="p-4">
+							<LoadingImage
+								src={post.featuredImage.url}
+								alt={post.featuredImage.filename}
+								wrapperClassName="w-full rounded-md border border-border"
+								imageClassName="w-full object-contain"
+							/>
+						</div>
+					</div>
 				)}
-				<article
-					className="prose prose-neutral max-w-none px-5 py-6 dark:prose-invert"
-					dangerouslySetInnerHTML={{ __html: post.content }}
-				/>
-			</div>
-
-			<div className="flex gap-3">
-				<a
-					href={`/admin/posts/${post.id}/edit`}
-					className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
-				>
-					Edit post
-				</a>
-				<a
-					href="/admin/posts"
-					className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground hover:bg-surface-elevated"
-				>
-					Back to posts
-				</a>
 			</div>
 		</div>
 	);
