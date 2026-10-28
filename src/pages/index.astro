@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Button from '../components/ui/Button.astro';
 import Container from '../components/ui/Container.astro';
 import { Icon } from 'astro-icon/components';
 const testimonials = [
@@ -45,33 +46,44 @@ const poemCollections = [
 ---
 
 <BaseLayout path="/">
-	<section class="relative flex min-h-[calc(100vh-4.5rem)] items-center overflow-hidden">
-		<div class="absolute inset-0 bg-gradient-to-br from-background via-background to-secondary/10"></div>
-		<div class="home-float absolute left-1/4 top-1/4 h-40 w-40 rounded-full bg-accent-soft/40 blur-3xl"></div>
-		<div class="home-float absolute bottom-1/4 right-1/4 h-56 w-56 rounded-full bg-primary/10 blur-3xl" style="animation-delay: -3s"></div>
-
-		<Container class="relative py-24 text-center">
-			<div class="mx-auto mb-8 flex max-w-xs items-center justify-center gap-4 text-muted-foreground">
-				<span class="h-px flex-1 bg-gradient-to-r from-transparent to-muted-foreground"></span>
-				<Icon name="lucide:sparkles" class="h-5 w-5" aria-hidden="true" />
-				<span class="h-px flex-1 bg-gradient-to-l from-transparent to-muted-foreground"></span>
+	<!-- HyperUI banner (left content, image right) on theme tokens. -->
+	<section class="relative overflow-hidden lg:grid lg:min-h-[calc(100vh-4rem)] lg:place-content-center">
+		<div class="home-float absolute left-1/4 top-1/4 h-40 w-40 rounded-full bg-accent-soft/40 blur-3xl" aria-hidden="true"></div>
+		<div class="home-float absolute bottom-1/4 right-1/4 h-56 w-56 rounded-full bg-primary/10 blur-3xl" style="animation-delay: -3s" aria-hidden="true"></div>
+		<div class="relative mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-24 md:grid md:grid-cols-2 md:items-center md:gap-8 lg:px-8 lg:py-24">
+			<div class="max-w-prose text-left">
+				<p class="home-fade-up text-xs font-medium uppercase tracking-[0.25em] text-muted-foreground">
+					Stezora &middot; Soul Writer &amp; Keeper of Stories
+				</p>
+				<h1 class="home-fade-up mt-4 font-serif text-4xl tracking-wide text-foreground sm:text-5xl" style="animation-delay: 120ms">
+					Words are the windows to the <strong class="font-serif text-accent-foreground">soul's</strong> deepest chambers
+				</h1>
+				<p class="home-fade-up mt-4 text-base text-pretty leading-relaxed text-muted-foreground sm:text-lg" style="animation-delay: 240ms">
+					Stezora writes soul-driven poems and stories of mystery, empathy, and transformation: three poetry
+					collections and two published books, written low and slow for readers who find themselves awake in the
+					quiet hours.
+				</p>
+				<div class="home-fade-up mt-6 flex flex-wrap gap-4" style="animation-delay: 360ms">
+					<Button href="/poetry-collections" variant="primary">Explore poetry collections</Button>
+					<Button href="/publications" variant="secondary">Browse books</Button>
+				</div>
 			</div>
-			<div class="relative mx-auto mb-6 h-28 w-28">
-				<img src="/stezora-hero-logo-light.png" alt="Stezora" class="home-fade-up absolute inset-0 h-28 w-28 object-contain dark:hidden" />
-				<img src="/stezora-hero-logo-dark.png" alt="" class="home-fade-up absolute inset-0 hidden h-28 w-28 object-contain dark:block" />
+			<div class="relative mx-auto mt-12 hidden h-96 w-full max-w-md md:mt-0 md:block" aria-hidden="true">
+				<img
+					src="/the-peach-fall-cover.jpg"
+					alt=""
+					loading="eager"
+					class="home-fade-up absolute left-4 top-6 w-56 -rotate-6 rounded-lg border border-border shadow-xl"
+				/>
+				<img
+					src="/the-warrior-must-rise-cover.png"
+					alt=""
+					loading="eager"
+					class="home-fade-up absolute right-4 top-0 w-56 rotate-6 rounded-lg border border-border shadow-xl"
+					style="animation-delay: 180ms"
+				/>
 			</div>
-			<p class="home-fade-up text-lg font-light tracking-wider text-muted-foreground">Soul Writer &amp; Keeper of Stories</p>
-			<h1 class="home-fade-up mt-2 font-serif text-5xl tracking-wide md:text-7xl" style="animation-delay: 120ms">Stezora</h1>
-			<p class="home-fade-up mx-auto mt-6 max-w-3xl font-serif text-xl italic leading-relaxed text-foreground/80 md:text-2xl" style="animation-delay: 240ms">Words are the windows to the soul's deepest chambers</p>
-			<a
-				href="#about"
-				class="home-fade-up mt-10 inline-flex items-center gap-3 text-xs font-medium uppercase tracking-[0.25em] text-muted-foreground transition-colors hover:text-accent-foreground"
-				style="animation-delay: 360ms"
-			>
-				<span>Scroll to explore</span>
-				<Icon name="lucide:arrow-down" class="h-4 w-4" aria-hidden="true" />
-			</a>
-		</Container>
+		</div>
 	</section>
 
 	<Container class="space-y-28 py-20 sm:py-28">
