@@ -1,4 +1,4 @@
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { createDb } from './client';
 import { media } from './schema';
 
@@ -6,22 +6,21 @@ export interface MediaRow {
 	id: string;
 	post_id: string;
 	publication_id: string;
-	r2_key: string;
+	// R2 uploads carry r2_key; Blogger-imported media is external (r2_key
+	// NULL) and identified by source_url until localized into R2.
+	r2_key: string | null;
+	source_url: string | null;
 	filename: string;
 	mime_type: string;
 	size: number;
 	created_at: string;
 }
 
-export interface NewMediaRow {
-	id: string;
-	post_id: string;
-	publication_id: string;
-	r2_key: string;
-	filename: string;
-	mime_type: string;
-	size: number;
-	created_at: string;
+export type NewMediaRow = MediaRow;
+
+/** Public URL for a media row: R2-served when localized, external otherwise. */
+export function mediaUrl(row: Pick<MediaRow, 'r2_key' | 'source_url'>): string {
+	return row.r2_key ? `/media/${row.r2_key}` : (row.source_url ?? '');
 }
 
 export class MediaRepository {
@@ -45,12 +44,15 @@ export class MediaRepository {
 		return rows[0] ?? null;
 	}
 
-	async list(limit = 50, offset = 0, publicationId?: string): Promise<MediaRow[]> {
-		const conditions = publicationId ? [eq(media.publication_id, publicationId)] : [];
+	async list(limit = 50, offset = 0, publicationId?: string, postId?: string): Promise<MediaRow[]> {
+		const conditions = [
+			...(publicationId ? [eq(media.publication_id, publicationId)] : []),
+			...(postId ? [eq(media.post_id, postId)] : []),
+		];
 		return this.db
 			.select()
 			.from(media)
-			.where(conditions.length ? conditions[0] : undefined)
+			.where(conditions.length ? and(...conditions) : undefined)
 			.orderBy(desc(media.created_at))
 			.limit(limit)
 			.offset(offset);

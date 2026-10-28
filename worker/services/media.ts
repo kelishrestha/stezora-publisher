@@ -54,6 +54,9 @@ export function mediaKey(filename: string): string {
 	return `${crypto.randomUUID()}-${filename}`;
 }
 
+/** Uploads always live in R2, so their r2_key is never null. */
+export type UploadedMediaRow = MediaRow & { r2_key: string };
+
 export interface PutMediaInput {
 	filename: string;
 	body: ArrayBuffer | ArrayBufferView | string | Blob;
@@ -68,7 +71,7 @@ export class MediaService {
 		private readonly repository: MediaRepository
 	) {}
 
-	async put(input: PutMediaInput): Promise<MediaRow> {
+	async put(input: PutMediaInput): Promise<UploadedMediaRow> {
 		const safeFilename = sanitizeFilename(input.filename);
 		if (!safeFilename) {
 			throw new ApiError(400, 'INVALID_FILENAME', 'The uploaded filename is invalid.');
@@ -94,11 +97,12 @@ export class MediaService {
 			httpMetadata: { contentType: input.contentType },
 		});
 
-		const row: MediaRow = {
+		const row: UploadedMediaRow = {
 			id: crypto.randomUUID(),
 			post_id: input.postId,
 			publication_id: input.publicationId,
 			r2_key: key,
+			source_url: null,
 			filename: safeFilename,
 			mime_type: input.contentType,
 			size,

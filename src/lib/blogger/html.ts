@@ -34,6 +34,67 @@ function isImageUrl(url: string): boolean {
 	return /\.(jpe?g|png|gif|webp|avif|svg|bmp)$/.test(path);
 }
 
+/**
+ * Blogger wraps every image in boilerplate: an anchor to the full-size file
+ * around the sized <img>, usually inside a separator div. These two
+ * transforms are inverses so content can be compiled from and back to
+ * Blogger's format: unwrap on import (clean <img> for the markdown
+ * pipeline, images registered as post media), wrap when mirroring a post
+ * back to Blogger.
+ */
+const BLOGGER_LINKED_IMAGE = /<a\b[^>]*href="([^"]+)"[^>]*>\s*(<img\b[^>]*\/?>)\s*<\/a>/gi;
+const BLOGGER_SEPARATOR_IMAGE =
+	/<div\b[^>]*class="separator"[^>]*>\s*<a\b[^>]*href="([^"]+)"[^>]*>\s*(<img\b[^>]*\/?>)\s*<\/a>\s*<\/div>/gi;
+
+function imgSrc(imgTag: string): string {
+	return /\bsrc="([^"]+)"/i.exec(imgTag)?.[1] ?? '';
+}
+
+function isBloggerImageUrl(url: string): boolean {
+	try {
+		const host = new URL(normalizeUrl(url)).hostname;
+		return host.endsWith('googleusercontent.com') || host.endsWith('bp.blogspot.com');
+	} catch {
+		return false;
+	}
+}
+
+export function unwrapBloggerImages(html: string): string {
+	const replaceLinked = (full: string, href: string, imgTag: string): string => {
+		const src = imgSrc(imgTag);
+		if (!isBloggerImageUrl(href) || !isBloggerImageUrl(src)) {
+			return full;
+		}
+		// Prefer the anchor target: it is the full-size variant.
+		return `<img src="${href}" />`;
+	};
+	// Consume the separator wrapper first so repeated wrap/unwrap cycles do
+	// not accumulate nested separator divs, then handle bare linked images.
+	return html.replace(BLOGGER_SEPARATOR_IMAGE, replaceLinked).replace(BLOGGER_LINKED_IMAGE, replaceLinked);
+}
+
+export function wrapImagesForBlogger(html: string): string {
+	return html.replace(/<img\b[^>]*\/?>/gi, (imgTag, offset: number) => {
+		const src = imgSrc(imgTag);
+		if (!src) {
+			return imgTag;
+		}
+		// Leave images alone when they are already wrapped in an anchor.
+		const before = html.slice(0, offset);
+		const lastAnchorOpen = before.lastIndexOf('<a');
+		const lastAnchorClose = before.lastIndexOf('</a>');
+		if (lastAnchorOpen > lastAnchorClose) {
+			return imgTag;
+		}
+		return (
+			'<div class="separator" style="clear: both; text-align: center;">' +
+			`<a href="${src}" style="margin-left: 1em; margin-right: 1em;">` +
+			`<img border="0" src="${src}" width="400" />` +
+			'</a></div>'
+		);
+	});
+}
+
 export function normalizeUrl(url: string): string {
 	if (!url) {
 		return '';

@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { createDb } from '../../db/client';
 import { posts } from '../../db/schema';
-import { MediaRepository } from '../../db/media';
+import { MediaRepository, mediaUrl } from '../../db/media';
 import { MediaService } from '../../services/media';
 import { ApiError } from '../../lib/errors';
 import { ok } from '../../lib/http';
@@ -17,10 +17,11 @@ const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 export const listAdminMedia: AuthenticatedHandler = async ({ env, request }) => {
 	const url = new URL(request.url);
 	const pagination = validatePagination(Object.fromEntries(url.searchParams.entries()));
-	// Optional publication scoping so the editor's media picker only offers
-	// uploads belonging to the post's publication (§55).
+	// Optional publication/post scoping so the editor's media panel only
+	// offers media belonging to the post (or its publication, §55).
 	const publicationId = url.searchParams.get('publicationId') ?? undefined;
-	const rows = await new MediaRepository(env.DB).list(pagination.limit, pagination.offset, publicationId);
+	const postId = url.searchParams.get('postId') ?? undefined;
+	const rows = await new MediaRepository(env.DB).list(pagination.limit, pagination.offset, publicationId, postId);
 	const items = rows.map((row) => ({
 		id: row.id,
 		postId: row.post_id,
@@ -28,7 +29,8 @@ export const listAdminMedia: AuthenticatedHandler = async ({ env, request }) => 
 		filename: row.filename,
 		mimeType: row.mime_type,
 		size: row.size,
-		url: `/media/${row.r2_key}`,
+		url: mediaUrl(row),
+		external: row.r2_key === null,
 		createdAt: row.created_at,
 	}));
 	return ok({ media: items, limit: pagination.limit, offset: pagination.offset });
@@ -90,7 +92,8 @@ export const uploadMedia: AuthenticatedHandler = async ({ env, request }) => {
 				filename: row.filename,
 				mimeType: row.mime_type,
 				size: row.size,
-				url: `/media/${row.r2_key}`,
+				url: mediaUrl(row),
+				external: row.r2_key === null,
 				createdAt: row.created_at,
 			},
 		},

@@ -2,6 +2,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { bloggerBlogIdForPublication } from '../../src/lib/blogger/config';
 import { sanitizeContentHtml } from '../../src/lib/blogger/sanitize';
+import { unwrapBloggerImages } from '../../src/lib/blogger/html';
 import { htmlToMarkdown } from '../../src/lib/blogger/to-markdown';
 import { readExistingPosts } from '../../src/lib/blogger/storage';
 import type { PostRecord } from '../../src/lib/blogger/types';
@@ -48,6 +49,15 @@ const POST_UPSERT_COLUMNS = [
 	'blogger_blog_id',
 	'blogger_post_id',
 ];
+
+function stableHash(value: string): string {
+	let hash = 2166136261;
+	for (let i = 0; i < value.length; i += 1) {
+		hash ^= value.charCodeAt(i);
+		hash = Math.imul(hash, 16777619);
+	}
+	return (hash >>> 0).toString(36);
+}
 
 export function buildBackfillSql(records: BackfillInput[], options: BackfillOptions = {}): string {
 	const now = options.now ?? new Date().toISOString();
@@ -107,7 +117,12 @@ export function buildBackfillSql(records: BackfillInput[], options: BackfillOpti
 			);
 		}
 
-		const sanitizedContent = sanitizeContentHtml(record.content);
+		// Segregate Blogger's anchor-wrapped images: the content keeps a plain
+		// <img> (clean markdown after conversion) and each image becomes a
+		// media row below. wrapImagesForBlogger() restores Blogger's format
+		// when a post is mirrored back.
+		const sanitizedContent = unwrapBloggerImages(sanitizeContentHtml(record.content));
+		const imageUrls = [...new Set(Array.from(sanitizedContent.matchAll(/<img\b[^>]*\ssrc="([^"]+)"/gi), (m) => m[1]))];
 		const conflictTarget = hasBloggerId
 			? 'ON CONFLICT (blogger_blog_id, blogger_post_id) DO UPDATE SET\n  '
 			: 'ON CONFLICT (publication_id, slug) DO UPDATE SET\n  ';
@@ -136,6 +151,32 @@ export function buildBackfillSql(records: BackfillInput[], options: BackfillOpti
 				conflictTarget + sqlUpsertSet(POST_UPSERT_COLUMNS) + ';',
 			].join('\n')
 		);
+
+		// One media row per embedded Blogger image (r2_key stays NULL until the
+		// image is localized into R2). Deterministic ids and the
+		// (post_id, source_url) unique index keep re-runs idempotent.
+		for (const url of imageUrls) {
+			const mediaId = `m-${postId}-${stableHash(url)}`;
+			lines.push(
+				[
+					'INSERT INTO media (id, post_id, publication_id, r2_key, source_url, filename, mime_type, size, created_at)',
+					[
+						'VALUES (',
+						sqlString(mediaId),
+						`, ${sqlString(postId)}`,
+						`, ${sqlString(publicationId)}`,
+						', NULL',
+						`, ${sqlString(url)}`,
+						`, ${sqlString(`blogger-${stableHash(url)}`)}`,
+						", 'application/octet-stream'",
+						', 0',
+						`, ${sqlString(now)}`,
+						')',
+					].join(''),
+					'ON CONFLICT (post_id, source_url) DO NOTHING;',
+				].join('\n')
+			);
+		}
 
 		for (const tag of record.tags) {
 			const tagSlug = slugify(tag);

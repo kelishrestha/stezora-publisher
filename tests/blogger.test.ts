@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { sanitizeBloggerHtml, extractImageUrls, normalizeUrl, slugFromUrl } from '../src/lib/blogger/html';
+import {
+	sanitizeBloggerHtml,
+	extractImageUrls,
+	normalizeUrl,
+	slugFromUrl,
+	unwrapBloggerImages,
+	wrapImagesForBlogger,
+} from '../src/lib/blogger/html';
 import { makeUniqueSlug, mapPost } from '../src/lib/blogger/mapper';
 import { postFilename } from '../src/lib/blogger/storage';
 import type { BloggerPostDto } from '../src/lib/blogger/types';
@@ -55,6 +62,36 @@ describe('blogger mapper', () => {
 		const longContent = `<p>${'word '.repeat(200)}</p>`;
 		const { record } = mapPost(dto({ content: longContent }), { publicationSlug: 'a' });
 		expect(record.excerpt).toBe('');
+	});
+});
+
+describe('blogger image transforms', () => {
+	const IMG = 'https://blogger.googleusercontent.com/img/a/AVvXsEji-example';
+
+	it('unwraps Blogger anchor-wrapped images to a plain img', () => {
+		const html = `<div><a href="${IMG}" rel="noopener noreferrer"><img src="${IMG}" width="400" /></a></div>text`;
+		const unwrapped = unwrapBloggerImages(html);
+		expect(unwrapped).toContain(`<img src="${IMG}" />`);
+		expect(unwrapped).not.toContain('<a href');
+	});
+
+	it('leaves non-Blogger linked images untouched', () => {
+		const html = '<a href="https://example.com/page"><img src="https://example.com/pic.png" /></a>';
+		expect(unwrapBloggerImages(html)).toBe(html);
+	});
+
+	it('wraps plain images into Blogger format and round-trips', () => {
+		const plain = `<p>line</p><img src="${IMG}" /><p>more</p>`;
+		const wrapped = wrapImagesForBlogger(plain);
+		expect(wrapped).toContain('class="separator"');
+		expect(wrapped).toContain(`<a href="${IMG}"`);
+		expect(unwrapBloggerImages(wrapped)).toContain(`<img src="${IMG}" />`);
+		expect(unwrapBloggerImages(wrapped)).not.toContain('separator');
+	});
+
+	it('does not double-wrap images already inside an anchor', () => {
+		const wrapped = wrapImagesForBlogger(`<a href="${IMG}"><img src="${IMG}" /></a>`);
+		expect(wrapped.match(/<a /g)?.length).toBe(1);
 	});
 });
 

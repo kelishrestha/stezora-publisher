@@ -85,7 +85,10 @@ export const media = sqliteTable(
 		publication_id: text('publication_id')
 			.notNull()
 			.references(() => publications.id),
-		r2_key: text('r2_key').notNull(),
+		// R2-hosted uploads carry an r2_key; media imported from Blogger is
+		// external (r2_key NULL) and identified by source_url until localized.
+		r2_key: text('r2_key'),
+		source_url: text('source_url'),
 		filename: text('filename').notNull(),
 		mime_type: text('mime_type').notNull(),
 		size: integer('size').notNull(),
@@ -93,7 +96,8 @@ export const media = sqliteTable(
 	},
 	(table) => [
 		uniqueIndex('media_r2_key_unique').on(table.r2_key),
-		uniqueIndex('media_post_id_unique').on(table.post_id),
+		uniqueIndex('media_post_source_unique').on(table.post_id, table.source_url),
+		index('idx_media_post').on(table.post_id),
 		index('idx_media_publication').on(table.publication_id),
 	]
 );

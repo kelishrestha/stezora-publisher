@@ -57,6 +57,9 @@ interface MediaItem {
 	mimeType: string;
 	size: number;
 	url: string;
+	// True for Blogger-sourced media that still lives on Blogger's CDN
+	// (no R2 object yet).
+	external?: boolean;
 	createdAt: string;
 }
 
@@ -128,14 +131,13 @@ export default function PostEditor({ postId }: PostEditorProps) {
 	const [publishedAt, setPublishedAt] = useState('');
 	const [seoTitle, setSeoTitle] = useState('');
 	const [seoDescription, setSeoDescription] = useState('');
-	// Media is post-owned (§28): one attachment per post, optionally marked as
-	// the featured image. The attachment is fetched from the media list.
-	const [attachedMedia, setAttachedMedia] = useState<MediaItem | null>(null);
+	// Media is post-owned: uploads plus Blogger-sourced images segregated out
+	// of imported content. Any item can be marked as the featured image.
+	const [postMedia, setPostMedia] = useState<MediaItem[]>([]);
 	const [featuredImageId, setFeaturedImageId] = useState<string | null>(null);
 	const [uploadingMedia, setUploadingMedia] = useState(false);
-	// Images embedded in the post content (imported Blogger posts carry their
-	// images as <img> tags in the content HTML, not as media attachments).
-	const [contentImages, setContentImages] = useState<string[]>([]);
+	// Full-size image preview shown in a modal overlay.
+	const [previewImage, setPreviewImage] = useState<MediaItem | null>(null);
 
 	const tagOptions = useMemo(
 		() => meta?.tags.filter((tag) => tag.publication_id === publicationId) ?? [],
@@ -171,14 +173,12 @@ export default function PostEditor({ postId }: PostEditorProps) {
 			setSeoTitle(post.seoTitle ?? '');
 			setSeoDescription(post.seoDescription ?? '');
 			setFeaturedImageId(post.featuredImageId);
-			const embeddedImages = Array.from(post.content.matchAll(/<img[^>]*\ssrc="([^"]+)"/gi), (m) => m[1]);
-			setContentImages([...new Set(embeddedImages)]);
 			if (!post.contentMarkdown && post.content) {
 				setNotice(
 					'This post has HTML content but no markdown source (run pnpm db:backfill to generate it). Saving now would replace the published content with the content box below.'
 				);
 			}
-			await loadAttachment(post.publicationId, post.id);
+			await loadMedia(post.id);
 		} catch (reason) {
 			setError(reason instanceof Error ? reason.message : 'Failed to load post.');
 		} finally {
@@ -195,6 +195,15 @@ export default function PostEditor({ postId }: PostEditorProps) {
 	useEffect(() => {
 		void load();
 	}, [load]);
+
+	useEffect(() => {
+		if (!previewImage) return;
+		const onKeyDown = (event: KeyboardEvent) => {
+			if (event.key === 'Escape') setPreviewImage(null);
+		};
+		window.addEventListener('keydown', onKeyDown);
+		return () => window.removeEventListener('keydown', onKeyDown);
+	}, [previewImage]);
 
 	function deriveSlug() {
 		setSlug(slugify(title));
@@ -259,19 +268,16 @@ export default function PostEditor({ postId }: PostEditorProps) {
 		}
 	}
 
-	/**
-	 * Loads this post's single attached media row (§28: one per post) by
-	 * scanning the publication-scoped media list.
-	 */
-	async function loadAttachment(publicationIdOfPost: string, postIdOfPost: string) {
+	/** Loads every media row belonging to this post (uploads and Blogger-sourced). */
+	async function loadMedia(postIdOfPost: string) {
 		try {
 			const result = await json<{ media: MediaItem[] }>(
-				`/api/admin/media?publicationId=${encodeURIComponent(publicationIdOfPost)}&limit=100`
+				`/api/admin/media?postId=${encodeURIComponent(postIdOfPost)}&limit=100`
 			);
-			setAttachedMedia(result.media.find((item) => item.postId === postIdOfPost) ?? null);
+			setPostMedia(result.media);
 		} catch {
-			// Attachment display is best-effort; saving/editing still works.
-			setAttachedMedia(null);
+			// Media display is best-effort; saving/editing still works.
+			setPostMedia([]);
 		}
 	}
 
@@ -288,7 +294,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 				method: 'POST',
 				body: form,
 			});
-			setAttachedMedia(result.media);
+			setPostMedia((previous) => [result.media, ...previous]);
 			// A fresh upload becomes the featured image candidate; it persists
 			// with the next Save (PLAN P4.6.5).
 			setFeaturedImageId(result.media.id);
@@ -300,13 +306,13 @@ export default function PostEditor({ postId }: PostEditorProps) {
 		}
 	}
 
-	function insertIntoContent(snippet: string) {
+	function insertIntoContent(item: MediaItem) {
 		const el = document.getElementById('post-content') as HTMLTextAreaElement | null;
 		const start = el?.selectionStart ?? contentMarkdown.length;
 		const end = el?.selectionEnd ?? contentMarkdown.length;
-		const alt = attachedMedia ? attachedMedia.filename.replace(/\.[a-z0-9]+$/i, '') : 'image';
-		const next = `${contentMarkdown.slice(0, start)}${snippet.replace('{alt}', alt)}${contentMarkdown.slice(end)}`;
-		setContentMarkdown(next);
+		const alt = item.filename.replace(/\.[a-z0-9]+$/i, '');
+		const snippet = `\n![${alt}](${item.url})\n`;
+		setContentMarkdown(`${contentMarkdown.slice(0, start)}${snippet}${contentMarkdown.slice(end)}`);
 	}
 
 	if (loading) {
@@ -319,6 +325,38 @@ export default function PostEditor({ postId }: PostEditorProps) {
 
 	return (
 		<div className="space-y-6">
+			{previewImage && (
+				<div
+					className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6 backdrop-blur-sm"
+					role="dialog"
+					aria-modal="true"
+					onClick={() => setPreviewImage(null)}
+				>
+					<figure
+						className="max-h-full max-w-3xl rounded-lg border border-border bg-surface p-3 shadow-lg"
+						onClick={(event) => event.stopPropagation()}
+					>
+						<img
+							src={previewImage.url}
+							alt={previewImage.filename}
+							className="max-h-[75vh] w-auto rounded-md"
+						/>
+						<figcaption className="mt-2 flex items-center justify-between gap-4 text-xs text-muted-foreground">
+							<span>
+								{previewImage.filename}
+								{previewImage.external ? ' · Blogger-hosted' : ''}
+							</span>
+							<button
+								type="button"
+								onClick={() => setPreviewImage(null)}
+								className="rounded-md border border-border bg-surface px-3 py-1.5 text-foreground hover:bg-surface-elevated"
+							>
+								Close
+							</button>
+						</figcaption>
+					</figure>
+				</div>
+			)}
 			{error && (
 				<p className="rounded-lg bg-accent-soft px-4 py-3 text-sm text-accent-foreground" role="alert">
 					{error}
@@ -450,49 +488,59 @@ export default function PostEditor({ postId }: PostEditorProps) {
 								<p className="mt-1 text-sm text-muted-foreground">
 									Save the post first — media is attached to a saved post.
 								</p>
-							) : attachedMedia ? (
-								<div className="mt-2 space-y-2">
-									<img
-										src={attachedMedia.url}
-										alt={attachedMedia.filename}
-										className="max-h-40 w-full rounded-md border border-border object-cover"
-									/>
-									<p className="text-xs text-muted-foreground">
-										{attachedMedia.filename} · {Math.round(attachedMedia.size / 1024)} KB ·{' '}
-										{attachedMedia.mimeType}
-									</p>
-									<div className="flex flex-wrap gap-2">
-										{featuredImageId === attachedMedia.id ? (
-											<button
-												type="button"
-												onClick={() => setFeaturedImageId(null)}
-												className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-foreground hover:bg-surface-elevated"
-											>
-												Remove as featured
-											</button>
-										) : (
-											<button
-												type="button"
-												onClick={() => setFeaturedImageId(attachedMedia.id)}
-												className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-on-accent hover:opacity-90"
-											>
-												Use as featured image
-											</button>
-										)}
-										<button
-											type="button"
-											onClick={() =>
-												insertIntoContent(`\n![{alt}](${attachedMedia.url})\n`)
-											}
-											className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-foreground hover:bg-surface-elevated"
-										>
-											Insert into content
-										</button>
-									</div>
-									<p className="text-xs text-muted-foreground">Featured image applies on save.</p>
-								</div>
 							) : (
-								<div className="mt-2 space-y-2">
+								<div className="mt-2 space-y-3">
+									{postMedia.map((item) => (
+										<div key={item.id} className="rounded-md border border-border p-2">
+											<button
+												type="button"
+												onClick={() => setPreviewImage(item)}
+												title="Click to preview"
+												className="block w-full"
+											>
+												<img
+													src={item.url}
+													alt={item.filename}
+													loading="lazy"
+													className="max-h-32 w-full rounded object-cover"
+												/>
+											</button>
+											<p className="mt-1 text-xs text-muted-foreground">
+												{item.filename}
+												{item.size > 0 ? ` · ${Math.round(item.size / 1024)} KB` : ''}
+												{item.external ? ' · Blogger-hosted' : ''}
+											</p>
+											<div className="mt-1 flex flex-wrap gap-2">
+												{featuredImageId === item.id ? (
+													<button
+														type="button"
+														onClick={() => setFeaturedImageId(null)}
+														className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-foreground hover:bg-surface-elevated"
+													>
+														Remove as featured
+													</button>
+												) : (
+													<button
+														type="button"
+														onClick={() => setFeaturedImageId(item.id)}
+														className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-on-accent hover:opacity-90"
+													>
+														Use as featured image
+													</button>
+												)}
+												<button
+													type="button"
+													onClick={() => insertIntoContent(item)}
+													className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-foreground hover:bg-surface-elevated"
+												>
+													Insert into content
+												</button>
+											</div>
+										</div>
+									))}
+									{postMedia.length > 0 && (
+										<p className="text-xs text-muted-foreground">Featured image applies on save.</p>
+									)}
 									<input
 										type="file"
 										accept="image/*,.pdf"
@@ -505,26 +553,6 @@ export default function PostEditor({ postId }: PostEditorProps) {
 										className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-accent-soft file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-accent-foreground hover:file:opacity-80"
 									/>
 									{uploadingMedia && <p className="text-xs text-muted-foreground">Uploading…</p>}
-								</div>
-							)}
-							{contentImages.length > 0 && (
-								<div className="mt-4">
-									<p className="text-sm font-medium text-foreground">Images in content</p>
-									<p className="mt-1 text-xs text-muted-foreground">
-										Embedded in the post body{contentImages.some((src) => !src.startsWith('/')) ? ', hosted externally (Blogger)' : ''}.
-									</p>
-									<div className="mt-2 grid grid-cols-3 gap-2">
-										{contentImages.map((src) => (
-											<a key={src} href={src} target="_blank" rel="noreferrer" title={src}>
-												<img
-													src={src}
-													alt=""
-													loading="lazy"
-													className="h-20 w-full rounded-md border border-border object-cover"
-												/>
-											</a>
-										))}
-									</div>
 								</div>
 							)}
 						</div>

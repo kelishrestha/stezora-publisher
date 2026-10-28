@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, inArray, ne } from 'drizzle-orm';
 import { createDb, type Db } from './client';
 import { bloggerSync, posts, postTags, publications, tags, media } from './schema';
+import { mediaUrl } from './media';
 
 export type PostStatus = 'draft' | 'scheduled' | 'published' | 'archived';
 
@@ -258,7 +259,8 @@ export class PostRepository {
 			.select({ r2_key: media.r2_key })
 			.from(media)
 			.where(eq(media.post_id, id));
-		return rows.map((row) => row.r2_key);
+		// External (Blogger-sourced) media rows have no R2 object to delete.
+		return rows.map((row) => row.r2_key).filter((key): key is string => key !== null);
 	}
 
 	async setStatus(id: string, status: PostStatus, now: string): Promise<AdminPost> {
@@ -336,6 +338,7 @@ export class PostRepository {
 					id: media.id,
 					post_id: media.post_id,
 					r2_key: media.r2_key,
+					source_url: media.source_url,
 					filename: media.filename,
 					mime_type: media.mime_type,
 				})
@@ -344,7 +347,7 @@ export class PostRepository {
 			for (const row of mediaRows) {
 				imagesByPost.set(row.post_id, {
 					id: row.id,
-					url: `/media/${row.r2_key}`,
+					url: mediaUrl(row),
 					filename: row.filename,
 					mimeType: row.mime_type,
 				});
