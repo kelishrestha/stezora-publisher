@@ -154,10 +154,17 @@ const poemCollections = [
 							<div class="flex items-center gap-2 text-yellow-500"><span class="flex" aria-label={`${book.rating} out of 5 stars`}>{[1, 2, 3, 4, 5].map(() => <Icon name="lucide:star" class="h-4 w-4 fill-current" aria-hidden="true" />)}</span><span class="text-sm text-foreground">{book.rating} <span class="text-muted-foreground">({book.reviews} reviews)</span></span></div>
 							<div class="flex items-center justify-between border-t border-border pt-4">
 								<span class="font-serif text-2xl">{book.price}</span>
-								<a href={book.href} class="inline-flex items-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm text-background transition-transform duration-300 hover:scale-105">
-									<Icon name="lucide:book-heart" class="h-4 w-4" aria-hidden="true" />
-									Purchase Book 
-								</a>
+								<span class="flex items-center gap-3">
+									<button
+										type="button"
+										disabled
+										class="inline-flex cursor-not-allowed items-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm text-background opacity-50"
+									>
+										<Icon name="lucide:book-heart" class="h-4 w-4" aria-hidden="true" />
+										Purchase Book
+									</button>
+									<span class="text-xs italic text-muted-foreground">Coming soon</span>
+								</span>
 							</div>
 						</div>
 					</article>
