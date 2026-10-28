@@ -1,9 +1,22 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import PublicationCard from '../../components/publication/PublicationCard.astro';
-import { PUBLICATIONS_PATH, getPublications } from '../../lib/publications';
+import PublicationShowcase from '../../components/publication/PublicationShowcase';
+import { getPostsForPublication } from '../../lib/publications/collections';
+import { PUBLICATIONS_PATH, getPublications, publicationPath } from '../../lib/publications';
 
-const publications = getPublications();
+const publications = await Promise.all(
+	getPublications().map(async (publication) => {
+		const posts = await getPostsForPublication(publication.slug);
+		return {
+			name: publication.name,
+			slug: publication.slug,
+			description: publication.description,
+			accent: publication.accent,
+			postCount: posts.length,
+			postTitles: posts.slice(0, 8).map((post) => post.data.title),
+		};
+	})
+);
 ---
 
 <BaseLayout title="Publications" description="All publications on this site." path={PUBLICATIONS_PATH}>
@@ -12,13 +25,26 @@ const publications = getPublications();
 			<p class="text-xs font-medium uppercase tracking-widest text-muted-foreground">All Publications</p>
 			<h1 class="mt-2 font-serif text-3xl font-bold tracking-tight sm:text-4xl">Browse publications</h1>
 			<p class="mt-3 max-w-2xl text-muted-foreground">
-				Three distinct voices, one shared home. Choose a publication to read its latest writing.
+				Three distinct voices, one shared home. Pick a book from the shelf to read its latest writing.
 			</p>
 		</header>
-		<div class="mt-10 grid gap-6 sm:grid-cols-3">
-			{publications.map((publication) => (
-				<PublicationCard publication={publication} />
-			))}
+		<div class="mt-10">
+			<PublicationShowcase client:load publications={publications} />
 		</div>
+		<!-- Crawlable, no-JS fallback: the shelf is a canvas. -->
+		<nav aria-label="Publications" class="mt-10">
+			<ul class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
+				{publications.map((publication) => (
+					<li>
+						<a
+							href={publicationPath(publication.slug)}
+							class="text-muted-foreground transition-colors hover:text-accent-foreground"
+						>
+							{publication.name} ({publication.postCount} poems)
+						</a>
+					</li>
+				))}
+			</ul>
+		</nav>
 	</div>
 </BaseLayout>
