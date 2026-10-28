@@ -47,6 +47,23 @@ function formatDate(value: string): string {
 	return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
+/** The month a post counts under: its publish date, else its last update. */
+function postMonthKey(post: ListPost): string | null {
+	const value = post.publishedAt ?? post.updatedAt;
+	if (!value) return null;
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return null;
+	return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function monthLabel(key: string): string {
+	const [year, month] = key.split('-').map(Number);
+	return new Date(year, month - 1, 1).toLocaleDateString(undefined, { year: 'numeric', month: 'long' });
+}
+
+const selectClass =
+	'mt-0.5 w-full rounded border-border bg-background text-foreground shadow-sm sm:text-sm focus:border-accent focus:ring-accent';
+
 interface IconProps {
 	className?: string;
 }
@@ -161,27 +178,41 @@ function PencilIcon({ className = 'size-4' }: IconProps) {
 
 export default function PostList() {
 	const [posts, setPosts] = useState<ListPost[] | null>(null);
+	const [publications, setPublications] = useState<PublicationOption[]>([]);
 	const [publicationNames, setPublicationNames] = useState<Record<string, string>>({});
 	const [filter, setFilter] = useState('all');
+	const [publicationFilter, setPublicationFilter] = useState('all');
+	const [monthFilter, setMonthFilter] = useState('all');
+	const [page, setPage] = useState(1);
 	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
 		let cancelled = false;
 
 		async function load() {
-			const posts = await fetch('/api/admin/posts', { credentials: 'same-origin' }).then(async (response) => {
-				if (response.status === 401) {
-					window.location.href = '/admin/login';
-					return null;
-				}
-				if (!response.ok) {
-					throw new Error(`Failed to load posts (HTTP ${response.status}).`);
-				}
-				const body = (await response.json()) as { data: { posts: ListPost[] } };
-				return body.data.posts;
-			});
-			if (cancelled || !posts) return;
-			setPosts(posts);
+			// The API caps pages at 100 rows; fetch them all so the filters,
+			// tab counts, and client-side pagination see every post.
+			const all: ListPost[] = [];
+			const pageSize = 100;
+			for (let offset = 0; ; offset += pageSize) {
+				const page = await fetch(`/api/admin/posts?limit=${pageSize}&offset=${offset}`, {
+					credentials: 'same-origin',
+				}).then(async (response) => {
+					if (response.status === 401) {
+						window.location.href = '/admin/login';
+						return null;
+					}
+					if (!response.ok) {
+						throw new Error(`Failed to load posts (HTTP ${response.status}).`);
+					}
+					const body = (await response.json()) as { data: { posts: ListPost[] } };
+					return body.data.posts;
+				});
+				if (cancelled || !page) return;
+				all.push(...page);
+				if (page.length < pageSize) break;
+			}
+			setPosts(all);
 
 			// Display names for publication badges; slugs are the row identity.
 			try {
@@ -189,6 +220,7 @@ export default function PostList() {
 				if (response.ok) {
 					const body = (await response.json()) as { data: { publications: PublicationOption[] } };
 					if (!cancelled) {
+						setPublications(body.data.publications);
 						setPublicationNames(
 							Object.fromEntries(body.data.publications.flatMap((p) => [[p.slug, p.name], [p.id, p.name]]))
 						);
@@ -216,15 +248,89 @@ export default function PostList() {
 		return <p className="text-sm text-muted-foreground">Loading…</p>;
 	}
 
-	const counts: Record<string, number> = { all: posts.length };
+	// Publication and month narrow the pool; the status tabs count within it.
+	const pool = posts.filter(
+		(post) =>
+			(publicationFilter === 'all' || post.publication === publicationFilter) &&
+			(monthFilter === 'all' || postMonthKey(post) === monthFilter)
+	);
+
+	const counts: Record<string, number> = { all: pool.length };
 	for (const tab of TABS.slice(1)) {
-		counts[tab] = posts.filter((post) => post.status === tab).length;
+		counts[tab] = pool.filter((post) => post.status === tab).length;
 	}
 
-	const visible = filter === 'all' ? posts : posts.filter((post) => post.status === filter);
+	const months = [...new Set(posts.map(postMonthKey).filter((key): key is string => key !== null))].sort().reverse();
+
+	const visible = filter === 'all' ? pool : pool.filter((post) => post.status === filter);
+
+	const PAGE_SIZE = 10;
+	const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+	const currentPage = Math.min(page, totalPages);
+	const pageItems = visible.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
 	return (
 		<div className="space-y-4">
+			{/* Filters (HyperUI selects): publication, status, month. */}
+			<div className="grid gap-4 sm:grid-cols-3">
+				<label htmlFor="filter-publication">
+					<span className="text-sm font-medium text-foreground">Publication</span>
+					<select
+						id="filter-publication"
+						value={publicationFilter}
+						onChange={(event) => {
+							setPublicationFilter(event.target.value);
+							setPage(1);
+						}}
+						className={selectClass}
+					>
+						<option value="all">All publications</option>
+						{publications.map((publication) => (
+							<option key={publication.id} value={publication.slug}>
+								{publication.name}
+							</option>
+						))}
+					</select>
+				</label>
+				<label htmlFor="filter-status">
+					<span className="text-sm font-medium text-foreground">Status</span>
+					<select
+						id="filter-status"
+						value={filter}
+						onChange={(event) => {
+							setFilter(event.target.value);
+							setPage(1);
+						}}
+						className={selectClass}
+					>
+						{TABS.map((tab) => (
+							<option key={tab} value={tab}>
+								{tab === 'all' ? 'All statuses' : TAB_LABELS[tab]}
+							</option>
+						))}
+					</select>
+				</label>
+				<label htmlFor="filter-month">
+					<span className="text-sm font-medium text-foreground">Month</span>
+					<select
+						id="filter-month"
+						value={monthFilter}
+						onChange={(event) => {
+							setMonthFilter(event.target.value);
+							setPage(1);
+						}}
+						className={selectClass}
+					>
+						<option value="all">All months</option>
+						{months.map((month) => (
+							<option key={month} value={month}>
+								{monthLabel(month)}
+							</option>
+						))}
+					</select>
+				</label>
+			</div>
+
 			{/* HyperUI tabs (border-bottom style) with icons and count badges. */}
 			<div className="border-b border-border">
 				<nav aria-label="Post status" className="-mb-px flex flex-wrap gap-4 overflow-x-auto sm:gap-6">
@@ -234,7 +340,10 @@ export default function PostList() {
 							<button
 								key={tab}
 								type="button"
-								onClick={() => setFilter(tab)}
+								onClick={() => {
+									setFilter(tab);
+									setPage(1);
+								}}
 								className={`flex shrink-0 items-center gap-2 border-b-2 px-1 pb-3 text-sm font-medium transition-colors ${
 									active
 										? 'border-accent text-accent-foreground'
@@ -262,7 +371,7 @@ export default function PostList() {
 					<p className="px-5 py-8 text-sm text-muted-foreground">No posts{filter === 'all' ? '' : ` (${filter})`} yet.</p>
 				) : (
 					<ul className="divide-y divide-border">
-						{visible.map((post) => (
+						{pageItems.map((post) => (
 							<li
 								key={post.id}
 								className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 hover:bg-surface-elevated"
@@ -318,6 +427,80 @@ export default function PostList() {
 					</ul>
 				)}
 			</div>
+
+			{/* HyperUI pagination on theme tokens. */}
+			{totalPages > 1 && (
+				<nav aria-label="Pagination" className="flex items-center justify-between gap-4">
+					<p className="text-xs text-muted-foreground">
+						Showing {(currentPage - 1) * PAGE_SIZE + 1} to {Math.min(currentPage * PAGE_SIZE, visible.length)} of{' '}
+						{visible.length} posts
+					</p>
+					<ul className="flex items-center gap-1">
+						<li>
+							<button
+								type="button"
+								onClick={() => setPage(Math.max(1, currentPage - 1))}
+								disabled={currentPage === 1}
+								aria-label="Previous page"
+								className="grid size-8 place-content-center rounded border border-border bg-surface text-foreground transition-colors hover:bg-surface-elevated disabled:pointer-events-none disabled:opacity-50"
+							>
+								<svg
+									aria-hidden="true"
+									xmlns="http://www.w3.org/2000/svg"
+									className="size-4 rtl:rotate-180"
+									viewBox="0 0 20 20"
+									fill="currentColor"
+								>
+									<path
+										fillRule="evenodd"
+										d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+										clipRule="evenodd"
+									/>
+								</svg>
+							</button>
+						</li>
+						{Array.from({ length: totalPages }, (_, index) => index + 1).map((number) => (
+							<li key={number}>
+								<button
+									type="button"
+									onClick={() => setPage(number)}
+									aria-current={number === currentPage ? 'page' : undefined}
+									className={`size-8 rounded border text-center text-sm font-medium transition-colors ${
+										number === currentPage
+											? 'border-accent bg-accent text-on-accent'
+											: 'border-border bg-surface text-foreground hover:bg-surface-elevated'
+									}`}
+								>
+									{number}
+								</button>
+							</li>
+						))}
+						<li>
+							<button
+								type="button"
+								onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
+								disabled={currentPage === totalPages}
+								aria-label="Next page"
+								className="grid size-8 place-content-center rounded border border-border bg-surface text-foreground transition-colors hover:bg-surface-elevated disabled:pointer-events-none disabled:opacity-50"
+							>
+								<svg
+									aria-hidden="true"
+									xmlns="http://www.w3.org/2000/svg"
+									className="size-4 rtl:rotate-180"
+									viewBox="0 0 20 20"
+									fill="currentColor"
+								>
+									<path
+										fillRule="evenodd"
+										d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+										clipRule="evenodd"
+									/>
+								</svg>
+							</button>
+						</li>
+					</ul>
+				</nav>
+			)}
 		</div>
 	);
 }
