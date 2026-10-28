@@ -223,28 +223,20 @@ export default function PostView() {
 				</ul>
 			</div>
 
-			{/* Content on the left, the featured image on the right. */}
-			<div className={post.featuredImage ? 'grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]' : ''}>
-				<div className="rounded-md border border-border bg-surface shadow-sm">
-					<h3 className="border-b border-border px-5 py-4 text-sm font-semibold uppercase tracking-wide text-foreground">Content</h3>
-					<article
-						className="prose prose-neutral max-w-none px-5 py-6 dark:prose-invert"
-						dangerouslySetInnerHTML={{ __html: post.content }}
-					/>
-				</div>
+			{/* Content on the left, the featured image on the right: no card chrome. */}
+			<div className={post.featuredImage ? 'grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]' : ''}>
+				<article
+					className="prose prose-neutral max-w-none dark:prose-invert"
+					dangerouslySetInnerHTML={{ __html: post.content }}
+				/>
 				{post.featuredImage && (
-					<div className="self-start rounded-md border border-border bg-surface shadow-sm lg:sticky lg:top-24">
-						<h3 className="border-b border-border px-5 py-4 text-sm font-semibold uppercase tracking-wide text-foreground">
-							Featured image
-						</h3>
-						<div className="p-4">
-							<LoadingImage
-								src={post.featuredImage.url}
-								alt={post.featuredImage.filename}
-								wrapperClassName="w-full rounded-md border border-border"
-								imageClassName="w-full object-contain"
-							/>
-						</div>
+					<div className="self-start lg:sticky lg:top-24">
+						<LoadingImage
+							src={post.featuredImage.url}
+							alt={post.featuredImage.filename}
+							wrapperClassName="w-full rounded-md border border-border"
+							imageClassName="w-full object-contain"
+						/>
 					</div>
 				)}
 			</div>
