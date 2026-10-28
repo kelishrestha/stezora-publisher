@@ -166,7 +166,7 @@ export default function PostView() {
 
 			<div className="rounded-md border border-border bg-surface shadow-sm">
 				<h3 className="border-b border-border px-5 py-4 text-sm font-semibold uppercase tracking-wide text-foreground">Details</h3>
-				<ul className="divide-y divide-border text-sm">
+				<ul className="text-sm">
 					<li className="flex flex-wrap gap-x-4 gap-y-1 px-3 py-2">
 						<span className="w-40 shrink-0 text-muted-foreground">Publication</span>
 						<span className="min-w-0 break-words text-foreground">{publicationName}</span>
