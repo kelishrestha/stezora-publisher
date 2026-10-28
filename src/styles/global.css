@@ -133,9 +133,12 @@ html[data-accent='bright-amber'] body::after {
 	pointer-events: none;
 }
 
+/* Dark mode paints the bird in the publication accent via a mask. */
 html.dark[data-accent='bright-amber'] body::after {
-	filter: invert(1);
-	opacity: 0.09;
+	background: var(--color-accent);
+	-webkit-mask: url('/bird-singing.svg') no-repeat right bottom / contain;
+	mask: url('/bird-singing.svg') no-repeat right bottom / contain;
+	opacity: 0.16;
 }
 
 /* Accented pages: the footer stays transparent so the fixed watermark
