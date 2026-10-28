@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import EmptyState from './EmptyState';
+import { CardGridSkeleton, SkeletonBlock } from './Skeleton';
 import LoadingImage from './LoadingImage';
 import Pagination from './Pagination';
 import { MONTHS, filterSelectClass, matchesMonthYear, yearsOf } from './filters';
@@ -210,7 +211,16 @@ export default function MediaManager() {
 	}
 
 	if (!items) {
-		return <p className="text-sm text-muted-foreground">Loading…</p>;
+		return (
+			<div className="space-y-4">
+				<div className="flex flex-wrap items-end gap-4">
+					{[0, 1, 2].map((index) => (
+						<SkeletonBlock key={index} className="h-14 w-44" />
+					))}
+				</div>
+				<CardGridSkeleton cards={6} />
+			</div>
+		);
 	}
 
 	const itemDate = (item: MediaItem): Date | null => {

@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import EmptyState from './EmptyState';
+import { ListSkeleton, SkeletonBlock } from './Skeleton';
 import LoadingImage from './LoadingImage';
 import Pagination from './Pagination';
 import { MONTHS, filterSelectClass, matchesMonthYear, yearsOf } from './filters';
@@ -231,7 +232,17 @@ export default function PostList() {
 	}
 
 	if (!posts) {
-		return <p className="text-sm text-muted-foreground">Loading…</p>;
+		return (
+			<div className="space-y-4">
+				<div className="flex flex-wrap items-end gap-4 pb-4">
+					{[0, 1, 2, 3].map((index) => (
+						<SkeletonBlock key={index} className="h-14 w-44" />
+					))}
+				</div>
+				<SkeletonBlock className="h-10 w-full max-w-xl" />
+				<ListSkeleton rows={6} />
+			</div>
+		);
 	}
 
 	// Publication, month, and year narrow the pool; the tabs count within it.

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import ConfirmDialog from './ConfirmDialog';
 import EmptyState from './EmptyState';
+import { ListSkeleton, SkeletonBlock } from './Skeleton';
 import Pagination from './Pagination';
 import { MONTHS, filterSelectClass, matchesMonthYear, yearsOf } from './filters';
 import { badgeClass, buttonClass, formControlClass } from '../ui/shared/classes';
@@ -266,7 +267,17 @@ export default function TagManager() {
 	}
 
 	if (!tags) {
-		return <p className="text-sm text-muted-foreground">Loading…</p>;
+		return (
+			<div className="space-y-4">
+				<div className="flex flex-wrap items-end gap-4 pb-4">
+					{[0, 1, 2].map((index) => (
+						<SkeletonBlock key={index} className="h-14 w-44" />
+					))}
+				</div>
+				<SkeletonBlock className="h-10 w-full max-w-xl" />
+				<ListSkeleton rows={6} withThumb={false} />
+			</div>
+		);
 	}
 
 	// Month and year narrow the pool; the publication tabs count within it.

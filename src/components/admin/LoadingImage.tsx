@@ -26,12 +26,13 @@ export default function LoadingImage({
 	return (
 		<span className={`relative block overflow-hidden ${wrapperClassName}`}>
 			{state === 'loading' && (
-				<span className="absolute inset-0 grid animate-pulse place-content-center bg-muted">
-					<span
-						aria-hidden="true"
-						className="size-4 animate-spin rounded-full border-2 border-border border-t-accent"
-					/>
-					<span className="sr-only">Loading image</span>
+				<span className="absolute inset-0 grid place-content-center bg-muted">
+					{/* HyperUI dots pulse loader. */}
+					<span className="flex gap-2" role="status" aria-label="Loading image">
+						<span className="size-2.5 animate-pulse rounded-full bg-accent" aria-hidden="true" />
+						<span className="size-2.5 animate-pulse rounded-full bg-accent [animation-delay:0.2s]" aria-hidden="true" />
+						<span className="size-2.5 animate-pulse rounded-full bg-accent [animation-delay:0.4s]" aria-hidden="true" />
+					</span>
 				</span>
 			)}
 			{state === 'error' ? (
