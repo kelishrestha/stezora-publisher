@@ -16,7 +16,7 @@ const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
 		'bg-accent text-on-accent hover:opacity-90 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background',
 	outline: 'border border-border bg-surface text-foreground hover:bg-surface-elevated focus:ring-accent',
 	accentOutline:
-		'border border-accent bg-accent-soft text-accent-foreground hover:bg-accent hover:text-on-accent focus:ring-accent',
+		'border border-accent bg-accent text-on-accent hover:opacity-90 focus:ring-accent',
 	danger: 'bg-red-600 text-red-50 hover:bg-red-700 focus:ring-red-500',
 	dangerOutline:
 		'border border-red-300 bg-red-50 text-red-700 hover:bg-red-600 hover:text-red-50 focus:ring-red-500 dark:border-red-900 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-700 dark:hover:text-red-50',
