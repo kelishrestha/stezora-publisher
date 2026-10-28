@@ -44,4 +44,39 @@ describe('worker router', () => {
 	it('returns method-not-allowed when the path exists for another method', () => {
 		expect(router.match('/api/posts', 'DELETE')).toEqual({ kind: 'method-not-allowed' });
 	});
+
+	describe('rest parameters', () => {
+		const restRouter = new Router().get('/media/:key*', (ctx) => new Response(ctx.params.key, { status: 200 }));
+
+		it('captures a single-segment key', () => {
+			expect(restRouter.match('/media/hero.png', 'GET')).toMatchObject({
+				kind: 'match',
+				params: { key: 'hero.png' },
+			});
+		});
+
+		it('captures a nested key across segments', () => {
+			expect(restRouter.match('/media/localized/m-abc.jpg', 'GET')).toMatchObject({
+				kind: 'match',
+				params: { key: 'localized/m-abc.jpg' },
+			});
+		});
+
+		it('decodes each segment of a nested key', () => {
+			expect(restRouter.match('/media/localized/hello%20world.png', 'GET')).toMatchObject({
+				kind: 'match',
+				params: { key: 'localized/hello world.png' },
+			});
+		});
+
+		it('requires at least one segment for the rest parameter', () => {
+			expect(restRouter.match('/media', 'GET')).toEqual({ kind: 'not-found' });
+		});
+
+		it('rejects a rest parameter that is not the last segment', () => {
+			expect(() => new Router().get('/media/:key*/extra', () => new Response('x'))).toThrow(
+				/Rest parameter must be the last segment/
+			);
+		});
+	});
 });

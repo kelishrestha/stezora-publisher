@@ -12,7 +12,8 @@ export const routes = new Router();
 
 routes.get('/api/content', content);
 routes.get('/api/export', exportAll);
-routes.get('/media/:key', media);
+// Rest parameter: localized objects live under nested keys (localized/<id>.<ext>).
+routes.get('/media/:key*', media);
 routes.get('/api/admin/stats', requireAdmin(adminStats));
 
 // Editor routes. `/api/admin/posts/meta` must be registered before

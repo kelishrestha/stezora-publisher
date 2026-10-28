@@ -7,7 +7,7 @@ export interface RouteContext {
 
 export type RouteHandler = (context: RouteContext) => Response | Promise<Response>;
 
-type Segment = string | { param: string };
+type Segment = string | { param: string; rest?: boolean };
 
 interface Route {
 	method: string;
@@ -21,10 +21,22 @@ export type MatchResult =
 	| { kind: 'not-found' };
 
 function compilePattern(pattern: string): Segment[] {
-	return pattern
+	const segments = pattern
 		.split('/')
 		.filter(Boolean)
-		.map((segment) => (segment.startsWith(':') ? { param: segment.slice(1) } : segment));
+		.map((segment): Segment => {
+			if (segment.startsWith(':')) {
+				return segment.endsWith('*')
+					? { param: segment.slice(1, -1), rest: true }
+					: { param: segment.slice(1) };
+			}
+			return segment;
+		});
+	const restIndex = segments.findIndex((segment) => typeof segment !== 'string' && segment.rest);
+	if (restIndex !== -1 && restIndex !== segments.length - 1) {
+		throw new Error(`Rest parameter must be the last segment: ${pattern}`);
+	}
+	return segments;
 }
 
 function normalizePath(pathname: string): string {
@@ -64,22 +76,24 @@ export class Router {
 		let pathMatched = false;
 
 		for (const route of this.routes) {
-			if (route.segments.length !== parts.length) {
+			const lastSegment = route.segments[route.segments.length - 1];
+			const hasRest = typeof lastSegment !== 'string' && lastSegment?.rest === true;
+			if (hasRest ? parts.length < route.segments.length : route.segments.length !== parts.length) {
 				continue;
 			}
 			const params: Record<string, string> = {};
 			let segmentsMatch = true;
 			for (let i = 0; i < route.segments.length; i += 1) {
 				const segment = route.segments[i];
-				const part = parts[i];
 				if (typeof segment === 'string') {
-					if (segment !== part) {
+					if (segment !== parts[i]) {
 						segmentsMatch = false;
 						break;
 					}
 				} else {
+					const raw = segment.rest ? parts.slice(i) : [parts[i]];
 					try {
-						params[segment.param] = decodeURIComponent(part);
+						params[segment.param] = raw.map((part) => decodeURIComponent(part)).join('/');
 					} catch {
 						segmentsMatch = false;
 						break;

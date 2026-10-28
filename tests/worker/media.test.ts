@@ -249,6 +249,20 @@ describe('GET /media/:key route', () => {
 		expect(await response.text()).toBe('webp-data');
 	});
 
+	it('serves an object stored under a nested key (localized Blogger images)', async () => {
+		const key = 'localized/m-nested-test.jpg';
+		await env.MEDIA.put(key, 'nested-bytes', { httpMetadata: { contentType: 'image/jpeg' } });
+
+		const request = new Request(`https://example.com/media/${key}`);
+		const ctx = createExecutionContext();
+		const response = await worker.fetch(request, env, ctx);
+		await waitOnExecutionContext(ctx);
+
+		expect(response.status).toBe(200);
+		expect(response.headers.get('content-type')).toBe('image/jpeg');
+		expect(await response.text()).toBe('nested-bytes');
+	});
+
 	it('returns 404 for an unknown key', async () => {
 		const response = await fetchMedia('00000000-0000-0000-0000-000000000000-missing.png');
 		expect(response.status).toBe(404);
