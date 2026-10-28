@@ -483,7 +483,7 @@ export default function PostList() {
 										href={`/admin/posts/${post.id}/view`}
 										aria-label={`View ${post.title}`}
 										title="View"
-										className="rounded-md bg-accent-soft p-2 text-accent-foreground transition-colors hover:bg-accent hover:text-on-accent focus:outline-none focus:ring-2 focus:ring-accent"
+										className="rounded-md border border-accent bg-accent-soft p-2 text-accent-foreground transition-colors hover:bg-accent hover:text-on-accent focus:outline-none focus:ring-2 focus:ring-accent"
 									>
 										<EyeIcon />
 									</a>
@@ -491,7 +491,7 @@ export default function PostList() {
 										href={`/admin/posts/${post.id}/edit`}
 										aria-label={`Edit ${post.title}`}
 										title="Edit"
-										className="rounded-md bg-accent-soft p-2 text-accent-foreground transition-colors hover:bg-accent hover:text-on-accent focus:outline-none focus:ring-2 focus:ring-accent"
+										className="rounded-md border border-accent bg-accent-soft p-2 text-accent-foreground transition-colors hover:bg-accent hover:text-on-accent focus:outline-none focus:ring-2 focus:ring-accent"
 									>
 										<PencilIcon />
 									</a>

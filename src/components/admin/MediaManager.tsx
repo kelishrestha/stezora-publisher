@@ -312,7 +312,7 @@ export default function MediaManager() {
 														href={`/admin/posts/${item.postId}/view`}
 														aria-label="View post"
 														title="View post"
-														className="rounded-md bg-accent-soft p-2 text-accent-foreground transition-colors hover:bg-accent hover:text-on-accent focus:outline-none focus:ring-2 focus:ring-accent"
+														className="rounded-md border border-accent bg-accent-soft p-2 text-accent-foreground transition-colors hover:bg-accent hover:text-on-accent focus:outline-none focus:ring-2 focus:ring-accent"
 													>
 														<svg
 															aria-hidden="true"
@@ -336,7 +336,7 @@ export default function MediaManager() {
 														onClick={() => setPreviewImage(item)}
 														aria-label="View image"
 														title="View image"
-														className="rounded-md bg-accent-soft p-2 text-accent-foreground transition-colors hover:bg-accent hover:text-on-accent focus:outline-none focus:ring-2 focus:ring-accent"
+														className="rounded-md border border-accent bg-accent-soft p-2 text-accent-foreground transition-colors hover:bg-accent hover:text-on-accent focus:outline-none focus:ring-2 focus:ring-accent"
 													>
 														<svg
 															aria-hidden="true"
