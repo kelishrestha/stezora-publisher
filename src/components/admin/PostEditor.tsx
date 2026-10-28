@@ -133,6 +133,9 @@ export default function PostEditor({ postId }: PostEditorProps) {
 	const [attachedMedia, setAttachedMedia] = useState<MediaItem | null>(null);
 	const [featuredImageId, setFeaturedImageId] = useState<string | null>(null);
 	const [uploadingMedia, setUploadingMedia] = useState(false);
+	// Images embedded in the post content (imported Blogger posts carry their
+	// images as <img> tags in the content HTML, not as media attachments).
+	const [contentImages, setContentImages] = useState<string[]>([]);
 
 	const tagOptions = useMemo(
 		() => meta?.tags.filter((tag) => tag.publication_id === publicationId) ?? [],
@@ -168,6 +171,13 @@ export default function PostEditor({ postId }: PostEditorProps) {
 			setSeoTitle(post.seoTitle ?? '');
 			setSeoDescription(post.seoDescription ?? '');
 			setFeaturedImageId(post.featuredImageId);
+			const embeddedImages = Array.from(post.content.matchAll(/<img[^>]*\ssrc="([^"]+)"/gi), (m) => m[1]);
+			setContentImages([...new Set(embeddedImages)]);
+			if (!post.contentMarkdown && post.content) {
+				setNotice(
+					'This post has HTML content but no markdown source (run pnpm db:backfill to generate it). Saving now would replace the published content with the content box below.'
+				);
+			}
 			await loadAttachment(post.publicationId, post.id);
 		} catch (reason) {
 			setError(reason instanceof Error ? reason.message : 'Failed to load post.');
@@ -495,6 +505,26 @@ export default function PostEditor({ postId }: PostEditorProps) {
 										className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-accent-soft file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-accent-foreground hover:file:opacity-80"
 									/>
 									{uploadingMedia && <p className="text-xs text-muted-foreground">Uploading…</p>}
+								</div>
+							)}
+							{contentImages.length > 0 && (
+								<div className="mt-4">
+									<p className="text-sm font-medium text-foreground">Images in content</p>
+									<p className="mt-1 text-xs text-muted-foreground">
+										Embedded in the post body{contentImages.some((src) => !src.startsWith('/')) ? ', hosted externally (Blogger)' : ''}.
+									</p>
+									<div className="mt-2 grid grid-cols-3 gap-2">
+										{contentImages.map((src) => (
+											<a key={src} href={src} target="_blank" rel="noreferrer" title={src}>
+												<img
+													src={src}
+													alt=""
+													loading="lazy"
+													className="h-20 w-full rounded-md border border-border object-cover"
+												/>
+											</a>
+										))}
+									</div>
 								</div>
 							)}
 						</div>

@@ -2,6 +2,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { bloggerBlogIdForPublication } from '../../src/lib/blogger/config';
 import { sanitizeContentHtml } from '../../src/lib/blogger/sanitize';
+import { htmlToMarkdown } from '../../src/lib/blogger/to-markdown';
 import { readExistingPosts } from '../../src/lib/blogger/storage';
 import type { PostRecord } from '../../src/lib/blogger/types';
 import { publications } from '../../src/lib/publications/data';
@@ -25,6 +26,7 @@ const POST_COLUMNS = [
 	'slug',
 	'excerpt',
 	'content',
+	'content_markdown',
 	'status',
 	'published_at',
 	'updated_at',
@@ -38,6 +40,7 @@ const POST_UPSERT_COLUMNS = [
 	'title',
 	'excerpt',
 	'content',
+	'content_markdown',
 	'status',
 	'published_at',
 	'updated_at',
@@ -104,6 +107,7 @@ export function buildBackfillSql(records: BackfillInput[], options: BackfillOpti
 			);
 		}
 
+		const sanitizedContent = sanitizeContentHtml(record.content);
 		const conflictTarget = hasBloggerId
 			? 'ON CONFLICT (blogger_blog_id, blogger_post_id) DO UPDATE SET\n  '
 			: 'ON CONFLICT (publication_id, slug) DO UPDATE SET\n  ';
@@ -118,7 +122,8 @@ export function buildBackfillSql(records: BackfillInput[], options: BackfillOpti
 					`, ${sqlString(record.title)}`,
 					`, ${sqlString(postSlug)}`,
 					`, ${sqlNullable(record.excerpt)}`,
-					`, ${sqlString(sanitizeContentHtml(record.content))}`,
+					`, ${sqlString(sanitizedContent)}`,
+					`, ${sqlString(htmlToMarkdown(sanitizedContent))}`,
 					`, ${sqlString(record.status)}`,
 					`, ${sqlString(record.pubDate)}`,
 					`, ${sqlNullable(record.updatedDate)}`,
