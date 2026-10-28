@@ -27,8 +27,6 @@ pnpm-debug.log*
 # test coverage
 coverage/
 
-# generated import artifacts
-migration-reports/
 
 # macOS-specific files
 .DS_Store

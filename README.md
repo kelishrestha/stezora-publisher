@@ -74,6 +74,17 @@ assets directory defined in `wrangler.jsonc`.
 
 See `ARCHITECTURE.md` for the full architecture and implementation phases.
 
+## Backups
+
+Nightly content exports, weekly SQL dumps, and a weekly R2 media mirror; see
+`docs/BACKUP.md` for the layers, manual commands, and the restore drill.
+
+```sh
+pnpm backup:content   # full-fidelity JSON export (drafts included)
+pnpm backup:db        # wrangler d1 export SQL dump
+pnpm backup:media     # rclone mirror of the R2 bucket
+```
+
 ## Database migrations
 
 Migrations live in `migrations/` (one file per table) and apply with:
@@ -113,7 +124,8 @@ src/                      Astro frontend
 │   └── seo/              config, helpers, structured data
 ├── pages/
 │   ├── admin/            CMS pages (login, posts, tags, media)
-│   └── publications/     publication index, posts, tags, per-publication RSS
+│   ├── poetry-collections/  collection index, posts, tags, per-collection RSS
+│   └── publications/     published books showcase
 └── styles/               global.css, theme.css (Tailwind)
 
 worker/                   Cloudflare Worker (CMS API)
@@ -123,6 +135,7 @@ worker/                   Cloudflare Worker (CMS API)
 └── services/             media handling
 
 scripts/
+├── backup/               content export, SQL dump, media mirror
 ├── blogger/              OAuth flow, import CLI, token store
 ├── db/                   seeding, backfill, migration reconcile SQL
 └── export-content.ts     D1 to JSON content export

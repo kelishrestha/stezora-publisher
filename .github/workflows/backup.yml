@@ -1,0 +1,105 @@
+# Backups: nightly content export committed to a private backup repository,
+# plus a weekly SQL dump and R2 media mirror.
+#
+# Required repository secrets:
+#   BACKUP_EXPORT_URL   https://<site>/api/export
+#   BACKUP_TOKEN        matches the Worker's BACKUP_TOKEN secret
+#   BACKUP_REPO         e.g. <owner>/stezora-content-backup
+#   BACKUP_DEPLOY_KEY   SSH deploy key with write access to BACKUP_REPO
+#   CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID   for wrangler d1 export
+#   RCLONE_CONF_B64     base64 of an rclone.conf with r2 and destination remotes
+name: backup
+
+on:
+  schedule:
+    # Nightly content export at 02:17 UTC; the weekly steps run on Sundays.
+    - cron: '17 2 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  content:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Check out the backup repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.BACKUP_REPO }}
+          ssh-key: ${{ secrets.BACKUP_DEPLOY_KEY }}
+          path: backup-repo
+      - name: Export content
+        env:
+          BACKUP_EXPORT_URL: ${{ secrets.BACKUP_EXPORT_URL }}
+          BACKUP_TOKEN: ${{ secrets.BACKUP_TOKEN }}
+        run: pnpm backup:content backup-repo/content
+      - name: Commit the snapshot
+        working-directory: backup-repo
+        run: |
+          git config user.name "stezora-backup"
+          git config user.email "backup@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "content backup $(date -u +%F)"
+          git push
+
+  weekly:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '17 2 * * *'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Only continue on Sundays (or manual runs)
+        id: gate
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "$(date -u +%u)" = "7" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: pnpm/action-setup@v4
+        if: steps.gate.outputs.run == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.run == 'true'
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        if: steps.gate.outputs.run == 'true'
+      - name: Check out the backup repository
+        if: steps.gate.outputs.run == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.BACKUP_REPO }}
+          ssh-key: ${{ secrets.BACKUP_DEPLOY_KEY }}
+          path: backup-repo
+      - name: SQL dump
+        if: steps.gate.outputs.run == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: pnpm backup:db backup-repo/db/stezora-publisher.sql
+      - name: Commit the dump
+        if: steps.gate.outputs.run == 'true'
+        working-directory: backup-repo
+        run: |
+          git config user.name "stezora-backup"
+          git config user.email "backup@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "db backup $(date -u +%F)"
+          git push
+      - name: Mirror media
+        if: steps.gate.outputs.run == 'true'
+        env:
+          RCLONE_CONF_B64: ${{ secrets.RCLONE_CONF_B64 }}
+          BACKUP_MEDIA_DEST: b2:stezora-publisher-media-backup
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq rclone
+          mkdir -p ~/.config/rclone
+          echo "$RCLONE_CONF_B64" | base64 -d > ~/.config/rclone/rclone.conf
+          scripts/backup/sync-media.sh
