@@ -4,35 +4,73 @@ A personal multi-publication publishing platform.
 
 **One CMS, three publications, one website.**
 
-Phase 1 lays the foundation: Astro on Cloudflare with TypeScript, Tailwind,
-SEO metadata, RSS, sitemap, responsive layout, and dark mode.
+Astro renders the public site as static pages. A Cloudflare Worker serves the
+admin CMS API with D1 for content and R2 for media. Posts are imported from
+Blogger and exported to JSON content files at build time, so the public site
+never depends on runtime API calls.
 
 ## Development
 
 ```sh
 pnpm install
-pnpm dev
+pnpm dev          # Astro dev server (public site only)
+pnpm dev:cms      # build, then run the Worker with the admin CMS
+pnpm dev:worker   # run the Worker alone (wrangler dev)
 ```
+
+First-time local database setup:
+
+```sh
+pnpm db:migrate   # apply migrations to local D1
+pnpm db:seed      # seed publications and the admin user
+pnpm db:backfill  # import JSON content files into local D1
+```
+
+The admin user credentials come from `.env.development` (see `.env.example`).
 
 ## Verification
 
 ```sh
 pnpm lint
 pnpm typecheck
-pnpm test
+pnpm test         # all tests
+pnpm test:unit    # unit tests only
+pnpm test:worker  # Worker tests (fresh D1 with migrations applied)
 pnpm build
 ```
 
-## Deployment
+## Content export
 
-The site deploys to Cloudflare Workers as static assets:
+The build reads posts from D1 and writes them to `src/content/posts/` as JSON
+(`pnpm build` runs this automatically via `prebuild`):
 
 ```sh
-pnpm deploy
+pnpm export:content                  # from local D1 via Miniflare
+EXPORT_CONTENT_URL=<url> pnpm build  # from a live /api/content endpoint
 ```
 
-The build output is `./dist/`, served through the assets directory defined in
-`wrangler.jsonc`. The production deployment is reproducible from Git.
+## Blogger
+
+```sh
+pnpm blogger:oauth                   # one-time OAuth; stores the refresh token in .secrets/
+pnpm blogger:import --blog <slug>    # import one publication
+pnpm blogger:import --all            # import all publications
+```
+
+Imports are idempotent and keyed by Blogger post ID. Image inventories are
+written to `migration-reports/`.
+
+## Deployment
+
+The site deploys to Cloudflare Workers (static assets plus the CMS API):
+
+```sh
+EXPORT_CONTENT_URL=<url> pnpm deploy
+```
+
+`EXPORT_CONTENT_URL` is required for production deploys so the build never
+depends on local D1 state. The build output is `./dist/`, served through the
+assets directory defined in `wrangler.jsonc`.
 
 See `ARCHITECTURE.md` for the full architecture and implementation phases.
 
@@ -41,6 +79,7 @@ See `ARCHITECTURE.md` for the full architecture and implementation phases.
 Migrations live in `migrations/` (one file per table) and apply with:
 
 ```sh
+pnpm db:generate         # generate a migration from worker/db/schema.ts changes
 pnpm db:migrate          # local D1
 pnpm db:migrate:remote   # remote D1
 ```
@@ -59,14 +98,35 @@ this and just apply migrations normally.
 ## Project structure
 
 ```text
-src/
+src/                      Astro frontend
 ├── components/
-│   ├── navigation/   SiteHeader, SiteFooter
-│   └── ui/           Container, Button, Card, ThemeToggle
-├── layouts/          BaseLayout
+│   ├── admin/            React CMS islands (Dashboard, PostEditor, PostList, ...)
+│   ├── blog/             PostCard, PostList, PostMeta, Breadcrumbs
+│   ├── navigation/       SiteHeader, SiteFooter
+│   ├── publication/      PublicationCard, PublicationHeader
+│   └── ui/               Container, Button, Card, ThemeToggle
+├── content/posts/        JSON content files exported from D1 (gitignored)
+├── layouts/              BaseLayout, PublicationLayout, AdminLayout
 ├── lib/
-│   └── seo/          config, helpers, structured data
-├── pages/            index, about, 404, robots.txt, rss.xml
-└── styles/           global.css (Tailwind)
-tests/                Vitest suite
+│   ├── blogger/          Blogger API client, importer, mapper, sanitizer
+│   ├── publications/     publication domain model and content collections
+│   └── seo/              config, helpers, structured data
+├── pages/
+│   ├── admin/            CMS pages (login, posts, tags, media)
+│   └── publications/     publication index, posts, tags, per-publication RSS
+└── styles/               global.css, theme.css (Tailwind)
+
+worker/                   Cloudflare Worker (CMS API)
+├── db/                   Drizzle schema and query modules (posts, tags, media)
+├── lib/                  auth (better-auth), http, errors, validation, markdown
+├── routes/               /api/content, /media, and admin routes
+└── services/             media handling
+
+scripts/
+├── blogger/              OAuth flow, import CLI, token store
+├── db/                   seeding, backfill, migration reconcile SQL
+└── export-content.ts     D1 to JSON content export
+
+migrations/               D1 migrations, one file per table
+tests/                    Vitest suites (unit and Worker projects)
 ```
