@@ -460,7 +460,7 @@ export default function PostList() {
 										href={`/admin/posts/${post.id}/view`}
 										aria-label={`View ${post.title}`}
 										title="View"
-										className={buttonClass('primary', 'icon')}
+										className={buttonClass('accentOutline', 'icon')}
 									>
 										<EyeIcon />
 									</a>
@@ -468,7 +468,7 @@ export default function PostList() {
 										href={`/admin/posts/${post.id}/edit`}
 										aria-label={`Edit ${post.title}`}
 										title="Edit"
-										className={buttonClass('primary', 'icon')}
+										className={buttonClass('accentOutline', 'icon')}
 									>
 										<PencilIcon />
 									</a>
