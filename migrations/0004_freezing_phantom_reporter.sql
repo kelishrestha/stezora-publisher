@@ -1,1 +1,0 @@
-ALTER TABLE `posts` ADD `featured_image_id` text REFERENCES media(id);

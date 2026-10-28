@@ -5,36 +5,78 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1786593954230,
-      "tag": "0000_init",
+      "when": 1793175349720,
+      "tag": "0000_publications",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "6",
-      "when": 1786598399308,
-      "tag": "0001_unknown_jane_foster",
+      "when": 1793175355939,
+      "tag": "0001_posts",
       "breakpoints": true
     },
     {
       "idx": 2,
       "version": "6",
-      "when": 1786601994259,
-      "tag": "0002_aberrant_hobgoblin",
+      "when": 1793175361842,
+      "tag": "0002_media",
       "breakpoints": true
     },
     {
       "idx": 3,
       "version": "6",
-      "when": 1786612624143,
-      "tag": "0003_spooky_iron_fist",
+      "when": 1793175367417,
+      "tag": "0003_tags",
       "breakpoints": true
     },
     {
       "idx": 4,
       "version": "6",
-      "when": 1787562461636,
-      "tag": "0004_freezing_phantom_reporter",
+      "when": 1793175372540,
+      "tag": "0004_post_tags",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1793175377872,
+      "tag": "0005_blogger_sync",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1793175383561,
+      "tag": "0006_user",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1793175389438,
+      "tag": "0007_session",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1793175391884,
+      "tag": "0008_account",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1793175394169,
+      "tag": "0009_verification",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1793175396554,
+      "tag": "0010_rate_limit",
       "breakpoints": true
     }
   ]
