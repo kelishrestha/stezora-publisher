@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import EmptyState from './EmptyState';
 import LoadingImage from './LoadingImage';
 import Pagination from './Pagination';
+import { MONTHS, filterSelectClass, matchesMonthYear, yearsOf } from './filters';
 
 interface MediaItem {
 	id: string;
@@ -77,6 +78,9 @@ export default function MediaManager() {
 	const [uploadOpen, setUploadOpen] = useState(false);
 	const [pendingFile, setPendingFile] = useState<File | null>(null);
 	const [pageSize, setPageSize] = useState(12);
+	const [publicationFilter, setPublicationFilter] = useState('all');
+	const [monthFilter, setMonthFilter] = useState('all');
+	const [yearFilter, setYearFilter] = useState('all');
 
 	useEffect(() => {
 		let cancelled = false;
@@ -162,9 +166,27 @@ export default function MediaManager() {
 		return <p className="text-sm text-muted-foreground">Loading…</p>;
 	}
 
-	const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+	const itemDate = (item: MediaItem): Date | null => {
+		const date = new Date(item.createdAt);
+		return Number.isNaN(date.getTime()) ? null : date;
+	};
+	const filtered = items.filter(
+		(item) =>
+			(publicationFilter === 'all' || item.publicationId === publicationFilter) &&
+			matchesMonthYear(itemDate(item), monthFilter, yearFilter)
+	);
+	const years = yearsOf(items.map(itemDate));
+
+	const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
 	const currentPage = Math.min(page, totalPages);
-	const pageItems = items.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+	const pageItems = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+	const clearFilters = () => {
+		setPublicationFilter('all');
+		setMonthFilter('all');
+		setYearFilter('all');
+		setPage(1);
+	};
 
 	const publicationName = (id: string | null) => publications.find((p) => p.id === id)?.name ?? '—';
 	const postTitle = (id: string | null) => posts?.find((p) => p.id === id)?.title ?? '—';
@@ -324,7 +346,73 @@ export default function MediaManager() {
 			)}
 			{notice && <p className="rounded-lg bg-accent-soft px-4 py-3 text-sm text-accent-foreground">{notice}</p>}
 
-			<div className="flex justify-end">
+			<div className="flex flex-wrap items-end justify-between gap-4">
+				<div className="flex flex-wrap items-end gap-4">
+					<label htmlFor="media-filter-publication" className="block w-44">
+						<span className="text-sm font-medium text-foreground">Publication</span>
+						<select
+							id="media-filter-publication"
+							value={publicationFilter}
+							onChange={(event) => {
+								setPublicationFilter(event.target.value);
+								setPage(1);
+							}}
+							className={filterSelectClass}
+						>
+							<option value="all">All publications</option>
+							{publications.map((publication) => (
+								<option key={publication.id} value={publication.id}>
+									{publication.name}
+								</option>
+							))}
+						</select>
+					</label>
+					<label htmlFor="media-filter-month" className="block w-44">
+						<span className="text-sm font-medium text-foreground">Month</span>
+						<select
+							id="media-filter-month"
+							value={monthFilter}
+							onChange={(event) => {
+								setMonthFilter(event.target.value);
+								setPage(1);
+							}}
+							className={filterSelectClass}
+						>
+							<option value="all">All months</option>
+							{MONTHS.map((month) => (
+								<option key={month.value} value={month.value}>
+									{month.label}
+								</option>
+							))}
+						</select>
+					</label>
+					<label htmlFor="media-filter-year" className="block w-44">
+						<span className="text-sm font-medium text-foreground">Year</span>
+						<select
+							id="media-filter-year"
+							value={yearFilter}
+							onChange={(event) => {
+								setYearFilter(event.target.value);
+								setPage(1);
+							}}
+							className={filterSelectClass}
+						>
+							<option value="all">All years</option>
+							{years.map((year) => (
+								<option key={year} value={year}>
+									{year}
+								</option>
+							))}
+						</select>
+					</label>
+					<button
+						type="button"
+						onClick={clearFilters}
+						className="rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-accent"
+					>
+						Clear filters
+					</button>
+				</div>
 				<button
 					type="button"
 					onClick={() => setUploadOpen(true)}
@@ -335,8 +423,8 @@ export default function MediaManager() {
 			</div>
 
 			<div>
-				{items.length === 0 ? (
-					<EmptyState icon={<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>} title="No media yet" description="Use the Upload media button, or attach media from the post editor." />
+				{filtered.length === 0 ? (
+					<EmptyState icon={<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>} title={items.length === 0 ? 'No media yet' : 'No media match these filters'} description={items.length === 0 ? 'Use the Upload media button, or attach media from the post editor.' : 'Try a different publication, month, or year, or clear the filters.'} />
 				) : (
 					<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 						{pageItems.map((item) => {
@@ -433,7 +521,7 @@ export default function MediaManager() {
 				)}
 				<div className="mt-4">
 					<Pagination
-						totalItems={items.length}
+						totalItems={filtered.length}
 						page={currentPage}
 						pageSize={pageSize}
 						onPageChange={setPage}

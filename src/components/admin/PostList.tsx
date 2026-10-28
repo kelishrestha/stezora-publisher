@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import EmptyState from './EmptyState';
 import LoadingImage from './LoadingImage';
 import Pagination from './Pagination';
+import { MONTHS, filterSelectClass, matchesMonthYear, yearsOf } from './filters';
 
 interface ListPost {
 	id: string;
@@ -57,14 +58,6 @@ function postDate(post: ListPost): Date | null {
 	const date = new Date(value);
 	return Number.isNaN(date.getTime()) ? null : date;
 }
-
-const MONTHS = Array.from({ length: 12 }, (_, index) => ({
-	value: String(index + 1).padStart(2, '0'),
-	label: new Date(2000, index, 1).toLocaleDateString(undefined, { month: 'long' }),
-}));
-
-const selectClass =
-	'mt-0.5 w-full rounded border-border bg-background text-foreground shadow-sm sm:text-sm focus:border-accent focus:ring-accent';
 
 interface IconProps {
 	className?: string;
@@ -257,15 +250,7 @@ export default function PostList() {
 		if (publicationFilter !== 'all' && post.publication !== publicationFilter) {
 			return false;
 		}
-		if (monthFilter === 'all' && yearFilter === 'all') {
-			return true;
-		}
-		const date = postDate(post);
-		if (!date) return false;
-		if (monthFilter !== 'all' && String(date.getMonth() + 1).padStart(2, '0') !== monthFilter) {
-			return false;
-		}
-		return yearFilter === 'all' || String(date.getFullYear()) === yearFilter;
+		return matchesMonthYear(postDate(post), monthFilter, yearFilter);
 	});
 
 	const counts: Record<string, number> = { all: pool.length };
@@ -273,16 +258,7 @@ export default function PostList() {
 		counts[tab] = pool.filter((post) => post.status === tab).length;
 	}
 
-	const years = [
-		...new Set(
-			posts
-				.map(postDate)
-				.filter((date): date is Date => date !== null)
-				.map((date) => String(date.getFullYear()))
-		),
-	]
-		.sort()
-		.reverse();
+	const years = yearsOf(posts.map(postDate));
 
 	const visible = filter === 'all' ? pool : pool.filter((post) => post.status === filter);
 
@@ -293,8 +269,8 @@ export default function PostList() {
 	return (
 		<div className="space-y-4">
 			{/* Filters (HyperUI selects): publication, status, month, year. */}
-			<div className="grid gap-4 pb-4 sm:grid-cols-2 lg:grid-cols-4">
-				<label htmlFor="filter-publication">
+			<div className="flex flex-wrap items-end gap-4 pb-4">
+				<label htmlFor="filter-publication" className="block w-44">
 					<span className="text-sm font-medium text-foreground">Publication</span>
 					<select
 						id="filter-publication"
@@ -303,7 +279,7 @@ export default function PostList() {
 							setPublicationFilter(event.target.value);
 							setPage(1);
 						}}
-						className={selectClass}
+						className={filterSelectClass}
 					>
 						<option value="all">All publications</option>
 						{publications.map((publication) => (
@@ -313,7 +289,7 @@ export default function PostList() {
 						))}
 					</select>
 				</label>
-				<label htmlFor="filter-status">
+				<label htmlFor="filter-status" className="block w-44">
 					<span className="text-sm font-medium text-foreground">Status</span>
 					<select
 						id="filter-status"
@@ -322,7 +298,7 @@ export default function PostList() {
 							setFilter(event.target.value);
 							setPage(1);
 						}}
-						className={selectClass}
+						className={filterSelectClass}
 					>
 						{TABS.map((tab) => (
 							<option key={tab} value={tab}>
@@ -331,7 +307,7 @@ export default function PostList() {
 						))}
 					</select>
 				</label>
-				<label htmlFor="filter-month">
+				<label htmlFor="filter-month" className="block w-44">
 					<span className="text-sm font-medium text-foreground">Month</span>
 					<select
 						id="filter-month"
@@ -340,7 +316,7 @@ export default function PostList() {
 							setMonthFilter(event.target.value);
 							setPage(1);
 						}}
-						className={selectClass}
+						className={filterSelectClass}
 					>
 						<option value="all">All months</option>
 						{MONTHS.map((month) => (
@@ -350,7 +326,7 @@ export default function PostList() {
 						))}
 					</select>
 				</label>
-				<label htmlFor="filter-year">
+				<label htmlFor="filter-year" className="block w-44">
 					<span className="text-sm font-medium text-foreground">Year</span>
 					<select
 						id="filter-year"
@@ -359,7 +335,7 @@ export default function PostList() {
 							setYearFilter(event.target.value);
 							setPage(1);
 						}}
-						className={selectClass}
+						className={filterSelectClass}
 					>
 						<option value="all">All years</option>
 						{years.map((year) => (
@@ -369,6 +345,19 @@ export default function PostList() {
 						))}
 					</select>
 				</label>
+				<button
+					type="button"
+					onClick={() => {
+						setFilter('all');
+						setPublicationFilter('all');
+						setMonthFilter('all');
+						setYearFilter('all');
+						setPage(1);
+					}}
+					className="rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-accent"
+				>
+					Clear filters
+				</button>
 			</div>
 
 			{/* HyperUI tabs (border-bottom style) with icons and count badges. */}
