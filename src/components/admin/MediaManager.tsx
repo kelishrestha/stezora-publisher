@@ -538,7 +538,7 @@ export default function MediaManager() {
 												{item.postId && (
 													<a
 														href={`/admin/posts/${item.postId}/view`}
-														className={buttonClass('accentOutline', 'sm')}
+														className={buttonClass('primary', 'sm')}
 													>
 														View post
 														<svg
@@ -561,7 +561,7 @@ export default function MediaManager() {
 													<button
 														type="button"
 														onClick={() => setPreviewImage(item)}
-														className={buttonClass('accentOutline', 'sm')}
+														className={buttonClass('primary', 'sm')}
 													>
 														View image
 														<svg

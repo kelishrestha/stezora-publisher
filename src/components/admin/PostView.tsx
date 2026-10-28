@@ -141,7 +141,7 @@ export default function PostView() {
 						</span>
 						<a
 							href={`/admin/posts/${post.id}/edit`}
-							className={buttonClass('accentOutline', 'sm')}
+							className={buttonClass('primary', 'sm')}
 						>
 							<PencilIcon />
 							Edit post

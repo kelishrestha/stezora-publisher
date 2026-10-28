@@ -119,7 +119,7 @@ function TrashIcon({ className = 'size-4' }: { className?: string }) {
 	);
 }
 
-const iconButtonClass = buttonClass('accentOutline', 'icon');
+const iconButtonClass = buttonClass('primary', 'icon');
 
 const dangerButtonClass = buttonClass('dangerOutline', 'icon');
 
