@@ -4,6 +4,7 @@ import LoadingImage from './LoadingImage';
 import Toast, { ToastStack } from './Toast';
 import ConfirmDialog from './ConfirmDialog';
 import { buttonClass, formControlClass } from '../ui/shared/classes';
+import { modalOverlayClass, modalPanelClass } from '../ui/shared/classes';
 
 interface PublicationOption {
 	id: string;
@@ -426,13 +427,13 @@ export default function PostEditor({ postId }: PostEditorProps) {
 			/>
 			{previewImage && (
 				<div
-					className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6 backdrop-blur-sm"
+					className={modalOverlayClass}
 					role="dialog"
 					aria-modal="true"
 					onClick={() => setPreviewImage(null)}
 				>
 					<figure
-						className="max-h-full max-w-3xl rounded-lg border border-border bg-surface p-3 shadow-lg"
+						className={modalPanelClass('max-h-full max-w-3xl p-3')}
 						onClick={(event) => event.stopPropagation()}
 					>
 						<img
@@ -769,13 +770,13 @@ export default function PostEditor({ postId }: PostEditorProps) {
 			)}
 			{confirmingSave && (
 				<div
-					className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6 backdrop-blur-sm"
+					className={modalOverlayClass}
 					role="dialog"
 					aria-modal="true"
 					onClick={() => setConfirmingSave(false)}
 				>
 					<div
-						className="w-full max-w-md rounded-lg border border-border bg-surface p-5 shadow-lg"
+						className={modalPanelClass()}
 						onClick={(event) => event.stopPropagation()}
 					>
 						<h2 className="text-base font-semibold text-foreground">

@@ -4,6 +4,7 @@ import LoadingImage from './LoadingImage';
 import Pagination from './Pagination';
 import { MONTHS, filterSelectClass, matchesMonthYear, yearsOf } from './filters';
 import { badgeClass, buttonClass, statusBadgeClass } from '../ui/shared/classes';
+import { cardClass, countBadgeClass } from '../ui/shared/classes';
 
 interface ListPost {
 	id: string;
@@ -370,11 +371,7 @@ export default function PostList() {
 							>
 								<TabIcon name={tab} />
 								{TAB_LABELS[tab]}
-								<span
-									className={`rounded-full px-2 py-0.5 text-xs ${
-										active ? 'bg-accent-soft text-accent-foreground' : 'bg-muted text-muted-foreground'
-									}`}
-								>
+								<span className={countBadgeClass(active)}>
 									{counts[tab]}
 								</span>
 							</button>
@@ -383,7 +380,7 @@ export default function PostList() {
 				</nav>
 			</div>
 
-			<div className="rounded-md border border-border bg-surface shadow-sm">
+			<div className={cardClass()}>
 				{visible.length === 0 ? (
 					posts.length === 0 ? (
 						<EmptyState

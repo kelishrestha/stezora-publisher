@@ -1,3 +1,4 @@
+import { paginationItemClass } from '../ui/shared/classes';
 interface PaginationProps {
 	totalItems: number;
 	page: number;
@@ -62,7 +63,7 @@ export default function Pagination({
 							onClick={() => onPageChange(Math.max(1, currentPage - 1))}
 							disabled={currentPage === 1}
 							aria-label="Previous page"
-							className="grid size-8 place-content-center rounded border border-border bg-surface text-foreground transition-colors hover:bg-surface-elevated disabled:pointer-events-none disabled:opacity-50"
+							className={`${paginationItemClass('page')} disabled:pointer-events-none disabled:opacity-50`}
 						>
 							<svg
 								aria-hidden="true"
@@ -85,11 +86,7 @@ export default function Pagination({
 								type="button"
 								onClick={() => onPageChange(number)}
 								aria-current={number === currentPage ? 'page' : undefined}
-								className={`size-8 rounded border text-center text-sm font-medium transition-colors ${
-									number === currentPage
-										? 'border-accent bg-accent text-on-accent'
-										: 'border-border bg-surface text-foreground hover:bg-surface-elevated'
-								}`}
+								className={paginationItemClass(number === currentPage ? 'active' : 'page')}
 							>
 								{number}
 							</button>
@@ -101,7 +98,7 @@ export default function Pagination({
 							onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
 							disabled={currentPage === totalPages}
 							aria-label="Next page"
-							className="grid size-8 place-content-center rounded border border-border bg-surface text-foreground transition-colors hover:bg-surface-elevated disabled:pointer-events-none disabled:opacity-50"
+							className={`${paginationItemClass('page')} disabled:pointer-events-none disabled:opacity-50`}
 						>
 							<svg
 								aria-hidden="true"

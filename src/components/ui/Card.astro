@@ -1,4 +1,6 @@
 ---
+import { cardClass } from './shared/classes';
+
 interface Props {
 	class?: string;
 }
@@ -6,7 +8,7 @@ interface Props {
 const { class: className = '' } = Astro.props;
 ---
 
-<!-- HyperUI card pattern mapped onto the theme tokens. -->
-<div class={`rounded-md border border-border bg-surface p-4 shadow-sm sm:p-6 ${className}`}>
+<!-- Thin wrapper over the shared card recipe. -->
+<div class={`${cardClass()} p-4 sm:p-6 ${className}`}>
 	<slot />
 </div>

@@ -1,4 +1,6 @@
 ---
+import { paginationItemClass } from '../ui/shared/classes';
+
 interface Props {
 	currentPage: number;
 	totalPages: number;
@@ -24,7 +26,7 @@ const pages = Array.from({ length: totalPages }, (_, index) => index + 1);
 						<a
 							href={pathFor(currentPage - 1)}
 							aria-label="Previous page"
-							class="grid size-8 place-content-center rounded border border-border bg-surface text-foreground transition-colors hover:bg-surface-elevated"
+							class={paginationItemClass('arrow')}
 						>
 							<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" class="size-4 rtl:rotate-180" viewBox="0 0 20 20" fill="currentColor">
 								<path
@@ -35,7 +37,7 @@ const pages = Array.from({ length: totalPages }, (_, index) => index + 1);
 							</svg>
 						</a>
 					) : (
-						<span class="grid size-8 place-content-center rounded border border-border bg-surface text-muted-foreground opacity-50">
+						<span class={paginationItemClass('arrowDisabled')}>
 							<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" class="size-4 rtl:rotate-180" viewBox="0 0 20 20" fill="currentColor">
 								<path
 									fill-rule="evenodd"
@@ -51,14 +53,14 @@ const pages = Array.from({ length: totalPages }, (_, index) => index + 1);
 						{page === currentPage ? (
 							<span
 								aria-current="page"
-								class="grid size-8 place-content-center rounded border border-accent bg-accent text-center text-sm font-medium text-on-accent"
+								class={paginationItemClass('active')}
 							>
 								{page}
 							</span>
 						) : (
 							<a
 								href={pathFor(page)}
-								class="grid size-8 place-content-center rounded border border-border bg-surface text-center text-sm font-medium text-foreground transition-colors hover:bg-surface-elevated"
+								class={paginationItemClass('page')}
 							>
 								{page}
 							</a>
@@ -70,7 +72,7 @@ const pages = Array.from({ length: totalPages }, (_, index) => index + 1);
 						<a
 							href={pathFor(currentPage + 1)}
 							aria-label="Next page"
-							class="grid size-8 place-content-center rounded border border-border bg-surface text-foreground transition-colors hover:bg-surface-elevated"
+							class={paginationItemClass('arrow')}
 						>
 							<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" class="size-4 rtl:rotate-180" viewBox="0 0 20 20" fill="currentColor">
 								<path
@@ -81,7 +83,7 @@ const pages = Array.from({ length: totalPages }, (_, index) => index + 1);
 							</svg>
 						</a>
 					) : (
-						<span class="grid size-8 place-content-center rounded border border-border bg-surface text-muted-foreground opacity-50">
+						<span class={paginationItemClass('arrowDisabled')}>
 							<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" class="size-4 rtl:rotate-180" viewBox="0 0 20 20" fill="currentColor">
 								<path
 									fill-rule="evenodd"

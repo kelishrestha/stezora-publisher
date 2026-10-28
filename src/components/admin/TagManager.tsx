@@ -4,6 +4,7 @@ import EmptyState from './EmptyState';
 import Pagination from './Pagination';
 import { MONTHS, filterSelectClass, matchesMonthYear, yearsOf } from './filters';
 import { badgeClass, buttonClass, formControlClass } from '../ui/shared/classes';
+import { cardClass, countBadgeClass, modalOverlayClass, modalPanelClass } from '../ui/shared/classes';
 
 interface TagRecord {
 	id: string;
@@ -303,13 +304,13 @@ export default function TagManager() {
 			)}
 			{modalOpen && (
 				<div
-					className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6 backdrop-blur-sm"
+					className={modalOverlayClass}
 					role="dialog"
 					aria-modal="true"
 					onClick={closeModal}
 				>
 					<div
-						className="w-full max-w-md rounded-lg border border-border bg-surface p-5 shadow-lg"
+						className={modalPanelClass()}
 						onClick={(event) => event.stopPropagation()}
 					>
 						<h2 className="text-base font-semibold text-foreground">
@@ -476,11 +477,7 @@ export default function TagManager() {
 							>
 								<TagIcon />
 								{tab.name}
-								<span
-									className={`rounded-full px-2 py-0.5 text-xs ${
-										active ? 'bg-accent-soft text-accent-foreground' : 'bg-muted text-muted-foreground'
-									}`}
-								>
+								<span className={countBadgeClass(active)}>
 									{counts[tab.id] ?? 0}
 								</span>
 							</button>
@@ -489,7 +486,7 @@ export default function TagManager() {
 				</nav>
 			</div>
 
-			<div className="rounded-md border border-border bg-surface shadow-sm">
+			<div className={cardClass()}>
 				{visible.length === 0 ? (
 					tags.length === 0 ? (
 						<EmptyState

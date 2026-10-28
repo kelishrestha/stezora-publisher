@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { buttonClass } from '../ui/shared/classes';
+import { modalOverlayClass, modalPanelClass } from '../ui/shared/classes';
 
 interface ConfirmDialogProps {
 	title: string;
@@ -29,13 +30,13 @@ export default function ConfirmDialog({
 
 	return (
 		<div
-			className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6 backdrop-blur-sm"
+			className={modalOverlayClass}
 			role="dialog"
 			aria-modal="true"
 			onClick={onCancel}
 		>
 			<div
-				className="w-full max-w-md rounded-lg border border-border bg-surface p-5 shadow-lg"
+				className={modalPanelClass()}
 				onClick={(event) => event.stopPropagation()}
 			>
 				<h2 className="text-base font-semibold text-foreground">{title}</h2>

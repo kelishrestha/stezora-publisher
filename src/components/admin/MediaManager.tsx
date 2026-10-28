@@ -4,6 +4,7 @@ import LoadingImage from './LoadingImage';
 import Pagination from './Pagination';
 import { MONTHS, filterSelectClass, matchesMonthYear, yearsOf } from './filters';
 import { badgeClass, buttonClass, formControlClass } from '../ui/shared/classes';
+import { cardClass, modalOverlayClass, modalPanelClass } from '../ui/shared/classes';
 
 interface MediaItem {
 	id: string;
@@ -241,13 +242,13 @@ export default function MediaManager() {
 		<div className="space-y-6">
 			{previewImage && (
 				<div
-					className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6 backdrop-blur-sm"
+					className={modalOverlayClass}
 					role="dialog"
 					aria-modal="true"
 					onClick={() => setPreviewImage(null)}
 				>
 					<figure
-						className="max-h-full max-w-3xl rounded-lg border border-border bg-surface p-3 shadow-lg"
+						className={modalPanelClass('max-h-full max-w-3xl p-3')}
 						onClick={(event) => event.stopPropagation()}
 					>
 						<img src={previewImage.url} alt={previewImage.filename} className="max-h-[75vh] w-auto rounded-md" />
@@ -266,13 +267,13 @@ export default function MediaManager() {
 			)}
 			{uploadOpen && (
 				<div
-					className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6 backdrop-blur-sm"
+					className={modalOverlayClass}
 					role="dialog"
 					aria-modal="true"
 					onClick={closeUploadModal}
 				>
 					<div
-						className="w-full max-w-md rounded-lg border border-border bg-surface p-5 shadow-lg"
+						className={modalPanelClass()}
 						onClick={(event) => event.stopPropagation()}
 					>
 						<h2 className="text-base font-semibold text-foreground">Upload media</h2>
@@ -501,7 +502,7 @@ export default function MediaManager() {
 							return (
 								<li key={item.id}>
 									{/* Blog card: media image, post title, tags, View post action. */}
-									<article className="flex h-full flex-col overflow-hidden rounded-md border border-border bg-surface shadow-sm">
+									<article className={`flex h-full flex-col ${cardClass()}`}>
 										{item.mimeType === 'application/pdf' ? (
 											<a href={item.url} target="_blank" rel="noopener noreferrer" className="block" title={item.filename}>
 												<div className="flex h-40 w-full items-center justify-center bg-surface-elevated">

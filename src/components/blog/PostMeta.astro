@@ -1,6 +1,7 @@
 ---
 import { formatDate } from '../../lib/seo/seo';
 import { slugify, tagPath } from '../../lib/publications';
+import { badgeClass } from '../ui/shared/classes';
 
 interface Props {
 	publicationSlug: string;
@@ -58,7 +59,7 @@ const wasUpdated = updatedDate && updatedDate.getTime() > pubDate.getTime();
 			{tags.map((tag) => (
 				<a
 					href={tagPath(publicationSlug, slugify(tag))}
-					class="rounded-full border border-border px-2.5 py-0.5 text-xs whitespace-nowrap text-muted-foreground transition-colors hover:text-accent-foreground"
+					class={`${badgeClass('outline')} transition-colors hover:text-accent-foreground`}
 				>
 					{tag}
 				</a>
