@@ -270,7 +270,7 @@ export default function PostList() {
 		<div className="space-y-4">
 			{/* Filters (HyperUI selects): publication, status, month, year. */}
 			<div className="flex flex-wrap items-end gap-4 pb-4">
-				<label htmlFor="filter-publication" className="block w-44">
+				<label htmlFor="filter-publication" className="block w-64">
 					<span className="text-sm font-medium text-foreground">Publication</span>
 					<select
 						id="filter-publication"

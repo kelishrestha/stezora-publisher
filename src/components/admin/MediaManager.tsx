@@ -425,7 +425,7 @@ export default function MediaManager() {
 			{notice && <p className="rounded-lg bg-accent-soft px-4 py-3 text-sm text-accent-foreground">{notice}</p>}
 
 			<div className="flex flex-wrap items-end gap-4">
-					<label htmlFor="media-filter-publication" className="block w-44">
+					<label htmlFor="media-filter-publication" className="block w-64">
 						<span className="text-sm font-medium text-foreground">Publication</span>
 						<select
 							id="media-filter-publication"

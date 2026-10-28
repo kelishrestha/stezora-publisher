@@ -376,7 +376,7 @@ export default function TagManager() {
 
 			{/* Filters (HyperUI selects): publication, month, year. */}
 			<div className="flex flex-wrap items-end gap-4 pb-4">
-				<label htmlFor="tag-filter-publication" className="block w-44">
+				<label htmlFor="tag-filter-publication" className="block w-64">
 					<span className="text-sm font-medium text-foreground">Publication</span>
 					<select
 						id="tag-filter-publication"
