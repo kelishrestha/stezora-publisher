@@ -100,6 +100,7 @@
 	--color-accent: oklch(91.5% 0 0);
 	--color-accent-foreground: var(--color-gray-950);
 	--color-accent-soft: oklch(95% 0 0);
+	--color-on-accent: var(--color-gray-950);
 	--color-muted: oklch(92% 0 0);
 	--color-border: rgb(0 0 0 / 10%);
 }
@@ -126,7 +127,26 @@
 	--color-accent: oklch(26.9% 0 0);
 	--color-accent-foreground: oklch(98.5% 0 0);
 	--color-accent-soft: oklch(26.9% 0 0);
+	--color-on-accent: oklch(98.5% 0 0);
 	--color-muted: oklch(26.9% 0 0);
+}
+
+/*
+ * Admin CMS: space indigo tool palette (decided 2026-10-28). Backgrounds and
+ * surfaces stay neutral so content previews read true; the accent family is
+ * a rich indigo that marks the CMS apart from every publication palette.
+ */
+:root:not(.dark)[data-accent='admin'] {
+	--color-accent: var(--color-space-indigo-500);
+	--color-on-accent: oklch(98.5% 0 0);
+	--color-accent-foreground: var(--color-space-indigo-600);
+	--color-accent-soft: var(--color-space-indigo-50);
+}
+.dark[data-accent='admin'] {
+	--color-accent: var(--color-space-indigo-400);
+	--color-on-accent: oklch(98.5% 0 0);
+	--color-accent-foreground: var(--color-space-indigo-200);
+	--color-accent-soft: var(--color-space-indigo-900);
 }
 
 /* The Sore Transition: grey light mode, blackish dark mode. */

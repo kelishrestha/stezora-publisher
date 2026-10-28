@@ -103,22 +103,22 @@ export default function Dashboard() {
 	return (
 		<div className="space-y-6">
 			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-				<div className="rounded-md border border-border bg-surface shadow-sm p-5">
-					<p className="text-sm text-muted-foreground">Publications</p>
+				<div className="rounded-md border border-border bg-accent-soft shadow-sm p-5">
+					<p className="text-sm font-medium text-accent-foreground">Publications</p>
 					<p className="mt-1 text-3xl font-semibold text-foreground">{stats.publications.length}</p>
 				</div>
-				<div className="rounded-md border border-border bg-surface shadow-sm p-5">
-					<p className="text-sm text-muted-foreground">Total posts</p>
+				<div className="rounded-md border border-border bg-accent-soft shadow-sm p-5">
+					<p className="text-sm font-medium text-accent-foreground">Total posts</p>
 					<p className="mt-1 text-3xl font-semibold text-foreground">{totalPosts}</p>
 				</div>
-				<div className="rounded-md border border-border bg-surface shadow-sm p-5">
-					<p className="text-sm text-muted-foreground">Published</p>
+				<div className="rounded-md border border-border bg-accent-soft shadow-sm p-5">
+					<p className="text-sm font-medium text-accent-foreground">Published</p>
 					<p className="mt-1 text-3xl font-semibold text-foreground">
 						{stats.publications.reduce((sum, p) => sum + p.published, 0)}
 					</p>
 				</div>
-				<div className="rounded-md border border-border bg-surface shadow-sm p-5">
-					<p className="text-sm text-muted-foreground">Media files</p>
+				<div className="rounded-md border border-border bg-accent-soft shadow-sm p-5">
+					<p className="text-sm font-medium text-accent-foreground">Media files</p>
 					<p className="mt-1 text-3xl font-semibold text-foreground">{stats.totalMedia}</p>
 				</div>
 			</div>

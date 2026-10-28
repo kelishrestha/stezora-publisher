@@ -26,7 +26,7 @@ export interface Props {
 	updatedAt?: Date | string;
 	noindex?: boolean;
 	breadcrumbs?: BreadcrumbItem[];
-	accent?: PublicationAccent;
+	accent?: PublicationAccent | 'admin';
 	/** Render the public site header/footer. The admin shell brings its own. */
 	chrome?: boolean;
 }

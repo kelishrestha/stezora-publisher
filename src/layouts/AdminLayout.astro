@@ -29,12 +29,12 @@ function isActive(href: string): boolean {
 	return href === '/admin' ? path === '/admin' : path.startsWith(href);
 }
 
-const activeLink = 'flex items-center gap-2 rounded-lg bg-surface-elevated px-4 py-2 text-sm font-medium text-foreground';
+const activeLink = 'flex items-center gap-2 rounded-lg bg-accent-soft px-4 py-2 text-sm font-medium text-accent-foreground';
 const inactiveLink =
-	'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-surface-elevated hover:text-foreground';
+	'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent-soft hover:text-accent-foreground';
 ---
 
-<BaseLayout title={title} description={description} path={path} noindex chrome={false}>
+<BaseLayout title={title} description={description} path={path} noindex chrome={false} accent="admin">
 	<!-- Top bar: logo only, with the theme toggle (HyperUI header on theme tokens). -->
 	<header class="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur">
 		<div class="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -51,7 +51,7 @@ const inactiveLink =
 
 	<div class="flex flex-1">
 		<!-- HyperUI side menu on theme tokens: nav on top, sign out pinned at the bottom. -->
-		<aside class="sticky top-16 hidden h-[calc(100vh-4rem)] w-56 shrink-0 flex-col justify-between border-e border-border bg-surface sm:flex">
+		<aside class="sticky top-16 hidden h-[calc(100vh-4rem)] w-64 shrink-0 flex-col justify-between border-e border-border bg-surface sm:flex lg:w-72">
 			<div class="p-4">
 				<ul class="space-y-1">
 					{navItems.map((item) => (
@@ -74,7 +74,7 @@ const inactiveLink =
 				<button
 					type="button"
 					id="admin-sign-out"
-					class="flex w-full items-center gap-2 rounded-lg px-4 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-surface-elevated hover:text-foreground"
+					class="flex w-full items-center gap-2 rounded-lg px-4 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-accent-soft hover:text-accent-foreground"
 				>
 					<Icon name="lucide:log-out" class="size-4 shrink-0" aria-hidden="true" />
 					Sign out
@@ -83,8 +83,8 @@ const inactiveLink =
 		</aside>
 
 		<main class="min-w-0 flex-1 px-4 py-8 sm:px-6 lg:px-8">
-			<!-- Content takes 75% of the pane on large screens; full width below. -->
-			<div class="mx-auto w-full lg:w-3/4">
+			<!-- Content takes 75% of the pane on large screens (left aligned); full width below. -->
+			<div class="w-full lg:w-3/4">
 			<!-- Small screens get the same navigation as a scrollable strip. -->
 			<nav aria-label="Admin" class="mb-6 flex gap-1 overflow-x-auto border-b border-border pb-3 text-sm sm:hidden">
 				{navItems.map((item) => (
@@ -92,8 +92,8 @@ const inactiveLink =
 						href={item.href}
 						class={`shrink-0 rounded-lg px-3 py-1.5 ${
 							isActive(item.href)
-								? 'bg-surface-elevated font-medium text-foreground'
-								: 'text-muted-foreground hover:bg-surface-elevated hover:text-foreground'
+								? 'bg-accent-soft font-medium text-accent-foreground'
+								: 'text-muted-foreground hover:bg-accent-soft hover:text-accent-foreground'
 						}`}
 					>
 						{item.label}

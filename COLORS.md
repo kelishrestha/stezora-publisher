@@ -80,6 +80,13 @@ Rules:
 - Surfaces => neutral gray-900/gray-800
 - Primary, secondary, and accent => neutral gray
 
+## Admin palette
+
+The CMS uses the `admin` accent (`data-accent='admin'`): neutral backgrounds
+and surfaces so content previews read true, with a space-indigo accent family
+(space-indigo-500 light, space-indigo-400 dark) that marks the CMS apart from
+every publication palette. Decided 2026-10-28.
+
 ## Publication palettes
 
 Each publication has a distinct background and supporting palette in both
