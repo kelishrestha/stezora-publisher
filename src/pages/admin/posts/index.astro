@@ -1,4 +1,5 @@
 ---
+import { Icon } from 'astro-icon/components';
 import { buttonClass } from '../../../components/ui/shared/classes';
 import AdminLayout from '../../../layouts/AdminLayout.astro';
 import PostList from '../../../components/admin/PostList';
@@ -14,6 +15,7 @@ const description = 'Manage posts across all publications.';
 			href="/admin/posts/new"
 			class={buttonClass('primary')}
 		>
+			<Icon name="lucide:plus" class="size-4" aria-hidden="true" />
 			New post
 		</a>
 	</div>

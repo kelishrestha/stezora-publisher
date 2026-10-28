@@ -1,4 +1,5 @@
 ---
+import { Icon } from 'astro-icon/components';
 import { buttonClass } from '../../../components/ui/shared/classes';
 import AdminLayout from '../../../layouts/AdminLayout.astro';
 import TagManager from '../../../components/admin/TagManager';
@@ -15,6 +16,7 @@ const description = 'Manage tags per publication.';
 			id="new-tag-button"
 			class={buttonClass('primary')}
 		>
+			<Icon name="lucide:plus" class="size-4" aria-hidden="true" />
 			New tag
 		</button>
 	</div>
