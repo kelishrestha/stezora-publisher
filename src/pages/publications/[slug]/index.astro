@@ -24,7 +24,7 @@ const pagePosts = posts.slice(0, POSTS_PAGE_SIZE);
 	{pagePosts.length > 0 ? (
 		<section>
 			<div>
-				<PostList posts={pagePosts} publicationSlug={publication.slug} />
+				<PostList posts={pagePosts} publicationSlug={publication.slug} borderless />
 			</div>
 			<PaginationNav currentPage={1} totalPages={totalPages} basePath={publicationPath(publication.slug)} />
 		</section>

@@ -2,16 +2,18 @@
 import type { Post } from '../../lib/publications/collections';
 import { postExcerpt, postPath } from '../../lib/publications';
 import { formatDate } from '../../lib/seo/seo';
-import { badgeClass, buttonClass } from '../ui/shared/classes';
+import { badgeClass, buttonClass, cardClass } from '../ui/shared/classes';
 
 interface Props {
 	post: Post;
 	publicationSlug: string;
 	/** Wide keeps the roomier proportions; slim is the default. */
 	wide?: boolean;
+	/** Render without a border (publication pages). */
+	borderless?: boolean;
 }
 
-const { post, publicationSlug, wide = false } = Astro.props;
+const { post, publicationSlug, wide = false, borderless = false } = Astro.props;
 
 const href = postPath(publicationSlug, post.id);
 
@@ -21,7 +23,7 @@ function displayDate(date: Date): string {
 ---
 
 <!-- HyperUI blog card: image, title, excerpt, published date, tags, CTA. -->
-<article class="group flex h-full flex-col overflow-hidden rounded-md border border-border bg-surface shadow-sm">
+<article class={`group flex h-full flex-col ${cardClass({ borderless })}`}>
 	{post.data.featuredImage && (
 		<a href={href} class="block" tabindex="-1" aria-hidden="true">
 			<img src={post.data.featuredImage} alt="" loading="lazy" class={`${wide ? 'h-64' : 'h-56'} w-full object-cover`} />

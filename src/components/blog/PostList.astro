@@ -7,13 +7,15 @@ interface Props {
 	publicationSlug: string;
 	/** Wide renders two roomy columns; slim (default) fits three on large screens. */
 	wide?: boolean;
+	/** Render cards without borders (publication pages). */
+	borderless?: boolean;
 }
 
-const { posts, publicationSlug, wide = false } = Astro.props;
+const { posts, publicationSlug, wide = false, borderless = false } = Astro.props;
 ---
 
 <div class={`grid gap-4 sm:grid-cols-2 ${wide ? '' : 'lg:grid-cols-3'}`}>
 	{posts.map((post) => (
-		<PostCard post={post} publicationSlug={publicationSlug} wide={wide} />
+		<PostCard post={post} publicationSlug={publicationSlug} wide={wide} borderless={borderless} />
 	))}
 </div>

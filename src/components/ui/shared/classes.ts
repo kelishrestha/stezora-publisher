@@ -59,3 +59,13 @@ export function statusBadgeClass(status: string): string {
 /** HyperUI form control (inputs, selects, textareas) on the forms plugin. */
 export const formControlClass =
 	'mt-0.5 w-full rounded border-border bg-background text-foreground shadow-sm sm:text-sm placeholder:text-muted-foreground focus:border-accent focus:ring-accent';
+
+export interface CardOptions {
+	/** Drop the border (tinted publication backgrounds read cleaner without it). */
+	borderless?: boolean;
+}
+
+/** HyperUI card shell shared by public and admin surfaces. */
+export function cardClass(options: CardOptions = {}): string {
+	return `overflow-hidden rounded-md bg-surface shadow-sm ${options.borderless ? '' : 'border border-border'}`;
+}
