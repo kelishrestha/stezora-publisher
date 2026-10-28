@@ -8,6 +8,7 @@ interface ListPost {
 	status: string;
 	publishedAt: string | null;
 	updatedAt: string | null;
+	featuredImage: { id: string; url: string; filename: string } | null;
 }
 
 interface PublicationOption {
@@ -116,6 +117,26 @@ function EyeIcon({ className = 'size-4' }: IconProps) {
 		>
 			<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
 			<circle cx="12" cy="12" r="3" />
+		</svg>
+	);
+}
+
+function ImagePlaceholderIcon({ className = 'size-5' }: IconProps) {
+	return (
+		<svg
+			aria-hidden="true"
+			xmlns="http://www.w3.org/2000/svg"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="2"
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			className={className}
+		>
+			<rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+			<circle cx="9" cy="9" r="2" />
+			<path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
 		</svg>
 	);
 }
@@ -246,14 +267,28 @@ export default function PostList() {
 								key={post.id}
 								className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 hover:bg-surface-elevated"
 							>
-								<a href={`/admin/posts/${post.id}/view`} className="min-w-0 flex-1">
-									<p className="truncate font-medium text-foreground">{post.title}</p>
-									<p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-										<span className="rounded-full bg-accent-soft px-2.5 py-0.5 whitespace-nowrap text-accent-foreground">
-											{publicationNames[post.publication] ?? post.publication}
+								<a href={`/admin/posts/${post.id}/view`} className="flex min-w-0 flex-1 items-center gap-3">
+									{post.featuredImage ? (
+										<img
+											src={post.featuredImage.url}
+											alt=""
+											loading="lazy"
+											className="size-12 shrink-0 rounded-md border border-border object-cover"
+										/>
+									) : (
+										<span className="grid size-12 shrink-0 place-content-center rounded-md border border-border bg-muted text-muted-foreground">
+											<ImagePlaceholderIcon />
 										</span>
-										{post.updatedAt && <span>Updated on {formatDate(post.updatedAt)}</span>}
-									</p>
+									)}
+									<div className="min-w-0">
+										<p className="truncate font-medium text-foreground">{post.title}</p>
+										<p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+											<span className="rounded-full bg-accent-soft px-2.5 py-0.5 whitespace-nowrap text-accent-foreground">
+												{publicationNames[post.publication] ?? post.publication}
+											</span>
+											{post.updatedAt && <span>Updated on {formatDate(post.updatedAt)}</span>}
+										</p>
+									</div>
 								</a>
 								<div className="flex shrink-0 items-center gap-2">
 									<span
