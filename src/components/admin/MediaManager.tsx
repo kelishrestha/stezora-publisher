@@ -297,37 +297,62 @@ export default function MediaManager() {
 												<span className="rounded-full border border-border px-2.5 py-0.5 text-xs whitespace-nowrap text-muted-foreground">
 													{publicationName(item.publicationId)}
 												</span>
-												{post && post.tags.length > 0 ? (
-													post.tags.map((tag) => (
-														<span
-															key={tag}
-															className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs whitespace-nowrap text-accent-foreground"
-														>
-															{tag}
-														</span>
-													))
-												) : (
-													<span className="text-xs text-muted-foreground">No tags</span>
-												)}
+												{post?.tags.map((tag) => (
+													<span
+														key={tag}
+														className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs whitespace-nowrap text-accent-foreground"
+													>
+														{tag}
+													</span>
+												))}
 											</div>
-											<div className="mt-4 flex flex-wrap items-center gap-4">
+											<div className="mt-4 flex flex-wrap items-center gap-2">
 												{item.postId && (
 													<a
 														href={`/admin/posts/${item.postId}/view`}
-														className="inline-flex items-center gap-1 text-sm font-medium text-accent-foreground transition-colors hover:opacity-80"
+														aria-label="View post"
+														title="View post"
+														className="rounded-md bg-accent-soft p-2 text-accent-foreground transition-colors hover:bg-accent hover:text-on-accent focus:outline-none focus:ring-2 focus:ring-accent"
 													>
-														View post
-														<span aria-hidden="true">&rarr;</span>
+														<svg
+															aria-hidden="true"
+															xmlns="http://www.w3.org/2000/svg"
+															viewBox="0 0 24 24"
+															fill="none"
+															stroke="currentColor"
+															strokeWidth="2"
+															strokeLinecap="round"
+															strokeLinejoin="round"
+															className="size-4"
+														>
+															<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+															<path d="M14 2v4a2 2 0 0 0 2 2h4" />
+														</svg>
 													</a>
 												)}
 												{item.mimeType !== 'application/pdf' && (
 													<button
 														type="button"
 														onClick={() => setPreviewImage(item)}
-														className="inline-flex items-center gap-1 text-sm font-medium text-accent-foreground transition-colors hover:opacity-80"
+														aria-label="View image"
+														title="View image"
+														className="rounded-md bg-accent-soft p-2 text-accent-foreground transition-colors hover:bg-accent hover:text-on-accent focus:outline-none focus:ring-2 focus:ring-accent"
 													>
-														View image
-														<span aria-hidden="true">&rarr;</span>
+														<svg
+															aria-hidden="true"
+															xmlns="http://www.w3.org/2000/svg"
+															viewBox="0 0 24 24"
+															fill="none"
+															stroke="currentColor"
+															strokeWidth="2"
+															strokeLinecap="round"
+															strokeLinejoin="round"
+															className="size-4"
+														>
+															<rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+															<circle cx="9" cy="9" r="2" />
+															<path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+														</svg>
 													</button>
 												)}
 											</div>
