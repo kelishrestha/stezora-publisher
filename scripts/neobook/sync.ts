@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { Miniflare } from 'miniflare';
+import { slugify } from '../../src/lib/publications';
 
 /**
  * One-way sync from the Neobook profile (https://neobook.org/stezora/) into
@@ -43,6 +44,7 @@ interface NeobookItem {
 	date_edit: string;
 	date_publish: string;
 	link_path: string;
+	tags?: string[];
 	attachment: { has: string; id: string; image?: { l?: string; m?: string } };
 }
 
@@ -134,6 +136,37 @@ interface PostRow {
 
 type LocalD1 = Awaited<ReturnType<Miniflare['getD1Database']>>;
 
+/**
+ * Ensures the item's Neobook tags exist in the post's publication (matched by
+ * slug, so Blogger-era lowercase tags are reused) and links them to the post.
+ * Existing tags are never removed. Returns the number of tags created.
+ */
+async function syncTags(db: LocalD1, post: PostRow, tagNames: string[], tagIds: Map<string, string>): Promise<number> {
+	let created = 0;
+	for (const name of tagNames) {
+		const slug = slugify(name);
+		if (!slug) {
+			continue;
+		}
+		const cacheKey = `${post.publication_id}/${slug}`;
+		let tagId = tagIds.get(cacheKey);
+		if (!tagId) {
+			tagId = `t-${post.publication_slug}-${slug}`;
+			await db
+				.prepare('INSERT INTO tags (id, publication_id, name, slug, created_at) VALUES (?, ?, ?, ?, ?)')
+				.bind(tagId, post.publication_id, name, slug, new Date().toISOString())
+				.run();
+			tagIds.set(cacheKey, tagId);
+			created += 1;
+		}
+		await db
+			.prepare('INSERT OR IGNORE INTO post_tags (post_id, tag_id) VALUES (?, ?)')
+			.bind(post.id, tagId)
+			.run();
+	}
+	return created;
+}
+
 /** Publishes a Neobook item as a new post following the p-<pub>-<slug> id scheme. */
 async function createPost(db: LocalD1, publicationSlug: string, item: NeobookItem): Promise<PostRow> {
 	const publication = await db
@@ -196,9 +229,15 @@ async function main(): Promise<void> {
 			.all<PostRow>();
 		const byTitle = new Map(posts.map((post) => [normalizeTitle(post.title), post]));
 
+		const { results: tagRows } = await db
+			.prepare('SELECT id, publication_id, slug FROM tags')
+			.all<{ id: string; publication_id: string; slug: string }>();
+		const tagIds = new Map(tagRows.map((tag) => [`${tag.publication_id}/${tag.slug}`, tag.id]));
+
 		let contentUpdates = 0;
 		let imagesAttached = 0;
 		let postsCreated = 0;
+		let tagsCreated = 0;
 		const unmatched: string[] = [];
 
 		for (const item of items) {
@@ -217,6 +256,8 @@ async function main(): Promise<void> {
 				unmatched.push(`${item.type}: ${item.title}`);
 				continue;
 			}
+
+			tagsCreated += await syncTags(db, post, item.tags ?? [], tagIds);
 
 			if (htmlToComparableText(item.text) !== htmlToComparableText(post.content)) {
 				const updatedAt = neobookDateToIso(item.date_edit) ?? new Date().toISOString();
@@ -275,7 +316,8 @@ async function main(): Promise<void> {
 		}
 
 		console.error(
-			`neobook:sync: ${postsCreated} post(s) created, ${contentUpdates} content update(s), ${imagesAttached} featured image(s) attached`
+			`neobook:sync: ${postsCreated} post(s) created, ${contentUpdates} content update(s), ` +
+				`${imagesAttached} featured image(s) attached, ${tagsCreated} tag(s) created`
 		);
 		if (unmatched.length > 0) {
 			console.error(`neobook:sync: ${unmatched.length} item(s) with no matching post:`);
