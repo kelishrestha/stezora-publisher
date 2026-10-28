@@ -33,17 +33,21 @@ export function isAdminAssetRequest(pathname: string): boolean {
 
 /**
  * Astro emits static pages as `index.html`, so the browser path `/admin/posts`
- * maps to the asset `/admin/posts/index.html`. Like `POST /api/admin/posts`,
- * `/admin/posts/:id/edit` needs no per-post asset; it intentionally maps every
- * id onto the one static editor shell. The same applies to `/admin/posts/:id/view`.
+ * maps to the built asset directory `/admin/posts/`. The mapping returns the
+ * trailing-slash directory form (not `.../index.html`) because the assets
+ * layer's auto trailing-slash handling 307-redirects explicit `index.html`
+ * paths back to the directory, which would loop through this gate forever.
+ * Like `POST /api/admin/posts`, `/admin/posts/:id/edit` needs no per-post
+ * asset; it intentionally maps every id onto the one static editor shell.
+ * The same applies to `/admin/posts/:id/view`.
  */
 export function adminAssetPath(pathname: string): string {
 	const withoutTrailingSlash = pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
 	if (isAdminEditPath(withoutTrailingSlash)) {
-		return '/admin/posts/edit/index.html';
+		return '/admin/posts/edit/';
 	}
 	if (isAdminViewPath(withoutTrailingSlash)) {
-		return '/admin/posts/view/index.html';
+		return '/admin/posts/view/';
 	}
-	return `${withoutTrailingSlash || '/admin'}/index.html`;
+	return `${withoutTrailingSlash || '/admin'}/`;
 }

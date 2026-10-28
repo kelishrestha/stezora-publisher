@@ -8,6 +8,12 @@
 	"main": "./worker/index.ts",
 	"assets": {
 		"directory": "./dist",
+		// The worker rewrites /admin/posts/:id/view and :id/edit onto the
+		// static editor shells and gates every /admin page behind a session,
+		// so admin requests must reach the worker instead of being served
+		// directly from assets, and the worker needs the ASSETS binding.
+		"binding": "ASSETS",
+		"run_worker_first": ["/admin", "/admin/*", "/api/*", "/media/*"],
 		"not_found_handling": "404-page"
 	},
 	"d1_databases": [

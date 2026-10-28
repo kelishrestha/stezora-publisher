@@ -25,29 +25,29 @@ describe('isAdminAssetRequest', () => {
 });
 
 describe('adminAssetPath', () => {
-	it('maps /admin to its index asset', () => {
-		expect(adminAssetPath('/admin')).toBe('/admin/index.html');
-		expect(adminAssetPath('/admin/')).toBe('/admin/index.html');
+	it('maps /admin to its asset directory', () => {
+		expect(adminAssetPath('/admin')).toBe('/admin/');
+		expect(adminAssetPath('/admin/')).toBe('/admin/');
 	});
 
-	it('maps admin sub-pages to their index asset', () => {
-		expect(adminAssetPath('/admin/posts')).toBe('/admin/posts/index.html');
-		expect(adminAssetPath('/admin/posts/')).toBe('/admin/posts/index.html');
-		expect(adminAssetPath('/admin/posts/new')).toBe('/admin/posts/new/index.html');
+	it('maps admin sub-pages to their asset directory', () => {
+		expect(adminAssetPath('/admin/posts')).toBe('/admin/posts/');
+		expect(adminAssetPath('/admin/posts/')).toBe('/admin/posts/');
+		expect(adminAssetPath('/admin/posts/new')).toBe('/admin/posts/new/');
 	});
 
 	it('maps every post-edit path to the single static editor shell', () => {
 		// The edit page is static; PostEditor reads the id from the URL client-side.
-		expect(adminAssetPath('/admin/posts/123/edit')).toBe('/admin/posts/edit/index.html');
-		expect(adminAssetPath('/admin/posts/foo-bar/edit')).toBe('/admin/posts/edit/index.html');
-		expect(adminAssetPath('/admin/posts/123/edit/')).toBe('/admin/posts/edit/index.html');
+		expect(adminAssetPath('/admin/posts/123/edit')).toBe('/admin/posts/edit/');
+		expect(adminAssetPath('/admin/posts/foo-bar/edit')).toBe('/admin/posts/edit/');
+		expect(adminAssetPath('/admin/posts/123/edit/')).toBe('/admin/posts/edit/');
 	});
 
 	it('maps every post-view path to the single static view shell', () => {
 		// The view page is static; PostView reads the id from the URL client-side.
-		expect(adminAssetPath('/admin/posts/123/view')).toBe('/admin/posts/view/index.html');
-		expect(adminAssetPath('/admin/posts/foo-bar/view')).toBe('/admin/posts/view/index.html');
-		expect(adminAssetPath('/admin/posts/123/view/')).toBe('/admin/posts/view/index.html');
+		expect(adminAssetPath('/admin/posts/123/view')).toBe('/admin/posts/view/');
+		expect(adminAssetPath('/admin/posts/foo-bar/view')).toBe('/admin/posts/view/');
+		expect(adminAssetPath('/admin/posts/123/view/')).toBe('/admin/posts/view/');
 	});
 });
 
