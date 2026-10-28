@@ -42,9 +42,7 @@ const breadcrumbs = [
 				<PostMeta pubDate={post.data.pubDate} updatedDate={post.data.updatedDate} />
 			</div>
 		</header>
-		{/* Snug body width: the floated featured image sits right against the
-		    text instead of drifting to the far edge of the wide article. */}
-		<div class="prose mt-10 max-w-3xl dark:prose-invert">
+		<div class="prose mt-10 max-w-none dark:prose-invert">
 			<slot />
 		</div>
 		{post.data.tags.length > 0 && (
