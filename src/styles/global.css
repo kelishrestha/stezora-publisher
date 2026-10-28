@@ -114,3 +114,9 @@ html.dark {
 		animation: none;
 	}
 }
+
+/* Publication pages (accented palettes) drop the site chrome borders. */
+html[data-accent] .site-header,
+html[data-accent] .site-footer {
+	border-color: transparent;
+}
