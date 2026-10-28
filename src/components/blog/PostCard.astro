@@ -27,6 +27,7 @@ function displayDate(date: Date): string {
 	{post.data.featuredImage && (
 		<a href={href} class="block" tabindex="-1" aria-hidden="true">
 			<span class={`img-shell ${wide ? 'h-64' : 'h-56'} w-full`}>
+				<span class="img-shell-dots" aria-hidden="true"><span></span><span></span><span></span></span>
 				<img
 					src={post.data.featuredImage}
 					alt=""

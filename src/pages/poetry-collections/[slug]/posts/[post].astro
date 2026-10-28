@@ -29,6 +29,7 @@ const content = sanitizeContentHtml(post.data.content);
 	{
 		post.data.featuredImage && (
 			<span class="img-shell mb-8 block w-full rounded-lg border border-border shadow-lg lg:float-right lg:mb-6 lg:ml-10 lg:w-80 lg:rotate-2 lg:transition-transform lg:hover:rotate-0">
+				<span class="img-shell-dots" aria-hidden="true"><span></span><span></span><span></span></span>
 				<img
 					src={post.data.featuredImage}
 					alt=""
