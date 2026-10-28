@@ -286,14 +286,12 @@ export default function MediaManager() {
 												{post?.title ?? postTitle(item.postId)}
 											</h3>
 											<p className="mt-1 truncate text-xs text-muted-foreground" title={item.external ? undefined : item.filename}>
+												{publicationName(item.publicationId)} ·{' '}
 												{item.external
 													? `Blogger-hosted · ${formatDate(item.createdAt)}`
 													: `${item.filename}${item.size > 0 ? ` · ${formatSize(item.size)}` : ''} · ${formatDate(item.createdAt)}`}
 											</p>
 											<div className="mt-3 flex flex-1 flex-wrap content-start gap-1.5">
-												<span className="rounded-full border border-border px-2.5 py-0.5 text-xs whitespace-nowrap text-muted-foreground">
-													{publicationName(item.publicationId)}
-												</span>
 												{post?.tags.map((tag) => (
 													<span
 														key={tag}
