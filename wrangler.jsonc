@@ -13,14 +13,19 @@
 		// so admin requests must reach the worker instead of being served
 		// directly from assets, and the worker needs the ASSETS binding.
 		"binding": "ASSETS",
-		"run_worker_first": ["/admin", "/admin/*", "/api/*", "/media/*"],
+		"run_worker_first": [
+			"/admin",
+			"/admin/*",
+			"/api/*",
+			"/media/*"
+		],
 		"not_found_handling": "404-page"
 	},
 	"d1_databases": [
 		{
 			"binding": "DB",
 			"database_name": "stezora-publisher-db",
-			"database_id": "00000000-0000-0000-0000-000000000000",
+			"database_id": "3cad3d3d-7cd6-4921-a371-aa6a5ce719e0",
 			"migrations_dir": "./migrations"
 		}
 	],
