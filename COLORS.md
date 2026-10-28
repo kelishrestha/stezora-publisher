@@ -98,4 +98,4 @@ and badges:
 | --- | --- |
 | The Sore Transition | space-indigo (greyed light-mode accent) |
 | The Rebellious Flame | dark-amaranth |
-| My Soulful Incantations | soft-periwinkle |
+| My Soulful Incantations | ocean-deep |

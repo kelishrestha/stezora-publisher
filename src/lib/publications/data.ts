@@ -23,6 +23,6 @@ export const publications: Publication[] = [
 		slug: 'my-soulful-incantations',
 		description:
 			'Poetry written low and slow — incantations for the hours that ask to be felt rather than fixed.',
-		accent: 'soft-periwinkle'
+		accent: 'ocean-deep'
 	},
 ];

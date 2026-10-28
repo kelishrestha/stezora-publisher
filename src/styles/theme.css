@@ -178,16 +178,16 @@
 	--color-accent-soft: var(--color-dark-amaranth-900);
 }
 
-/* My Soulful Incantations: contemplative periwinkle poetry palette. */
-:root:not(.dark)[data-accent='soft-periwinkle'] {
-	--color-accent: var(--color-soft-periwinkle-600);
+/* My Soulful Incantations: deep ocean blues. */
+:root:not(.dark)[data-accent='ocean-deep'] {
+	--color-accent: var(--color-ocean-deep-600);
 	--color-on-accent: oklch(98.5% 0 0);
-	--color-accent-foreground: var(--color-soft-periwinkle-700);
-	--color-accent-soft: var(--color-soft-periwinkle-100);
+	--color-accent-foreground: var(--color-ocean-deep-700);
+	--color-accent-soft: var(--color-ocean-deep-100);
 }
-.dark[data-accent='soft-periwinkle'] {
-	--color-accent: var(--color-soft-periwinkle-400);
+.dark[data-accent='ocean-deep'] {
+	--color-accent: var(--color-ocean-deep-400);
 	--color-on-accent: oklch(98.5% 0 0);
-	--color-accent-foreground: var(--color-soft-periwinkle-300);
-	--color-accent-soft: var(--color-soft-periwinkle-900);
+	--color-accent-foreground: var(--color-ocean-deep-300);
+	--color-accent-soft: var(--color-ocean-deep-900);
 }
