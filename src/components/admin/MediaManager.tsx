@@ -74,6 +74,8 @@ export default function MediaManager() {
 	const [notice, setNotice] = useState<string | null>(null);
 	const [page, setPage] = useState(1);
 	const [previewImage, setPreviewImage] = useState<MediaItem | null>(null);
+	const [uploadOpen, setUploadOpen] = useState(false);
+	const [pendingFile, setPendingFile] = useState<File | null>(null);
 	const [pageSize, setPageSize] = useState(12);
 
 	useEffect(() => {
@@ -111,13 +113,16 @@ export default function MediaManager() {
 	}, []);
 
 	useEffect(() => {
-		if (!previewImage) return;
+		if (!previewImage && !uploadOpen) return;
 		const onKeyDown = (event: KeyboardEvent) => {
-			if (event.key === 'Escape') setPreviewImage(null);
+			if (event.key !== 'Escape') return;
+			setPreviewImage(null);
+			setUploadOpen(false);
+			setPendingFile(null);
 		};
 		window.addEventListener('keydown', onKeyDown);
 		return () => window.removeEventListener('keydown', onKeyDown);
-	}, [previewImage]);
+	}, [previewImage, uploadOpen]);
 
 	const postsForPublication = (posts ?? []).filter((post) => post.publicationId === publicationId);
 
@@ -144,6 +149,8 @@ export default function MediaManager() {
 			});
 			setNotice(`Uploaded ${result.media.filename}.`);
 			setItems((current) => (current ? [result.media, ...current] : [result.media]));
+			setPendingFile(null);
+			setUploadOpen(false);
 		} catch (reason) {
 			setError(reason instanceof Error ? reason.message : 'Failed to upload media.');
 		} finally {
@@ -189,78 +196,147 @@ export default function MediaManager() {
 					</figure>
 				</div>
 			)}
-			{error && (
+			{uploadOpen && (
+				<div
+					className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6 backdrop-blur-sm"
+					role="dialog"
+					aria-modal="true"
+					onClick={() => {
+						setUploadOpen(false);
+						setPendingFile(null);
+					}}
+				>
+					<div
+						className="w-full max-w-md rounded-lg border border-border bg-surface p-5 shadow-lg"
+						onClick={(event) => event.stopPropagation()}
+					>
+						<h2 className="text-base font-semibold text-foreground">Upload media</h2>
+						<p className="mt-1 text-sm text-muted-foreground">
+							Media belongs to a post and that post's publication (one media item per post).
+						</p>
+						{error && (
+							<p className="mt-3 rounded-lg bg-accent-soft px-3 py-2 text-sm text-accent-foreground" role="alert">
+								{error}
+							</p>
+						)}
+						<div className="mt-4 space-y-4">
+							<div>
+								<label htmlFor="media-publication" className="block text-sm font-medium text-foreground">
+									Publication
+								</label>
+								<select
+									id="media-publication"
+									value={publicationId}
+									onChange={(event) => {
+										setPublicationId(event.target.value);
+										setPostId('');
+									}}
+									className={inputClass}
+								>
+									{publications.map((publication) => (
+										<option key={publication.id} value={publication.id}>
+											{publication.name}
+										</option>
+									))}
+								</select>
+							</div>
+							<div>
+								<label htmlFor="media-post" className="block text-sm font-medium text-foreground">
+									Post
+								</label>
+								<select
+									id="media-post"
+									value={postId}
+									onChange={(event) => setPostId(event.target.value)}
+									className={inputClass}
+								>
+									<option value="">Select a post</option>
+									{postsForPublication.map((post) => (
+										<option key={post.id} value={post.id}>
+											{post.title}
+										</option>
+									))}
+								</select>
+							</div>
+							{pendingFile ? (
+								<div className="rounded-lg border border-border bg-background p-4">
+									<p className="text-sm font-medium text-foreground">Confirm upload</p>
+									<p className="mt-1 text-sm text-muted-foreground">
+										Upload {pendingFile.name} ({formatSize(pendingFile.size)}) to{' '}
+										<span className="text-foreground">{postTitle(postId) ?? 'the selected post'}</span> in{' '}
+										<span className="text-foreground">{publicationName(publicationId)}</span>?
+									</p>
+									<div className="mt-4 flex gap-2">
+										<button
+											type="button"
+											disabled={uploading}
+											onClick={() => void upload(pendingFile)}
+											className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent disabled:pointer-events-none disabled:opacity-60"
+										>
+											{uploading ? 'Uploading…' : 'Confirm upload'}
+										</button>
+										<button
+											type="button"
+											disabled={uploading}
+											onClick={() => setPendingFile(null)}
+											className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-accent"
+										>
+											Cancel
+										</button>
+									</div>
+								</div>
+							) : (
+								<label className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border px-6 py-10 text-center hover:bg-surface-elevated">
+									<span className="text-sm font-medium text-foreground">Choose a file to upload</span>
+									<span className="text-xs text-muted-foreground">Images (JPEG, PNG, GIF, WebP, AVIF) or PDF · up to 10 MB</span>
+									<input
+										type="file"
+										className="sr-only"
+										accept="image/jpeg,image/png,image/gif,image/webp,image/avif,application/pdf"
+										onChange={(event) => {
+											const file = event.target.files?.[0];
+											if (file) setPendingFile(file);
+											event.target.value = '';
+										}}
+									/>
+								</label>
+							)}
+						</div>
+						<div className="mt-5 flex justify-end">
+							<button
+								type="button"
+								onClick={() => {
+									setUploadOpen(false);
+									setPendingFile(null);
+								}}
+								className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-foreground hover:bg-surface-elevated"
+							>
+								Close
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+			{error && !uploadOpen && (
 				<p className="rounded-lg bg-accent-soft px-4 py-3 text-sm text-accent-foreground" role="alert">
 					{error}
 				</p>
 			)}
 			{notice && <p className="rounded-lg bg-accent-soft px-4 py-3 text-sm text-accent-foreground">{notice}</p>}
 
-			<div className="rounded-md border border-border bg-surface shadow-sm p-5">
-				<h2 className="text-base font-semibold text-foreground">Upload</h2>
-				<p className="mt-1 text-sm text-muted-foreground">
-					Media belongs to a post and that post's publication (one media item per post).
-				</p>
-				<div className="mt-4 grid gap-4 sm:grid-cols-2">
-					<div>
-						<label htmlFor="media-publication" className="block text-sm font-medium text-foreground">
-							Publication
-						</label>
-						<select
-							id="media-publication"
-							value={publicationId}
-							onChange={(event) => {
-								setPublicationId(event.target.value);
-								setPostId('');
-							}}
-							className={inputClass}
-						>
-							{publications.map((publication) => (
-								<option key={publication.id} value={publication.id}>
-									{publication.name}
-								</option>
-							))}
-						</select>
-					</div>
-					<div>
-						<label htmlFor="media-post" className="block text-sm font-medium text-foreground">
-							Post
-						</label>
-						<select
-							id="media-post"
-							value={postId}
-							onChange={(event) => setPostId(event.target.value)}
-							className={inputClass}
-						>
-							<option value="">—</option>
-							{postsForPublication.map((post) => (
-								<option key={post.id} value={post.id}>
-									{post.title}
-								</option>
-							))}
-						</select>
-					</div>
-				</div>
-				<label className="mt-4 flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border px-6 py-10 text-center hover:bg-surface-elevated">
-					<span className="text-sm font-medium text-foreground">{uploading ? 'Uploading…' : 'Choose a file to upload'}</span>
-					<span className="text-xs text-muted-foreground">Images (JPEG, PNG, GIF, WebP, AVIF) or PDF · up to 10 MB</span>
-					<input
-						type="file"
-						className="sr-only"
-						accept="image/jpeg,image/png,image/gif,image/webp,image/avif,application/pdf"
-						disabled={uploading}
-						onChange={(event) => {
-							const file = event.target.files?.[0];
-							if (file) void upload(file);
-							event.target.value = '';
-						}}
-					/>
-				</label>
+			<div className="flex justify-end">
+				<button
+					type="button"
+					onClick={() => setUploadOpen(true)}
+					className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+				>
+					Upload media
+				</button>
 			</div>
 
 			<div>
 				{items.length === 0 ? (
-					<EmptyState icon={<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>} title="No media yet" description="Upload an image above, or attach media from the post editor." />
+					<EmptyState icon={<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>} title="No media yet" description="Use the Upload media button, or attach media from the post editor." />
 				) : (
 					<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 						{pageItems.map((item) => {
