@@ -67,7 +67,7 @@ export default function PublicationShowcase({ publications }: Props) {
 						<span aria-hidden="true">&rarr;</span>
 					</a>
 				) : (
-					<p className="text-sm text-muted-foreground">Pick a book from the shelf to open its publication.</p>
+					<p className="text-sm text-muted-foreground">Pick a poem collection from the shelf to open its publication.</p>
 				)}
 			</div>
 		</div>
