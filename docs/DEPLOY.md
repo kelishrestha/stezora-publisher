@@ -31,8 +31,10 @@ Paste the printed `database_id` into `wrangler.jsonc` and commit that change.
 
 The JSON backfill can no longer rebuild media rows or featured images (images
 were segregated out of content), so use the byte-exact dump. `backup:db`
-reorders statements so the dump replays cleanly (tables, then data, then
-indexes):
+rewrites the statement order so the dump replays against remote D1, which
+runs the file in multiple transactions with foreign keys enforced: tables
+first, inserts in dependency order, the posts to media reference cycle broken
+via UPDATE statements, then indexes:
 
 ```sh
 pnpm backup:db backups/bootstrap.sql --local
