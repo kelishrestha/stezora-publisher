@@ -33,5 +33,5 @@ export default function Toast({ message, tone, onDismiss }: ToastProps) {
 
 /** Fixed stacking container for toasts. */
 export function ToastStack({ children }: { children: ReactNode }) {
-	return <div className="pointer-events-none fixed bottom-4 right-4 z-[60] flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-2">{children}</div>;
+	return <div className="pointer-events-none fixed top-4 left-1/2 z-[60] flex w-96 max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-col gap-2">{children}</div>;
 }
