@@ -123,10 +123,10 @@ html.dark {
 html[data-accent='bright-amber'] body::after {
 	content: '';
 	position: fixed;
-	right: 0;
-	bottom: 0;
+	right: 16px;
+	bottom: 16px;
 	z-index: -1;
-	width: min(42vw, 420px);
+	width: min(28vw, 280px);
 	aspect-ratio: 1;
 	background: url('/bird-singing.svg') no-repeat right bottom / contain;
 	opacity: 0.07;
