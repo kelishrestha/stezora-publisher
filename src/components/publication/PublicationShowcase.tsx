@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import { BooksShowcase, type BookCfg } from '../vendor/books-showcase';
 import { publicationPath } from '../../lib/publications';
+import CanvasGuard from './CanvasGuard';
+import { buttonClass } from '../ui/shared/classes';
 
 export interface ShowcasePublication {
 	name: string;
@@ -49,7 +51,26 @@ export default function PublicationShowcase({ publications }: Props) {
 		...(COVERS[publication.accent] ?? COVERS['space-indigo']),
 	})), [publications]);
 
+	const fallback = (
+		<ul className="grid gap-4 sm:grid-cols-3">
+			{publications.map((publication) => (
+				<li key={publication.slug} className="rounded-md border border-border bg-surface p-5 shadow-sm">
+					<p className="font-serif text-lg font-semibold text-foreground">{publication.name}</p>
+					<p className="mt-1 text-sm text-muted-foreground">
+						{publication.postCount} {publication.postCount === 1 ? 'poem' : 'poems'}
+					</p>
+					<p className="mt-2 line-clamp-3 text-sm text-muted-foreground">{publication.description}</p>
+					<a href={publicationPath(publication.slug)} className={`mt-4 ${buttonClass('accentOutline', 'sm')}`}>
+						Read
+						<span aria-hidden="true">&rarr;</span>
+					</a>
+				</li>
+			))}
+		</ul>
+	);
+
 	return (
+		<CanvasGuard fallback={fallback}>
 		<div>
 			<div className="relative h-[70vh] min-h-[480px] w-full overflow-hidden rounded-md">
 				<BooksShowcase
@@ -67,5 +88,6 @@ export default function PublicationShowcase({ publications }: Props) {
 				/>
 			</div>
 		</div>
+		</CanvasGuard>
 	);
 }

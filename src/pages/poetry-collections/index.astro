@@ -2,7 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PublicationShowcase from '../../components/publication/PublicationShowcase';
 import { getPostsForPublication } from '../../lib/publications/collections';
-import { PUBLICATIONS_PATH, getPublications, publicationPath } from '../../lib/publications';
+import { PUBLICATIONS_PATH, getPublications } from '../../lib/publications';
 
 const publications = await Promise.all(
 	getPublications().map(async (publication) => {

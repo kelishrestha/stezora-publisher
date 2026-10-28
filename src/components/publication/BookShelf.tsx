@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
 import { BooksShowcase, type BookCfg } from '../vendor/books-showcase';
+import CanvasGuard from './CanvasGuard';
+import { buttonClass } from '../ui/shared/classes';
 
 export interface ShelfBook {
 	id: string;
@@ -42,7 +44,27 @@ export default function BookShelf({ books }: Props) {
 		images: { front: book.cover },
 	})), [books]);
 
+	const fallback = (
+		<ul className="grid gap-4 sm:grid-cols-2">
+			{books.map((book) => (
+				<li key={book.id} className="flex gap-4 rounded-md border border-border bg-surface p-5 shadow-sm">
+					<img src={book.cover} alt="" loading="lazy" className="h-32 w-auto rounded border border-border object-cover" />
+					<div className="min-w-0">
+						<p className="font-serif text-lg font-semibold text-foreground">{book.title}</p>
+						<p className="mt-1 text-xs text-muted-foreground">{book.meta ?? book.year}</p>
+						<p className="mt-2 line-clamp-3 text-sm text-muted-foreground">{book.desc}</p>
+						<a href={book.href} className={`mt-3 ${buttonClass('accentOutline', 'sm')}`}>
+							{book.cta}
+							<span aria-hidden="true">&rarr;</span>
+						</a>
+					</div>
+				</li>
+			))}
+		</ul>
+	);
+
 	return (
+		<CanvasGuard fallback={fallback}>
 		<div>
 			<div className="relative h-[70vh] min-h-[480px] w-full overflow-hidden rounded-md">
 				<BooksShowcase
@@ -61,5 +83,6 @@ export default function BookShelf({ books }: Props) {
 				/>
 			</div>
 		</div>
+		</CanvasGuard>
 	);
 }
