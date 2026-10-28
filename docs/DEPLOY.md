@@ -9,15 +9,15 @@ push carries the R2 bytes. Do the steps in order.
 ## 0. Prerequisites
 
 ```sh
-wrangler login            # or set CLOUDFLARE_API_TOKEN
-wrangler whoami
+npx wrangler login            # or set CLOUDFLARE_API_TOKEN
+npx wrangler whoami
 ```
 
 ## 1. Create the resources
 
 ```sh
-wrangler d1 create stezora-publisher-db
-wrangler r2 bucket create stezora-publisher-media
+npx wrangler d1 create stezora-publisher-db
+npx wrangler r2 bucket create stezora-publisher-media
 ```
 
 Paste the printed `database_id` into `wrangler.jsonc` (it currently holds a
@@ -30,7 +30,7 @@ were segregated out of content and localized), so use the byte-exact dump:
 
 ```sh
 pnpm backup:db backups/bootstrap.sql --local
-wrangler d1 execute stezora-publisher-db --remote --file backups/bootstrap.sql
+npx wrangler d1 execute stezora-publisher-db --remote --file backups/bootstrap.sql
 ```
 
 The dump includes the schema, every content table, the admin user, and the
@@ -41,7 +41,7 @@ fresh database.
 Sanity check:
 
 ```sh
-wrangler d1 execute stezora-publisher-db --remote --command "SELECT count(*) FROM posts"
+npx wrangler d1 execute stezora-publisher-db --remote --command "SELECT count(*) FROM posts"
 ```
 
 Expect the local post count (83 at the time of writing).
@@ -58,8 +58,8 @@ to the remote bucket under the same keys the database rows reference.
 ## 4. Secrets
 
 ```sh
-openssl rand -hex 32 | wrangler secret put BETTER_AUTH_SECRET
-openssl rand -hex 32 | wrangler secret put BACKUP_TOKEN
+openssl rand -hex 32 | npx wrangler secret put BETTER_AUTH_SECRET
+openssl rand -hex 32 | npx wrangler secret put BACKUP_TOKEN
 ```
 
 Record the backup token wherever the GitHub backup secrets live (see
