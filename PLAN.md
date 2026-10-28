@@ -713,3 +713,64 @@ Rollback: `wrangler rollback` to the previous release; document in `docs/cloudfl
 - `COLORS.md` — the six oklch ramps and the light/dark mode rules consumed by M5.
 - `ARCHITECTURE.md` — high-level architecture and schema intent.
 - `AGENTS.md` — agent rules and command reference.
+
+---
+
+# Phase 6 — Backup architecture & Blogger integration (planned 2026-10-28)
+
+The next phases after the CMS: protect the data, then make Blogger a
+first-class import/export peer. Sequencing: backups first (they protect
+against integration bugs), then image localization, then mirror publishing.
+
+## 6A. Backup architecture (DONE)
+
+Three layers; see `docs/BACKUP.md` for the runbook and restore drill.
+
+- [x] `GET /api/export`: full-fidelity content export (drafts, markdown, media
+      and blogger_sync rows), authed by admin session or `BACKUP_TOKEN` bearer.
+- [x] `scripts/backup/`: `export-all.ts` (per-post JSON + table files, local
+      Miniflare or live URL), `dump-d1.ts` (SQL dump), `sync-media.sh` (rclone
+      R2 mirror); `backup:content` / `backup:db` / `backup:media` scripts.
+- [x] `.github/workflows/backup.yml`: nightly content snapshot committed to a
+      private backup repo; Sunday SQL dump and media mirror.
+- [x] `docs/BACKUP.md` with the restore drill; `migration-reports/` tracked.
+- [ ] Activation (owner): `wrangler secret put BACKUP_TOKEN`, create the
+      private backup repo, add the workflow secrets.
+
+## 6B. Blogger import hardening
+
+- [x] Content fidelity: HTML-to-markdown on backfill (turndown), Blogger
+      line-div handling, image unwrap/strip, excerpts left for manual
+      authoring, lead image recorded as featured.
+- [x] Media segregation: every embedded image becomes a media row keyed by
+      `(post_id, source_url)`.
+- [x] Image localization: `POST /api/admin/media/:id/localize` downloads the
+      external image into R2 (`localized/<media-id>.<ext>`, w1600 variant for
+      Blogger URLs), fixes mime/size, and rewrites the owning post's content
+      and markdown to `/media/<key>`. Driven by `pnpm blogger:localize`
+      (signs in as admin, loops external rows). Ran locally: 56/56.
+- [ ] Run localization against production after deploy (same endpoint; the
+      driver needs a remote-URL mode or a one-off curl loop).
+- [ ] Incremental re-import: per-publication high-water mark so routine
+      re-imports only touch changed posts; import guard refusing publications
+      already in Phase 2 (CMS-as-source) without `--force`.
+
+## 6C. Blogger mirror publishing (CMS -> Blogger)
+
+Design principle: mirroring never blocks or fails a save on our site.
+
+- [ ] Move `BloggerClient` where the Worker can import it; add `getPost`,
+      `insertPost`, `updatePost`, `publishPost`, `revertPost`.
+- [ ] Worker secrets: `BLOGGER_CLIENT_ID`, `BLOGGER_CLIENT_SECRET`,
+      `BLOGGER_REFRESH_TOKEN` (minted by `pnpm blogger:oauth`).
+- [ ] `worker/services/blogger-sync.ts` driven by the `blogger_sync` table:
+      on publish/update of a post whose publication has `blogger_blog_id`,
+      upsert a pending row and sync in `ctx.waitUntil`; insert vs update keyed
+      by `blogger_post_id`; unpublish calls revert, never delete.
+- [ ] Compile to Blogger format: rendered HTML + `wrapImagesForBlogger()`
+      around the featured image (the inverse of the import unwrap), plus an
+      "Originally published at <canonical>" footer.
+- [ ] Retry: `POST /api/admin/posts/:id/blogger-sync` and a sync status
+      indicator in the admin posts list.
+- [ ] Loop prevention: stop importing publications that have locally authored
+      synced posts.

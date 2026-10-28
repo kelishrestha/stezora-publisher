@@ -46,7 +46,11 @@ export async function buildLocalWorker(): Promise<{
 		compatibilityFlags: ['nodejs_compat'],
 		d1Databases: { [d1.binding]: d1.database_id ?? d1.binding },
 		r2Buckets: r2 ? { [r2.binding]: r2.bucket_name } : undefined,
-		bindings: { BACKUP_TOKEN: 'local-backup', BETTER_AUTH_SECRET: 'local-backup-dummy' },
+		bindings: {
+			BACKUP_TOKEN: 'local-backup',
+			BETTER_AUTH_SECRET: 'local-backup-dummy',
+			BETTER_AUTH_URL: 'http://localhost',
+		},
 		resourcePersistencePath: path.join(root, '.wrangler', 'state', 'v3'),
 	});
 	const worker = await mf.getWorker();

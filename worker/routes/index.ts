@@ -6,7 +6,7 @@ import { requireAdmin, withBodyLimit } from '../lib/middleware';
 import { adminStats } from './admin/stats';
 import { createPost, deletePost, editorMeta, getPost, listPosts, previewPost, publishPost, updatePost } from './admin/posts';
 import { createTag, deleteTag, listTags, updateTag } from './admin/tags';
-import { deleteAdminMedia, listAdminMedia, uploadMedia } from './admin/media';
+import { deleteAdminMedia, listAdminMedia, localizeMedia, uploadMedia } from './admin/media';
 
 export const routes = new Router();
 
@@ -36,3 +36,4 @@ routes.delete('/api/admin/tags/:id', requireAdmin(deleteTag));
 routes.get('/api/admin/media', requireAdmin(listAdminMedia));
 routes.post('/api/admin/media', requireAdmin(uploadMedia));
 routes.delete('/api/admin/media/:id', requireAdmin(deleteAdminMedia));
+routes.post('/api/admin/media/:id/localize', requireAdmin(localizeMedia));

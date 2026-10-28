@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { createDb } from '../../db/client';
-import { posts } from '../../db/schema';
+import { media, posts } from '../../db/schema';
 import { MediaRepository, mediaUrl } from '../../db/media';
 import { MediaService } from '../../services/media';
 import { ApiError } from '../../lib/errors';
@@ -128,6 +128,88 @@ export const deleteAdminMedia: AuthenticatedHandler = async ({ env, params }) =>
 	}
 	await repository.deleteById(row.id);
 	return ok({ deleted: true });
+};
+
+const EXT_BY_MIME: Record<string, string> = {
+	'image/jpeg': 'jpg',
+	'image/png': 'png',
+	'image/gif': 'gif',
+	'image/webp': 'webp',
+	'image/avif': 'avif',
+};
+
+/**
+ * POST /api/admin/media/:id/localize
+ * Downloads an external (Blogger-hosted) media row into R2, fills in the real
+ * mime type and size, and rewrites the owning post's content and markdown to
+ * reference /media/<key> instead of the external URL. Idempotent: rows that
+ * already have an R2 object return immediately.
+ */
+export const localizeMedia: AuthenticatedHandler = async ({ env, params }) => {
+	const repository = new MediaRepository(env.DB);
+	const row = await repository.getById(params.id);
+	if (!row) {
+		throw new ApiError(404, 'MEDIA_NOT_FOUND', 'Media was not found.');
+	}
+	if (row.r2_key) {
+		return ok({ media: { id: row.id, url: mediaUrl(row) }, alreadyLocalized: true });
+	}
+	if (!row.source_url) {
+		throw new ApiError(400, 'NO_SOURCE', 'This media has neither an R2 object nor a source URL.');
+	}
+
+	// Blogger's CDN serves bounded variants; w1600 keeps display fidelity
+	// without archiving multi-megapixel originals (source_url stays recorded).
+	const isBlogger = /\bgoogleusercontent\.com$/.test(new URL(row.source_url).hostname);
+	const candidates = isBlogger ? [`${row.source_url}=w1600`, row.source_url] : [row.source_url];
+
+	let response: Response | null = null;
+	for (const candidate of candidates) {
+		const attempt = await fetch(candidate, { headers: { accept: 'image/*' } });
+		if (attempt.ok) {
+			response = attempt;
+			break;
+		}
+	}
+	if (!response) {
+		throw new ApiError(502, 'FETCH_FAILED', `Could not download ${row.source_url}.`);
+	}
+
+	const bytes = await response.arrayBuffer();
+	const contentType = response.headers.get('content-type')?.split(';')[0] ?? 'image/jpeg';
+	const extension = EXT_BY_MIME[contentType] ?? 'img';
+	const key = `localized/${row.id}.${extension}`;
+	await env.MEDIA.put(key, bytes, { httpMetadata: { contentType } });
+
+	const db = createDb(env.DB);
+	await db
+		.update(media)
+		.set({ r2_key: key, mime_type: contentType, size: bytes.byteLength, filename: `${row.filename}.${extension}` })
+		.where(eq(media.id, row.id));
+
+	// Rewrite the owning post so its content serves the localized copy.
+	const owner = (
+		await db
+			.select({ id: posts.id, content: posts.content, content_markdown: posts.content_markdown })
+			.from(posts)
+			.where(eq(posts.id, row.post_id))
+			.limit(1)
+	)[0];
+	let rewritten = false;
+	if (owner) {
+		const localUrl = `/media/${key}`;
+		const content = owner.content.split(row.source_url).join(localUrl);
+		const markdown = owner.content_markdown ? owner.content_markdown.split(row.source_url).join(localUrl) : owner.content_markdown;
+		if (content !== owner.content || markdown !== owner.content_markdown) {
+			await db.update(posts).set({ content, content_markdown: markdown }).where(eq(posts.id, owner.id));
+			rewritten = true;
+		}
+	}
+
+	return ok({
+		media: { id: row.id, url: `/media/${key}`, mimeType: contentType, size: bytes.byteLength },
+		rewrittenPost: rewritten,
+	});
 };
 
 /**

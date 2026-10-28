@@ -37,7 +37,8 @@
     "db:backfill:remote": "mkdir -p .d1 && pnpm --silent db:backfill:sql > .d1/backfill.sql && wrangler d1 execute stezora-publisher-db --remote --file .d1/backfill.sql",
     "backup:content": "tsx scripts/backup/export-all.ts",
     "backup:db": "tsx scripts/backup/dump-d1.ts",
-    "backup:media": "scripts/backup/sync-media.sh"
+    "backup:media": "scripts/backup/sync-media.sh",
+    "blogger:localize": "tsx --env-file=.env.development scripts/blogger/localize-images.ts"
   },
   "dependencies": {
     "@astrojs/react": "^6.0.2",
