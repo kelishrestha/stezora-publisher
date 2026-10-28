@@ -39,6 +39,7 @@
     "backup:db": "tsx scripts/backup/dump-d1.ts",
     "backup:media": "tsx scripts/backup/export-media.ts",
     "blogger:localize": "tsx --env-file=.env.development scripts/blogger/localize-images.ts",
+    "neobook:sync": "tsx scripts/neobook/sync.ts",
     "deploy:media": "tsx scripts/deploy/push-media.ts"
   },
   "dependencies": {
