@@ -23,15 +23,13 @@ const pagePosts = posts.slice(0, POSTS_PAGE_SIZE);
 <PublicationLayout publication={publication} path={publicationPath(publication.slug)}>
 	{pagePosts.length > 0 ? (
 		<section>
-			<h2 class="font-serif text-2xl font-semibold">Latest writing</h2>
-			<div class="mt-6">
+			<div>
 				<PostList posts={pagePosts} publicationSlug={publication.slug} />
 			</div>
 			<PaginationNav currentPage={1} totalPages={totalPages} basePath={publicationPath(publication.slug)} />
 		</section>
 	) : (
 		<section>
-			<h2 class="font-serif text-2xl font-semibold">Latest writing</h2>
 			<p class="mt-6 text-muted-foreground">No published posts yet.</p>
 		</section>
 	)}

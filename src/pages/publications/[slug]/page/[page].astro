@@ -34,8 +34,7 @@ const pagePosts = posts.slice((page - 1) * POSTS_PAGE_SIZE, page * POSTS_PAGE_SI
 	path={`${publicationPath(publication.slug)}/page/${page}`}
 >
 	<section>
-		<h2 class="font-serif text-2xl font-semibold">Latest writing</h2>
-		<div class="mt-6">
+		<div>
 			<PostList posts={pagePosts} publicationSlug={publication.slug} />
 		</div>
 		<PaginationNav currentPage={page} totalPages={totalPages} basePath={publicationPath(publication.slug)} />
