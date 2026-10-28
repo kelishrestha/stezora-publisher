@@ -78,7 +78,7 @@ export function validatePagination(query: unknown): { limit: number; offset: num
  * the only authentication token — there is no separate `AUTH_SECRET` HMAC
  * (DEVELOPER.md §13). Used by `requireAdmin` and the `/admin` asset gate.
  */
-async function authenticateSession(request: Request, env: Env): Promise<AdminUser | null> {
+export async function authenticateSession(request: Request, env: Env): Promise<AdminUser | null> {
 	const auth = getAuth(request, env);
 	const session = await auth.api.getSession({ headers: request.headers });
 	if (!session) {

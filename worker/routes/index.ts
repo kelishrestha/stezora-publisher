@@ -1,5 +1,6 @@
 import { Router } from '../router';
 import { content } from './content';
+import { exportAll } from './export';
 import { media } from './media';
 import { requireAdmin, withBodyLimit } from '../lib/middleware';
 import { adminStats } from './admin/stats';
@@ -10,6 +11,7 @@ import { deleteAdminMedia, listAdminMedia, uploadMedia } from './admin/media';
 export const routes = new Router();
 
 routes.get('/api/content', content);
+routes.get('/api/export', exportAll);
 routes.get('/media/:key', media);
 routes.get('/api/admin/stats', requireAdmin(adminStats));
 
