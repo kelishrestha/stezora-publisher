@@ -95,6 +95,8 @@ export class PostRepository {
 	async list(options: {
 		publicationId?: string;
 		status?: PostStatus;
+		/** 'published' orders by publish date; the default is last update. */
+		sort?: 'published';
 		limit: number;
 		offset: number;
 	}): Promise<AdminPost[]> {
@@ -129,7 +131,11 @@ export class PostRepository {
 			.from(posts)
 			.innerJoin(publications, eq(posts.publication_id, publications.id))
 			.where(conditions.length ? and(...conditions) : undefined)
-			.orderBy(desc(posts.updated_at), desc(posts.created_at))
+			.orderBy(
+				...(options.sort === 'published'
+					? [desc(posts.published_at)]
+					: [desc(posts.updated_at), desc(posts.created_at)])
+			)
 			.limit(options.limit)
 			.offset(options.offset);
 		return this.hydrate(rows);

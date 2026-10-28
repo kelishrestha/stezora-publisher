@@ -47,9 +47,12 @@ export const listPosts: AuthenticatedHandler = async ({ env, request }) => {
 	const publicationId = url.searchParams.get('publicationId') ?? undefined;
 	const statusParam = url.searchParams.get('status') ?? undefined;
 	const status = statusParam ? parseStatus(statusParam) : undefined;
+	// sort=published orders by the actual publish date (dashboard recents);
+	// the default stays most-recently-updated for the posts table.
+	const sort = url.searchParams.get('sort') === 'published' ? ('published' as const) : undefined;
 
 	const repository = new PostRepository(env.DB, isMediaStorageEnabled(env));
-	const posts = await repository.list({ publicationId, status, ...pagination });
+	const posts = await repository.list({ publicationId, status, sort, ...pagination });
 	return ok({ posts, limit: pagination.limit, offset: pagination.offset });
 };
 

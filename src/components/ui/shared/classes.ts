@@ -93,8 +93,8 @@ export const tableClass = 'min-w-full divide-y-2 divide-border text-left text-sm
 export const tableCellClass = 'px-3 py-2 whitespace-nowrap';
 
 /** Stat tiles (dashboard): accent-soft card with an accent label. */
-export const statCardClass = 'rounded-md border border-border bg-accent-soft p-5 shadow-sm';
-export const statCardLabelClass = 'text-sm font-medium text-accent-foreground';
+export const statCardClass = 'rounded-md border border-border bg-secondary p-5 shadow-sm';
+export const statCardLabelClass = 'text-sm font-medium text-on-secondary';
 export const statCardValueClass = 'mt-1 text-3xl font-semibold text-foreground';
 
 /** Modal overlay and panel shared by every dialog. */
