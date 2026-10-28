@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import EmptyState from './EmptyState';
 
 interface TagRecord {
 	id: string;
@@ -231,7 +232,7 @@ export default function TagManager() {
 					</div>
 				</div>
 				{tagsByPublication.length === 0 ? (
-					<p className="px-5 py-8 text-sm text-muted-foreground">No tags yet.</p>
+					<EmptyState icon={<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5"><path d="M9 5H2v7l6.29 6.29c.94.94 2.48.94 3.42 0l3.58-3.58c.94-.94.94-2.48 0-3.42L9 5Z" /><path d="M6 9.01V9" /></svg>} title="No tags yet" description="Create a tag above to start organizing this publication's posts." />
 				) : (
 					<ul className="divide-y divide-border">
 						{tagsByPublication.map((tag) => (

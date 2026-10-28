@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import EmptyState from './EmptyState';
 
 interface MediaItem {
 	id: string;
@@ -209,7 +210,7 @@ export default function MediaManager() {
 			<div className="rounded-md border border-border bg-surface shadow-sm">
 				<h2 className="border-b border-border px-5 py-4 text-base font-semibold text-foreground">All media</h2>
 				{items.length === 0 ? (
-					<p className="px-5 py-8 text-sm text-muted-foreground">No media uploaded yet.</p>
+					<EmptyState icon={<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>} title="No media yet" description="Upload an image above, or attach media from the post editor." />
 				) : (
 					<ul className="grid grid-cols-2 gap-px bg-border sm:grid-cols-3 lg:grid-cols-4">
 						{items.map((item) => (

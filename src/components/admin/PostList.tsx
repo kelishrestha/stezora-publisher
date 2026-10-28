@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import EmptyState from './EmptyState';
 
 interface ListPost {
 	id: string;
@@ -47,19 +48,18 @@ function formatDate(value: string): string {
 	return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-/** The month a post counts under: its publish date, else its last update. */
-function postMonthKey(post: ListPost): string | null {
+/** The date a post counts under: its publish date, else its last update. */
+function postDate(post: ListPost): Date | null {
 	const value = post.publishedAt ?? post.updatedAt;
 	if (!value) return null;
 	const date = new Date(value);
-	if (Number.isNaN(date.getTime())) return null;
-	return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+	return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function monthLabel(key: string): string {
-	const [year, month] = key.split('-').map(Number);
-	return new Date(year, month - 1, 1).toLocaleDateString(undefined, { year: 'numeric', month: 'long' });
-}
+const MONTHS = Array.from({ length: 12 }, (_, index) => ({
+	value: String(index + 1).padStart(2, '0'),
+	label: new Date(2000, index, 1).toLocaleDateString(undefined, { month: 'long' }),
+}));
 
 const selectClass =
 	'mt-0.5 w-full rounded border-border bg-background text-foreground shadow-sm sm:text-sm focus:border-accent focus:ring-accent';
@@ -183,7 +183,9 @@ export default function PostList() {
 	const [filter, setFilter] = useState('all');
 	const [publicationFilter, setPublicationFilter] = useState('all');
 	const [monthFilter, setMonthFilter] = useState('all');
+	const [yearFilter, setYearFilter] = useState('all');
 	const [page, setPage] = useState(1);
+	const [pageSize, setPageSize] = useState(10);
 	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
@@ -248,31 +250,48 @@ export default function PostList() {
 		return <p className="text-sm text-muted-foreground">Loading…</p>;
 	}
 
-	// Publication and month narrow the pool; the status tabs count within it.
-	const pool = posts.filter(
-		(post) =>
-			(publicationFilter === 'all' || post.publication === publicationFilter) &&
-			(monthFilter === 'all' || postMonthKey(post) === monthFilter)
-	);
+	// Publication, month, and year narrow the pool; the tabs count within it.
+	const pool = posts.filter((post) => {
+		if (publicationFilter !== 'all' && post.publication !== publicationFilter) {
+			return false;
+		}
+		if (monthFilter === 'all' && yearFilter === 'all') {
+			return true;
+		}
+		const date = postDate(post);
+		if (!date) return false;
+		if (monthFilter !== 'all' && String(date.getMonth() + 1).padStart(2, '0') !== monthFilter) {
+			return false;
+		}
+		return yearFilter === 'all' || String(date.getFullYear()) === yearFilter;
+	});
 
 	const counts: Record<string, number> = { all: pool.length };
 	for (const tab of TABS.slice(1)) {
 		counts[tab] = pool.filter((post) => post.status === tab).length;
 	}
 
-	const months = [...new Set(posts.map(postMonthKey).filter((key): key is string => key !== null))].sort().reverse();
+	const years = [
+		...new Set(
+			posts
+				.map(postDate)
+				.filter((date): date is Date => date !== null)
+				.map((date) => String(date.getFullYear()))
+		),
+	]
+		.sort()
+		.reverse();
 
 	const visible = filter === 'all' ? pool : pool.filter((post) => post.status === filter);
 
-	const PAGE_SIZE = 10;
-	const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+	const totalPages = Math.max(1, Math.ceil(visible.length / pageSize));
 	const currentPage = Math.min(page, totalPages);
-	const pageItems = visible.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+	const pageItems = visible.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
 	return (
 		<div className="space-y-4">
-			{/* Filters (HyperUI selects): publication, status, month. */}
-			<div className="grid gap-4 sm:grid-cols-3">
+			{/* Filters (HyperUI selects): publication, status, month, year. */}
+			<div className="grid gap-4 pb-4 sm:grid-cols-2 lg:grid-cols-4">
 				<label htmlFor="filter-publication">
 					<span className="text-sm font-medium text-foreground">Publication</span>
 					<select
@@ -322,9 +341,28 @@ export default function PostList() {
 						className={selectClass}
 					>
 						<option value="all">All months</option>
-						{months.map((month) => (
-							<option key={month} value={month}>
-								{monthLabel(month)}
+						{MONTHS.map((month) => (
+							<option key={month.value} value={month.value}>
+								{month.label}
+							</option>
+						))}
+					</select>
+				</label>
+				<label htmlFor="filter-year">
+					<span className="text-sm font-medium text-foreground">Year</span>
+					<select
+						id="filter-year"
+						value={yearFilter}
+						onChange={(event) => {
+							setYearFilter(event.target.value);
+							setPage(1);
+						}}
+						className={selectClass}
+					>
+						<option value="all">All years</option>
+						{years.map((year) => (
+							<option key={year} value={year}>
+								{year}
 							</option>
 						))}
 					</select>
@@ -368,7 +406,42 @@ export default function PostList() {
 
 			<div className="rounded-md border border-border bg-surface shadow-sm">
 				{visible.length === 0 ? (
-					<p className="px-5 py-8 text-sm text-muted-foreground">No posts{filter === 'all' ? '' : ` (${filter})`} yet.</p>
+					posts.length === 0 ? (
+						<EmptyState
+							icon={<TabIcon name="draft" className="size-5" />}
+							title="No posts yet"
+							description="Write your first post and publish it to any of your publications."
+							action={
+								<a
+									href="/admin/posts/new"
+									className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+								>
+									New post
+								</a>
+							}
+						/>
+					) : (
+						<EmptyState
+							icon={<TabIcon name="all" className="size-5" />}
+							title="No posts match these filters"
+							description="Try a different publication, status, month, or year, or clear the filters."
+							action={
+								<button
+									type="button"
+									onClick={() => {
+										setFilter('all');
+										setPublicationFilter('all');
+										setMonthFilter('all');
+										setYearFilter('all');
+										setPage(1);
+									}}
+									className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-accent"
+								>
+									Clear filters
+								</button>
+							}
+						/>
+					)
 				) : (
 					<ul className="divide-y divide-border">
 						{pageItems.map((post) => (
@@ -429,12 +502,34 @@ export default function PostList() {
 			</div>
 
 			{/* HyperUI pagination on theme tokens. */}
-			{totalPages > 1 && (
-				<nav aria-label="Pagination" className="flex items-center justify-between gap-4">
-					<p className="text-xs text-muted-foreground">
-						Showing {(currentPage - 1) * PAGE_SIZE + 1} to {Math.min(currentPage * PAGE_SIZE, visible.length)} of{' '}
-						{visible.length} posts
-					</p>
+			{visible.length > 0 && (
+				<nav aria-label="Pagination" className="flex flex-wrap items-center justify-between gap-4">
+					<div className="flex flex-wrap items-center gap-4">
+						<p className="text-xs text-muted-foreground">
+							Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, visible.length)} of{' '}
+							{visible.length} posts
+						</p>
+						<label htmlFor="page-size" className="flex items-center gap-2 text-xs text-muted-foreground">
+							Show
+							<select
+								id="page-size"
+								value={pageSize}
+								onChange={(event) => {
+									setPageSize(Number(event.target.value));
+									setPage(1);
+								}}
+								className="rounded border-border bg-background py-1 text-xs text-foreground shadow-sm focus:border-accent focus:ring-accent"
+							>
+								{[5, 10, 25, 50].map((size) => (
+									<option key={size} value={size}>
+										{size}
+									</option>
+								))}
+							</select>
+							per page
+						</label>
+					</div>
+					{totalPages > 1 && (
 					<ul className="flex items-center gap-1">
 						<li>
 							<button
@@ -499,6 +594,7 @@ export default function PostList() {
 							</button>
 						</li>
 					</ul>
+					)}
 				</nav>
 			)}
 		</div>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import EmptyState from './EmptyState';
 
 interface PublicationStats {
 	slug: string;
@@ -160,7 +161,7 @@ export default function Dashboard() {
 					Recent posts
 				</h2>
 				{stats.recentPosts.length === 0 ? (
-					<p className="px-5 py-6 text-sm text-muted-foreground">No posts yet.</p>
+					<EmptyState icon={<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="M14 2v4a2 2 0 0 0 2 2h4" /></svg>} title="No posts yet" description="Recent posts appear here once you start writing." />
 				) : (
 					<ul className="divide-y divide-border">
 						{stats.recentPosts.map((post) => (
