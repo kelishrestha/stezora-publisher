@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, lte } from 'drizzle-orm';
 import { createDb } from '../db/client';
-import { posts, postTags, publications, tags } from '../db/schema';
+import { media, posts, postTags, publications, tags } from '../db/schema';
+import { mediaUrl } from '../db/media';
 import type { RouteHandler } from '../router';
 
 interface ContentPublication {
@@ -30,6 +31,7 @@ export interface ContentPost {
 	content: string;
 	seoTitle?: string;
 	seoDescription?: string;
+	featuredImage?: string;
 	bloggerBlogId?: string;
 	bloggerPostId?: string;
 	bloggerUrl?: string;
@@ -82,9 +84,12 @@ export const content: RouteHandler = async ({ env }) => {
 				seo_title: posts.seo_title,
 				seo_description: posts.seo_description,
 				publication: publications.slug,
+				featured_r2_key: media.r2_key,
+				featured_source_url: media.source_url,
 			})
 			.from(posts)
 			.innerJoin(publications, eq(posts.publication_id, publications.id))
+			.leftJoin(media, eq(posts.featured_image_id, media.id))
 			.where(and(eq(posts.status, 'published'), lte(posts.published_at, now)))
 			.orderBy(desc(posts.published_at)),
 		db
@@ -139,6 +144,10 @@ export const content: RouteHandler = async ({ env }) => {
 		}
 		if (row.canonical_url) {
 			post.bloggerUrl = row.canonical_url;
+		}
+		const featured = mediaUrl({ r2_key: row.featured_r2_key, source_url: row.featured_source_url });
+		if (featured) {
+			post.featuredImage = featured;
 		}
 		return post;
 	});

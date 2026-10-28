@@ -15,6 +15,7 @@ const posts = defineCollection({
 		content: z.string(),
 		seoTitle: z.string().optional(),
 		seoDescription: z.string().optional(),
+		featuredImage: z.string().optional(),
 		bloggerBlogId: z.string().optional(),
 		bloggerPostId: z.string().optional(),
 		bloggerUrl: z.url().optional(),

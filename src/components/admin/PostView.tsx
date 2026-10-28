@@ -18,6 +18,7 @@ interface PostRecord {
 	canonicalUrl: string | null;
 	bloggerBlogId: string | null;
 	bloggerPostId: string | null;
+	featuredImage: { id: string; url: string; filename: string; mimeType: string } | null;
 	createdAt: string;
 }
 
@@ -162,6 +163,13 @@ export default function PostView() {
 
 			<div className="rounded-xl border border-border bg-surface">
 				<h3 className="border-b border-border px-5 py-4 text-sm font-semibold uppercase tracking-wide text-foreground">Content</h3>
+				{post.featuredImage && (
+					<img
+						src={post.featuredImage.url}
+						alt={post.featuredImage.filename}
+						className="mx-5 mt-6 max-h-80 rounded-lg border border-border object-cover"
+					/>
+				)}
 				<article
 					className="prose prose-neutral max-w-none px-5 py-6 dark:prose-invert"
 					dangerouslySetInnerHTML={{ __html: post.content }}

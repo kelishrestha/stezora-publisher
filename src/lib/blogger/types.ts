@@ -52,6 +52,9 @@ export interface PostRecord {
 	updatedDate?: string;
 	status: PostStatus;
 	content: string;
+	seoTitle?: string;
+	seoDescription?: string;
+	featuredImage?: string;
 	bloggerBlogId?: string;
 	bloggerPostId: string;
 	bloggerUrl: string;

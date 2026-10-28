@@ -22,6 +22,7 @@ export interface ContentPost {
 	content: string;
 	seoTitle?: string;
 	seoDescription?: string;
+	featuredImage?: string;
 	bloggerBlogId?: string;
 	bloggerPostId?: string;
 	bloggerUrl?: string;
@@ -176,6 +177,7 @@ interface ExportRecord {
 	content: string;
 	seoTitle?: string;
 	seoDescription?: string;
+	featuredImage?: string;
 	bloggerBlogId?: string;
 	bloggerPostId?: string;
 	bloggerUrl?: string;
@@ -198,6 +200,9 @@ function toPostRecord(post: ContentPost): PostRecord {
 	}
 	if (post.seoDescription) {
 		record.seoDescription = post.seoDescription;
+	}
+	if (post.featuredImage) {
+		record.featuredImage = post.featuredImage;
 	}
 	if (post.bloggerBlogId) {
 		record.bloggerBlogId = post.bloggerBlogId;

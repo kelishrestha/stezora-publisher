@@ -95,6 +95,25 @@ export function wrapImagesForBlogger(html: string): string {
 	});
 }
 
+/**
+ * Removes every <img> from content HTML, then collapses the wrapper
+ * elements Blogger leaves behind (empty divs, anchors, spacer divs holding a
+ * lone <br>). Imported images live as post media and render as the featured
+ * image above the content, so the content itself stays image-free.
+ */
+export function stripImages(html: string): string {
+	let output = html.replace(/<img\b[^>]*\/?>/gi, '');
+	let previous;
+	do {
+		previous = output;
+		// Only drop wrappers emptied by the image removal. Blogger's
+		// <div><br/></div> spacers carry paragraph breaks and must survive,
+		// except at the very start where they only padded the lead image.
+		output = output.replace(/<(div|p|a|span)\b[^>]*>\s*<\/\1>/gi, '');
+	} while (output !== previous);
+	return output.replace(/^(?:\s*<div\b[^>]*>\s*(?:<br\s*\/?>\s*)*<\/div>)+/i, '').trim();
+}
+
 export function normalizeUrl(url: string): string {
 	if (!url) {
 		return '';

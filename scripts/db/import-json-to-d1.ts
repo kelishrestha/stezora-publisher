@@ -2,7 +2,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { bloggerBlogIdForPublication } from '../../src/lib/blogger/config';
 import { sanitizeContentHtml } from '../../src/lib/blogger/sanitize';
-import { unwrapBloggerImages } from '../../src/lib/blogger/html';
+import { stripImages, unwrapBloggerImages } from '../../src/lib/blogger/html';
 import { htmlToMarkdown } from '../../src/lib/blogger/to-markdown';
 import { readExistingPosts } from '../../src/lib/blogger/storage';
 import type { PostRecord } from '../../src/lib/blogger/types';
@@ -117,12 +117,13 @@ export function buildBackfillSql(records: BackfillInput[], options: BackfillOpti
 			);
 		}
 
-		// Segregate Blogger's anchor-wrapped images: the content keeps a plain
-		// <img> (clean markdown after conversion) and each image becomes a
-		// media row below. wrapImagesForBlogger() restores Blogger's format
-		// when a post is mirrored back.
-		const sanitizedContent = unwrapBloggerImages(sanitizeContentHtml(record.content));
-		const imageUrls = [...new Set(Array.from(sanitizedContent.matchAll(/<img\b[^>]*\ssrc="([^"]+)"/gi), (m) => m[1]))];
+		// Segregate Blogger's anchor-wrapped images: each becomes a media row
+		// (the first one the post's featured image) and the content is stored
+		// image-free, so the markdown form stays clean. wrapImagesForBlogger()
+		// plus the featured image restores Blogger's format when mirroring.
+		const unwrapped = unwrapBloggerImages(sanitizeContentHtml(record.content));
+		const imageUrls = [...new Set(Array.from(unwrapped.matchAll(/<img\b[^>]*\ssrc="([^"]+)"/gi), (m) => m[1]))];
+		const sanitizedContent = stripImages(unwrapped);
 		const conflictTarget = hasBloggerId
 			? 'ON CONFLICT (blogger_blog_id, blogger_post_id) DO UPDATE SET\n  '
 			: 'ON CONFLICT (publication_id, slug) DO UPDATE SET\n  ';
@@ -175,6 +176,16 @@ export function buildBackfillSql(records: BackfillInput[], options: BackfillOpti
 					].join(''),
 					'ON CONFLICT (post_id, source_url) DO NOTHING;',
 				].join('\n')
+			);
+		}
+
+		// The lead image becomes the featured image (rendered above the
+		// content). Set after the media insert so the FK target exists, and
+		// only when unset so a manual choice in the CMS survives re-runs.
+		if (imageUrls.length > 0) {
+			const firstMediaId = `m-${postId}-${stableHash(imageUrls[0])}`;
+			lines.push(
+				`UPDATE posts SET featured_image_id = ${sqlString(firstMediaId)} WHERE id = ${sqlString(postId)} AND featured_image_id IS NULL;`
 			);
 		}
 
