@@ -181,7 +181,7 @@
 /* My Soulful Incantations: bright amber. The ramp is light, so solid accents
    carry dark amber text instead of white. */
 :root:not(.dark)[data-accent='bright-amber'] {
-	--color-accent: var(--color-bright-amber-600);
+	--color-accent: var(--color-bright-amber-500);
 	--color-on-accent: var(--color-bright-amber-950);
 	--color-accent-foreground: var(--color-bright-amber-800);
 	--color-accent-soft: var(--color-bright-amber-100);
