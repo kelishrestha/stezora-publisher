@@ -94,7 +94,7 @@
 	--color-surface: oklch(98.5% 0 0);
 	--color-surface-elevated: oklch(95% 0.006 264.53);
 	--color-primary: var(--color-soft-periwinkle-400);
-	--color-on-primary: var(--color-space-indigo-950);
+	--color-on-primary: oklch(98.5% 0 0);
 	--color-secondary: oklch(95% 0.006 264.53);
 	--color-on-secondary: var(--color-gray-950);
 	--color-accent: oklch(91.5% 0 0);
