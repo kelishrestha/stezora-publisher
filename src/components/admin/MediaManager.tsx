@@ -177,10 +177,7 @@ export default function MediaManager() {
 					>
 						<img src={previewImage.url} alt={previewImage.filename} className="max-h-[75vh] w-auto rounded-md" />
 						<figcaption className="mt-2 flex items-center justify-between gap-4 text-xs text-muted-foreground">
-							<span>
-								{previewImage.filename}
-								{previewImage.external ? ' · Blogger-hosted' : ''}
-							</span>
+							<span>{previewImage.external ? 'Blogger-hosted' : previewImage.filename}</span>
 							<button
 								type="button"
 								onClick={() => setPreviewImage(null)}
@@ -288,10 +285,10 @@ export default function MediaManager() {
 											<h3 className="font-serif text-base font-semibold text-pretty text-foreground">
 												{post?.title ?? postTitle(item.postId)}
 											</h3>
-											<p className="mt-1 truncate text-xs text-muted-foreground" title={item.filename}>
-												{item.filename}
-												{item.size > 0 ? ` · ${formatSize(item.size)}` : ''}
-												{item.external ? ' · Blogger-hosted' : ''} · {formatDate(item.createdAt)}
+											<p className="mt-1 truncate text-xs text-muted-foreground" title={item.external ? undefined : item.filename}>
+												{item.external
+													? `Blogger-hosted · ${formatDate(item.createdAt)}`
+													: `${item.filename}${item.size > 0 ? ` · ${formatSize(item.size)}` : ''} · ${formatDate(item.createdAt)}`}
 											</p>
 											<div className="mt-3 flex flex-1 flex-wrap content-start gap-1.5">
 												<span className="rounded-full border border-border px-2.5 py-0.5 text-xs whitespace-nowrap text-muted-foreground">
