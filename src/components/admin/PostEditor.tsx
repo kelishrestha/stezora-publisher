@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import AdminBreadcrumbs from './AdminBreadcrumbs';
 import LoadingImage from './LoadingImage';
+import Toast, { ToastStack } from './Toast';
 
 interface PublicationOption {
 	id: string;
@@ -67,6 +68,13 @@ interface MediaItem {
 
 const STATUS_OPTIONS = ['draft', 'scheduled', 'published', 'archived'];
 
+const STATUS_LABELS: Record<string, string> = {
+	draft: 'Draft',
+	scheduled: 'Scheduled',
+	published: 'Published',
+	archived: 'Archived',
+};
+
 const inputClass =
 	'mt-0.5 w-full rounded border-border bg-background text-foreground shadow-sm sm:text-sm placeholder:text-muted-foreground focus:border-accent focus:ring-accent';
 
@@ -121,7 +129,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [notice, setNotice] = useState<string | null>(null);
-	const [preview, setPreview] = useState<{ html: string; title: string } | null>(null);
+	const [confirmingSave, setConfirmingSave] = useState(false);
 
 	const [title, setTitle] = useState('');
 	// Loaded post title, frozen for the breadcrumb while the user edits `title`.
@@ -255,22 +263,70 @@ export default function PostEditor({ postId }: PostEditorProps) {
 		}
 	}
 
+	/** Standalone preview document with a watermark; no site assets needed. */
+	function previewDocument(previewTitle: string, html: string): string {
+		return [
+			'<!doctype html><html><head><meta charset="utf-8" />',
+			'<meta name="robots" content="noindex" />',
+			`<title>Preview: ${previewTitle}</title>`,
+			'<style>',
+			'body { margin: 0; font-family: Georgia, serif; color: #1c1c1c; background: #fcfcfc; }',
+			'.banner { position: sticky; top: 0; z-index: 2; background: #4338ca; color: #fff;',
+			'  font-family: system-ui, sans-serif; font-size: 13px; padding: 8px 16px; text-align: center; }',
+			'.watermark { position: fixed; inset: 0; display: grid; place-content: center; pointer-events: none; z-index: 1; }',
+			'.watermark span { font-family: system-ui, sans-serif; font-size: 16vw; font-weight: 800;',
+			'  color: rgba(67, 56, 202, 0.07); transform: rotate(-28deg); letter-spacing: 0.1em; }',
+			'main { position: relative; z-index: 0; max-width: 42rem; margin: 0 auto; padding: 3rem 1.5rem 6rem; line-height: 1.7; }',
+			'main img { max-width: 100%; height: auto; }',
+			'h1 { font-size: 2rem; }',
+			'</style></head><body>',
+			'<div class="banner">Preview. This is how the post will read; it is not published.</div>',
+			'<div class="watermark" aria-hidden="true"><span>PREVIEW</span></div>',
+			`<main><h1>${previewTitle}</h1>${html}</main>`,
+			'</body></html>',
+		].join('\n');
+	}
+
 	async function runPreview() {
 		if (!editingPostId) {
 			setError('Save the post before previewing.');
 			return;
 		}
 		setError(null);
+		// Open synchronously so the browser treats it as a user gesture.
+		const tab = window.open('about:blank', '_blank');
+		if (!tab) {
+			setError('Allow pop-ups for this site to open the preview.');
+			return;
+		}
+		tab.document.write('<title>Preview</title><p style="font-family: system-ui, sans-serif; padding: 2rem;">Rendering preview...</p>');
 		try {
 			const result = await json<{ html: string; title: string }>(`/api/admin/posts/${editingPostId}/preview`, {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
 				body: JSON.stringify({ contentMarkdown }),
 			});
-			setPreview(result);
+			tab.document.open();
+			tab.document.write(previewDocument(result.title || title, result.html));
+			tab.document.close();
 		} catch (reason) {
+			tab.close();
 			setError(reason instanceof Error ? reason.message : 'Failed to render preview.');
 		}
+	}
+
+	/** Save goes through a confirmation box for both new and edited posts. */
+	function requestSave() {
+		if (!publicationId) {
+			setError('Select a publication.');
+			return;
+		}
+		if (!title.trim()) {
+			setError('Enter a title.');
+			return;
+		}
+		setError(null);
+		setConfirmingSave(true);
 	}
 
 	/** Loads every media row belonging to this post (uploads and Blogger-sourced). */
@@ -373,12 +429,10 @@ export default function PostEditor({ postId }: PostEditorProps) {
 					</figure>
 				</div>
 			)}
-			{error && (
-				<p className="rounded-lg bg-accent-soft px-4 py-3 text-sm text-accent-foreground" role="alert">
-					{error}
-				</p>
-			)}
-			{notice && <p className="rounded-lg bg-accent-soft px-4 py-3 text-sm text-accent-foreground">{notice}</p>}
+			<ToastStack>
+				{error && <Toast tone="error" message={error} onDismiss={() => setError(null)} />}
+				{notice && <Toast tone="success" message={notice} onDismiss={() => setNotice(null)} />}
+			</ToastStack>
 
 			<div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
 				<div className="space-y-4">
@@ -556,17 +610,21 @@ export default function PostEditor({ postId }: PostEditorProps) {
 									{postMedia.length > 0 && (
 										<p className="text-xs text-muted-foreground">Featured image applies on save.</p>
 									)}
-									<input
-										type="file"
-										accept="image/*,.pdf"
-										disabled={uploadingMedia}
-										onChange={(event) => {
-											const file = event.target.files?.[0];
-											if (file) void handleUpload(file);
-											event.target.value = '';
-										}}
-										className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-accent-soft file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-accent-foreground hover:file:opacity-80"
-									/>
+									<label className="flex w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border px-4 py-6 text-center transition-colors hover:bg-surface-elevated">
+										<span className="text-sm font-medium text-foreground">Choose a file to upload</span>
+										<span className="text-xs text-muted-foreground">Images or PDF, up to 10 MB</span>
+										<input
+											type="file"
+											className="sr-only"
+											accept="image/jpeg,image/png,image/gif,image/webp,image/avif,application/pdf"
+											disabled={uploadingMedia}
+											onChange={(event) => {
+												const file = event.target.files?.[0];
+												if (file) void handleUpload(file);
+												event.target.value = '';
+											}}
+										/>
+									</label>
 									{uploadingMedia && <p className="text-xs text-muted-foreground">Uploading…</p>}
 								</div>
 							)}
@@ -582,7 +640,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 						<select id="post-status" value={status} onChange={(event) => setStatus(event.target.value)} className={inputClass}>
 							{STATUS_OPTIONS.map((option) => (
 								<option key={option} value={option}>
-									{option}
+									{STATUS_LABELS[option] ?? option}
 								</option>
 							))}
 						</select>
@@ -631,7 +689,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 					<div className="flex gap-3 pt-2">
 						<button
 							type="button"
-							onClick={() => void save()}
+							onClick={requestSave}
 							disabled={saving}
 							className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60"
 						>
@@ -649,15 +707,51 @@ export default function PostEditor({ postId }: PostEditorProps) {
 				</div>
 			</div>
 
-			{preview && (
-				<div className="rounded-md border border-border bg-surface shadow-sm">
-					<h2 className="border-b border-border px-5 py-4 text-base font-semibold text-foreground">Preview</h2>
-					<article
-						className="prose prose-neutral max-w-none px-5 py-6 dark:prose-invert"
-						// Preview is rendered server-side through the same sanitized
-						// pipeline as production (DEVELOPER.md §63, §83).
-						dangerouslySetInnerHTML={{ __html: preview.html }}
-					/>
+			{confirmingSave && (
+				<div
+					className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6 backdrop-blur-sm"
+					role="dialog"
+					aria-modal="true"
+					onClick={() => setConfirmingSave(false)}
+				>
+					<div
+						className="w-full max-w-md rounded-lg border border-border bg-surface p-5 shadow-lg"
+						onClick={(event) => event.stopPropagation()}
+					>
+						<h2 className="text-base font-semibold text-foreground">
+							{editingPostId ? 'Save changes?' : 'Create this post?'}
+						</h2>
+						<p className="mt-2 text-sm text-muted-foreground">
+							{editingPostId ? 'Save changes to' : 'Create'}{' '}
+							<span className="text-foreground">{title.trim() || 'this post'}</span> as{' '}
+							<span className="text-foreground">{STATUS_LABELS[status] ?? status}</span> in{' '}
+							<span className="text-foreground">
+								{meta.publications.find((publication) => publication.id === publicationId)?.name ?? 'the selected publication'}
+							</span>
+							?
+						</p>
+						<div className="mt-5 flex justify-end gap-2">
+							<button
+								type="button"
+								onClick={() => setConfirmingSave(false)}
+								disabled={saving}
+								className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-accent"
+							>
+								Cancel
+							</button>
+							<button
+								type="button"
+								disabled={saving}
+								onClick={() => {
+									setConfirmingSave(false);
+									void save();
+								}}
+								className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+							>
+								{editingPostId ? 'Confirm save' : 'Confirm create'}
+							</button>
+						</div>
+					</div>
 				</div>
 			)}
 		</div>
