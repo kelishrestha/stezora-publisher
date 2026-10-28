@@ -149,7 +149,8 @@ export default function PostEditor({ postId }: PostEditorProps) {
 	// of imported content. Any item can be marked as the featured image.
 	const [postMedia, setPostMedia] = useState<MediaItem[]>([]);
 	const [featuredImageId, setFeaturedImageId] = useState<string | null>(null);
-	const [uploadingMedia, setUploadingMedia] = useState(false);
+	// Files picked in the editor stay local until Save uploads them.
+	const [pendingUploads, setPendingUploads] = useState<Array<{ file: File; url: string }>>([]);
 	// Full-size image preview shown in a modal overlay.
 	const [previewImage, setPreviewImage] = useState<MediaItem | null>(null);
 
@@ -247,16 +248,20 @@ export default function PostEditor({ postId }: PostEditorProps) {
 				featuredImageId: editingPostId ? featuredImageId : null,
 			};
 			const path = editingPostId ? `/api/admin/posts/${editingPostId}` : '/api/admin/posts';
-			await json<{ post: PostRecord }>(path, {
+			const result = await json<{ post: PostRecord }>(path, {
 				method: editingPostId ? 'PUT' : 'POST',
 				headers: { 'content-type': 'application/json' },
 				body: JSON.stringify(payload),
 			});
-			setNotice('Post saved.');
+			const savedId = editingPostId ?? result.post.id;
+			const failures = pendingUploads.length > 0 ? await uploadPending(savedId) : [];
+			if (failures.length > 0) {
+				setError(`Post saved, but these uploads failed: ${failures.join(', ')}`);
+			} else {
+				setNotice(pendingUploads.length > 0 ? 'Post saved and media uploaded.' : 'Post saved.');
+			}
 			if (!editingPostId) {
-				// Created — refresh to the new edit page (payload id unknown until
-				// the response, so reload the list instead).
-				window.location.href = '/admin/posts';
+				window.location.href = `/admin/posts/${result.post.id}/edit`;
 			}
 		} catch (reason) {
 			setError(reason instanceof Error ? reason.message : 'Failed to save post.');
@@ -344,29 +349,33 @@ export default function PostEditor({ postId }: PostEditorProps) {
 		}
 	}
 
-	async function handleUpload(file: File) {
-		if (!editingPostId || !publicationId) return;
-		setUploadingMedia(true);
-		setError(null);
-		try {
-			const form = new FormData();
-			form.append('file', file);
-			form.append('postId', editingPostId);
-			form.append('publicationId', publicationId);
-			const result = await json<{ media: MediaItem }>('/api/admin/media', {
-				method: 'POST',
-				body: form,
-			});
-			setPostMedia((previous) => [result.media, ...previous]);
-			// A fresh upload becomes the featured image candidate; it persists
-			// with the next Save (PLAN P4.6.5).
-			setFeaturedImageId(result.media.id);
-			setNotice('Media uploaded. It becomes the featured image when you save.');
-		} catch (reason) {
-			setError(reason instanceof Error ? reason.message : 'Upload failed.');
-		} finally {
-			setUploadingMedia(false);
+	function addPendingFile(file: File) {
+		setPendingUploads((previous) => [...previous, { file, url: URL.createObjectURL(file) }]);
+	}
+
+	function removePendingFile(url: string) {
+		URL.revokeObjectURL(url);
+		setPendingUploads((previous) => previous.filter((pending) => pending.url !== url));
+	}
+
+	/** Uploads the locally held files once the post exists; runs on Save. */
+	async function uploadPending(postIdForUpload: string): Promise<string[]> {
+		const failures: string[] = [];
+		for (const pending of pendingUploads) {
+			try {
+				const form = new FormData();
+				form.append('file', pending.file);
+				form.append('postId', postIdForUpload);
+				form.append('publicationId', publicationId);
+				const result = await json<{ media: MediaItem }>('/api/admin/media', { method: 'POST', body: form });
+				URL.revokeObjectURL(pending.url);
+				setPostMedia((previous) => [result.media, ...previous]);
+			} catch {
+				failures.push(pending.file.name);
+			}
 		}
+		setPendingUploads((previous) => previous.filter((pending) => failures.some((name) => name === pending.file.name)));
+		return failures;
 	}
 
 	async function handleDeleteMedia(item: MediaItem) {
@@ -572,13 +581,8 @@ export default function PostEditor({ postId }: PostEditorProps) {
 						</div>
 						<div>
 							<label className="block text-sm font-medium text-foreground">Media</label>
-							{!editingPostId ? (
-								<p className="mt-1 text-sm text-muted-foreground">
-									Save the post first — media is attached to a saved post.
-								</p>
-							) : (
-								<div className="mt-2 space-y-3">
-									{postMedia.map((item) => (
+							<div className="mt-2 space-y-3">
+								{editingPostId && postMedia.map((item) => (
 										<div key={item.id} className="rounded-md border border-border p-2">
 											<button
 												type="button"
@@ -632,27 +636,50 @@ export default function PostEditor({ postId }: PostEditorProps) {
 											</div>
 										</div>
 									))}
-									{postMedia.length > 0 && (
-										<p className="text-xs text-muted-foreground">Featured image applies on save.</p>
-									)}
-									<label className="flex w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border px-4 py-6 text-center transition-colors hover:bg-surface-elevated">
-										<span className="text-sm font-medium text-foreground">Choose a file to upload</span>
-										<span className="text-xs text-muted-foreground">Images or PDF, up to 10 MB</span>
-										<input
-											type="file"
-											className="sr-only"
-											accept="image/jpeg,image/png,image/gif,image/webp,image/avif,application/pdf"
-											disabled={uploadingMedia}
-											onChange={(event) => {
-												const file = event.target.files?.[0];
-												if (file) void handleUpload(file);
-												event.target.value = '';
-											}}
-										/>
-									</label>
-									{uploadingMedia && <p className="text-xs text-muted-foreground">Uploading…</p>}
-								</div>
-							)}
+								{editingPostId && postMedia.length > 0 && (
+									<p className="text-xs text-muted-foreground">Featured image applies on save.</p>
+								)}
+								{pendingUploads.map((pending) => (
+									<div key={pending.url} className="rounded-md border border-dashed border-border p-2">
+										{pending.file.type.startsWith('image/') ? (
+											<img src={pending.url} alt={pending.file.name} className="h-32 w-full rounded object-cover" />
+										) : (
+											<div className="flex h-16 w-full items-center justify-center rounded bg-surface-elevated">
+												<span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+													{pending.file.type === 'application/pdf' ? 'PDF' : 'File'}
+												</span>
+											</div>
+										)}
+										<div className="mt-1 flex items-center justify-between gap-2">
+											<p className="truncate text-xs text-muted-foreground" title={pending.file.name}>
+												{pending.file.name} · not uploaded yet
+											</p>
+											<button
+												type="button"
+												onClick={() => removePendingFile(pending.url)}
+												className="shrink-0 rounded-md border border-border bg-surface px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-elevated"
+											>
+												Remove
+											</button>
+										</div>
+									</div>
+								))}
+								<label className="flex w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border px-4 py-6 text-center transition-colors hover:bg-surface-elevated">
+									<span className="text-sm font-medium text-foreground">Choose a file to upload</span>
+									<span className="text-xs text-muted-foreground">Images or PDF, up to 10 MB</span>
+									<input
+										type="file"
+										className="sr-only"
+										accept="image/jpeg,image/png,image/gif,image/webp,image/avif,application/pdf"
+										onChange={(event) => {
+											const file = event.target.files?.[0];
+											if (file) addPendingFile(file);
+											event.target.value = '';
+										}}
+									/>
+								</label>
+								<p className="text-xs text-muted-foreground">Files upload when you save the post.</p>
+							</div>
 						</div>
 					</div>
 				</div>
