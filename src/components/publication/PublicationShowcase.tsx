@@ -14,7 +14,6 @@ export interface ShowcasePublication {
 }
 
 const THEME_COLORS = {
-	pink: '#a00048',
 	bgLight: '#ffffff',
 	bgDark: '#1d1d1d',
 	foregroundLight: '#171717',
