@@ -89,21 +89,13 @@ every publication palette. Decided 2026-10-28.
 
 ## Publication palettes
 
-Each publication has a distinct background and supporting palette in both
-color modes. The palette is selected by the publication's existing `accent`
-identity and overrides the shared site defaults:
+Each publication keeps the neutral site background in both color modes
+(decided 2026-10-28); its `accent` identity now overrides only the accent
+family (accent, accent-foreground, accent-soft, on-accent) used by buttons
+and badges:
 
-| Publication | Light background | Dark background | Palette |
-| --- | --- | --- | --- |
-| The Sore Transition | neutral grey | space-indigo-950 | grey light mode, blackish dark mode |
-| The Rebellious Flame | dark-amaranth-50 | dark-amaranth-950 | red amaranth |
-| My Soulful Incantations | soft-periwinkle-50 | soft-periwinkle-950 | soft periwinkle |
-
-The main page uses a neutral white light-mode background rather than a colored
-publication background. The app's unthemed dark mode uses ocean-deep tones,
-separate from The Sore Transition's blackish dark palette.
-
-For each publication, surfaces use the next darker ramp steps, foreground text
-uses a high-contrast ramp endpoint, and borders use a middle-dark ramp step.
-This keeps the publication identity visible without reducing article
-readability.
+| Publication | Accent ramp |
+| --- | --- |
+| The Sore Transition | space-indigo (greyed light-mode accent) |
+| The Rebellious Flame | dark-amaranth |
+| My Soulful Incantations | soft-periwinkle |

@@ -149,24 +149,15 @@
 	--color-accent-soft: var(--color-space-indigo-900);
 }
 
-/* The Sore Transition: grey light mode, blackish dark mode. */
+/* Publication palettes: accent family only; pages keep the neutral background. */
+/* The Sore Transition. */
 :root:not(.dark)[data-accent='space-indigo'] {
-	--color-background: oklch(96% 0.008 270);
-	--color-foreground: oklch(20% 0.012 270);
-	--color-surface: oklch(99% 0.004 270);
-	--color-surface-elevated: oklch(94% 0.01 270);
-	--color-border: oklch(82% 0.012 270);
 	--color-accent: oklch(40% 0.018 270);
 	--color-on-accent: oklch(98.5% 0 0);
 	--color-accent-foreground: oklch(28% 0.014 270);
 	--color-accent-soft: oklch(90% 0.01 270);
 }
 .dark[data-accent='space-indigo'] {
-	--color-background: var(--color-space-indigo-950);
-	--color-foreground: var(--color-space-indigo-50);
-	--color-surface: var(--color-space-indigo-900);
-	--color-surface-elevated: var(--color-space-indigo-800);
-	--color-border: var(--color-space-indigo-700);
 	--color-accent: var(--color-space-indigo-300);
 	--color-on-accent: var(--color-space-indigo-950);
 	--color-accent-foreground: var(--color-space-indigo-100);
@@ -175,22 +166,12 @@
 
 /* The Rebellious Flame: red, urgent manifesto palette. */
 :root:not(.dark)[data-accent='dark-amaranth'] {
-	--color-background: var(--color-dark-amaranth-50);
-	--color-foreground: var(--color-dark-amaranth-950);
-	--color-surface: var(--color-dark-amaranth-100);
-	--color-surface-elevated: var(--color-dark-amaranth-200);
-	--color-border: var(--color-dark-amaranth-300);
 	--color-accent: var(--color-dark-amaranth-500);
 	--color-on-accent: oklch(98.5% 0 0);
 	--color-accent-foreground: var(--color-dark-amaranth-700);
 	--color-accent-soft: var(--color-dark-amaranth-200);
 }
 .dark[data-accent='dark-amaranth'] {
-	--color-background: var(--color-dark-amaranth-950);
-	--color-foreground: var(--color-dark-amaranth-50);
-	--color-surface: var(--color-dark-amaranth-900);
-	--color-surface-elevated: var(--color-dark-amaranth-800);
-	--color-border: var(--color-dark-amaranth-700);
 	--color-accent: var(--color-dark-amaranth-300);
 	--color-on-accent: var(--color-dark-amaranth-950);
 	--color-accent-foreground: var(--color-dark-amaranth-200);
@@ -199,22 +180,12 @@
 
 /* My Soulful Incantations: contemplative periwinkle poetry palette. */
 :root:not(.dark)[data-accent='soft-periwinkle'] {
-	--color-background: var(--color-soft-periwinkle-50);
-	--color-foreground: var(--color-soft-periwinkle-950);
-	--color-surface: var(--color-soft-periwinkle-100);
-	--color-surface-elevated: var(--color-soft-periwinkle-200);
-	--color-border: var(--color-soft-periwinkle-200);
 	--color-accent: var(--color-soft-periwinkle-500);
 	--color-on-accent: oklch(98.5% 0 0);
 	--color-accent-foreground: var(--color-soft-periwinkle-600);
 	--color-accent-soft: var(--color-soft-periwinkle-100);
 }
 .dark[data-accent='soft-periwinkle'] {
-	--color-background: var(--color-soft-periwinkle-950);
-	--color-foreground: var(--color-soft-periwinkle-50);
-	--color-surface: var(--color-soft-periwinkle-900);
-	--color-surface-elevated: var(--color-soft-periwinkle-800);
-	--color-border: var(--color-soft-periwinkle-700);
 	--color-accent: var(--color-soft-periwinkle-300);
 	--color-on-accent: var(--color-soft-periwinkle-950);
 	--color-accent-foreground: var(--color-soft-periwinkle-200);

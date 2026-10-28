@@ -57,16 +57,17 @@ describe('COLORS.md → theme.css', () => {
 		}
 	});
 
-	it('defines distinct light and dark publication backgrounds', () => {
-		for (const [palette, light, dark] of [
-			['space-indigo', 'space-indigo-950', 'space-indigo-950'],
-			['dark-amaranth', 'dark-amaranth-50', 'dark-amaranth-950'],
-			['soft-periwinkle', 'soft-periwinkle-50', 'soft-periwinkle-950'],
-		]) {
-			expect(themeCss).toContain(`:root:not(.dark)[data-accent='${palette}']`);
-			expect(themeCss).toContain(`--color-background: var(--color-${light});`);
-			expect(themeCss).toContain(`.dark[data-accent='${palette}']`);
-			expect(themeCss).toContain(`--color-background: var(--color-${dark});`);
+	it('publication palettes override only the accent family, never the background', () => {
+		for (const palette of ['space-indigo', 'dark-amaranth', 'soft-periwinkle']) {
+			for (const selector of [`:root:not(.dark)[data-accent='${palette}']`, `.dark[data-accent='${palette}']`]) {
+				expect(themeCss).toContain(selector);
+				const start = themeCss.indexOf(selector);
+				const block = themeCss.slice(start, themeCss.indexOf('}', start));
+				expect(block).toContain('--color-accent:');
+				expect(block).not.toContain('--color-background:');
+				expect(block).not.toContain('--color-surface:');
+				expect(block).not.toContain('--color-border:');
+			}
 		}
 	});
 
