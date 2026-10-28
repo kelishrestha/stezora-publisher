@@ -424,7 +424,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 
 					<div>
 						<label htmlFor="post-content" className="block text-sm font-medium text-foreground">
-							Content (Markdown)
+							Content
 						</label>
 						<textarea
 							id="post-content"
