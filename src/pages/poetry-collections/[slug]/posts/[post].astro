@@ -28,12 +28,15 @@ const content = sanitizeContentHtml(post.data.content);
 <BlogLayout post={post} publication={publication}>
 	{
 		post.data.featuredImage && (
-			<img
-				src={post.data.featuredImage}
-				alt=""
-				class="mb-8 w-full rounded-lg border border-border shadow-lg lg:float-right lg:mb-6 lg:ml-10 lg:w-80 lg:rotate-2 lg:transition-transform lg:hover:rotate-0"
-				loading="eager"
-			/>
+			<span class="img-shell mb-8 block w-full rounded-lg border border-border shadow-lg lg:float-right lg:mb-6 lg:ml-10 lg:w-80 lg:rotate-2 lg:transition-transform lg:hover:rotate-0">
+				<img
+					src={post.data.featuredImage}
+					alt=""
+					class="w-full"
+					loading="eager"
+					onload="this.classList.add('loaded')"
+				/>
+			</span>
 		)
 	}
 	<Fragment set:html={content} />

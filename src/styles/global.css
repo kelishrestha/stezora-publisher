@@ -174,3 +174,45 @@ html.dark[data-accent='space-indigo'] body::after {
 html[data-accent] .site-footer {
 	background: transparent;
 }
+
+/*
+ * Public image skeleton: wrap an <img onload="this.classList.add('loaded')">
+ * in .img-shell to show a pulsing placeholder until the image arrives.
+ */
+.img-shell {
+	position: relative;
+	display: block;
+	overflow: hidden;
+	background: var(--color-muted);
+	animation: var(--animate-pulse, pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite);
+}
+
+@keyframes pulse {
+	50% {
+		opacity: 0.6;
+	}
+}
+
+.img-shell > img {
+	opacity: 0;
+	transition: opacity 300ms ease;
+}
+
+.img-shell > img.loaded {
+	opacity: 1;
+}
+
+.img-shell:has(> img.loaded) {
+	background: transparent;
+	animation: none;
+}
+
+/* Without JavaScript the onload hook never fires; show images directly. */
+@media (scripting: none) {
+	.img-shell {
+		animation: none;
+	}
+	.img-shell > img {
+		opacity: 1;
+	}
+}

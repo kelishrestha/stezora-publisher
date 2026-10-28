@@ -26,7 +26,15 @@ function displayDate(date: Date): string {
 <article class={`group flex h-full flex-col ${cardClass({ borderless })}`}>
 	{post.data.featuredImage && (
 		<a href={href} class="block" tabindex="-1" aria-hidden="true">
-			<img src={post.data.featuredImage} alt="" loading="lazy" class={`${wide ? 'h-64' : 'h-56'} w-full object-cover`} />
+			<span class={`img-shell ${wide ? 'h-64' : 'h-56'} w-full`}>
+				<img
+					src={post.data.featuredImage}
+					alt=""
+					loading="lazy"
+					onload="this.classList.add('loaded')"
+					class="h-full w-full object-cover"
+				/>
+			</span>
 		</a>
 	)}
 	<div class={`flex flex-1 flex-col ${wide ? 'p-4 sm:p-6' : 'p-4'}`}>

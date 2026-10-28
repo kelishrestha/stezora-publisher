@@ -50,8 +50,21 @@ export default function CanvasGuard({ fallback, children }: CanvasGuardProps) {
 	}, []);
 
 	if (supported === null) {
-		// SSR and the first client frame: render nothing heavy yet.
-		return null;
+		// SSR and the first client frame: a shelf-shaped skeleton with the
+		// HyperUI dots pulse, so the page never shows a blank gap.
+		return (
+			<div
+				role="status"
+				aria-label="Loading bookshelf"
+				className="grid h-[70vh] min-h-[480px] w-full animate-pulse place-content-center rounded-md bg-muted"
+			>
+				<span className="flex gap-2">
+					<span className="size-3 animate-pulse rounded-full bg-accent" aria-hidden="true" />
+					<span className="size-3 animate-pulse rounded-full bg-accent [animation-delay:0.2s]" aria-hidden="true" />
+					<span className="size-3 animate-pulse rounded-full bg-accent [animation-delay:0.4s]" aria-hidden="true" />
+				</span>
+			</div>
+		);
 	}
 	if (!supported) {
 		return <>{fallback}</>;
