@@ -161,66 +161,34 @@ export default function PostView() {
 					</div>
 				</div>
 				<p className="mt-1 text-sm text-muted-foreground">{publicationName}</p>
-				{post.excerpt && <p className="mt-3 text-sm text-muted-foreground">{post.excerpt}</p>}
-			</div>
-
-			<div className="rounded-md border border-border bg-surface shadow-sm">
-				<h3 className="border-b border-border px-5 py-4 text-sm font-semibold uppercase tracking-wide text-foreground">Details</h3>
-				<ul className="text-sm">
-					<li className="flex flex-wrap gap-x-4 gap-y-1 px-3 py-2">
-						<span className="w-40 shrink-0 text-muted-foreground">Publication</span>
-						<span className="min-w-0 break-words text-foreground">{publicationName}</span>
-					</li>
-					<li className="flex flex-wrap gap-x-4 gap-y-1 px-3 py-2">
-						<span className="w-40 shrink-0 text-muted-foreground">Slug</span>
-						<span className="min-w-0 break-words text-foreground">/{post.slug}</span>
-					</li>
-					<li className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-2">
-						<span className="w-40 shrink-0 text-muted-foreground">Tags</span>
-						{post.tags.length > 0 ? (
-							<span className="flex min-w-0 flex-wrap gap-1.5">
-								{post.tags.map((tag) => (
-									<span
-										key={tag}
-										className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs whitespace-nowrap text-accent-foreground"
-									>
-										{tag}
-									</span>
-								))}
+				{post.tags.length > 0 && (
+					<p className="mt-2 flex flex-wrap gap-1.5">
+						{post.tags.map((tag) => (
+							<span
+								key={tag}
+								className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs whitespace-nowrap text-accent-foreground"
+							>
+								{tag}
 							</span>
-						) : (
-							<span className="text-muted-foreground">None</span>
-						)}
-					</li>
-					<li className="flex flex-wrap gap-x-4 gap-y-1 px-3 py-2">
-						<span className="w-40 shrink-0 text-muted-foreground">Published on</span>
-						<span className="min-w-0 break-words text-foreground">{formatDate(post.publishedAt)}</span>
-					</li>
-					<li className="flex flex-wrap gap-x-4 gap-y-1 px-3 py-2">
-						<span className="w-40 shrink-0 text-muted-foreground">Updated on</span>
-						<span className="min-w-0 break-words text-foreground">{formatDate(post.updatedAt)}</span>
-					</li>
-					{post.seoTitle && (
-						<li className="flex flex-wrap gap-x-4 gap-y-1 px-3 py-2">
-							<span className="w-40 shrink-0 text-muted-foreground">SEO title</span>
-							<span className="min-w-0 break-words text-foreground">{post.seoTitle}</span>
-						</li>
-					)}
-					{post.seoDescription && (
-						<li className="flex flex-wrap gap-x-4 gap-y-1 px-3 py-2">
-							<span className="w-40 shrink-0 text-muted-foreground">SEO description</span>
-							<span className="min-w-0 break-words text-foreground">{post.seoDescription}</span>
-						</li>
-					)}
-					{post.canonicalUrl && (
-						<li className="flex flex-wrap gap-x-4 gap-y-1 px-3 py-2">
-							<span className="w-40 shrink-0 text-muted-foreground">Canonical URL</span>
-							<a href={post.canonicalUrl} target="_blank" rel="noopener noreferrer" className="min-w-0 break-all text-accent-foreground hover:underline">
-								{post.canonicalUrl}
-							</a>
-						</li>
-					)}
-				</ul>
+						))}
+					</p>
+				)}
+				<p className="mt-2 text-sm text-muted-foreground">
+					Published on {formatDate(post.publishedAt)} · Updated on {formatDate(post.updatedAt)}
+				</p>
+				{post.canonicalUrl && (
+					<p className="mt-2 text-sm">
+						<a
+							href={post.canonicalUrl}
+							target="_blank"
+							rel="noopener noreferrer"
+							className="text-accent-foreground hover:underline"
+						>
+							See blogger post
+						</a>
+					</p>
+				)}
+				{post.excerpt && <p className="mt-3 text-sm text-muted-foreground">{post.excerpt}</p>}
 			</div>
 
 			{/* Content on the left, the featured image on the right: no card chrome. */}
