@@ -20,7 +20,7 @@ interface Envelope<T> {
 }
 
 const inputClass =
-	'mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-accent';
+	'mt-0.5 w-full rounded border-border bg-background text-foreground shadow-sm sm:text-sm placeholder:text-muted-foreground focus:border-accent focus:ring-accent';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
 	const response = await fetch(path, { credentials: 'same-origin', ...init });

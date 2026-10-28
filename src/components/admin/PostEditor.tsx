@@ -66,7 +66,7 @@ interface MediaItem {
 const STATUS_OPTIONS = ['draft', 'scheduled', 'published', 'archived'];
 
 const inputClass =
-	'mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-accent';
+	'mt-0.5 w-full rounded border-border bg-background text-foreground shadow-sm sm:text-sm placeholder:text-muted-foreground focus:border-accent focus:ring-accent';
 
 function slugify(value: string): string {
 	const trimmed = value.toLowerCase().trim();

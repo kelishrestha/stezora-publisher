@@ -1,6 +1,8 @@
 @import 'tailwindcss';
 @import './theme.css';
 @plugin '@tailwindcss/typography';
+/* HyperUI form elements (inputs/selects) assume the forms plugin reset. */
+@plugin '@tailwindcss/forms';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
