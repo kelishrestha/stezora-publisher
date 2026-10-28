@@ -502,10 +502,8 @@ export default function TagManager() {
 						{pageItems.map((tag) => (
 							<li key={tag.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3">
 								<div className="min-w-0">
-									<span className="inline-flex max-w-full rounded-full bg-accent-soft px-3 py-1 text-sm font-medium text-accent-foreground">
-										<span className="truncate">#{tag.name}</span>
-									</span>
-									<p className="mt-1.5 truncate text-xs text-muted-foreground" title={postNamesFor(tag) || undefined}>
+									<p className="truncate font-semibold text-foreground">{tag.name}</p>
+									<p className="mt-1 truncate text-xs text-muted-foreground" title={postNamesFor(tag) || undefined}>
 										{publicationName(tag.publication_id)}
 										{postNamesFor(tag) ? ` · ${postNamesFor(tag)}` : ''}
 										{formatDate(tag.created_at) ? ` · Created on ${formatDate(tag.created_at)}` : ''}
