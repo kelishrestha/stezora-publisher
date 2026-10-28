@@ -97,8 +97,8 @@ export function buildBackfillSql(records: BackfillInput[], options: BackfillOpti
 				emittedTagSlugs.add(tagId);
 				lines.push(
 					[
-						'INSERT INTO tags (id, publication_id, name, slug)',
-						`VALUES (${sqlString(tagId)}, ${sqlString(publicationId)}, ${sqlString(tag)}, ${sqlString(tagSlug)})`,
+						'INSERT INTO tags (id, publication_id, name, slug, created_at)',
+						`VALUES (${sqlString(tagId)}, ${sqlString(publicationId)}, ${sqlString(tag)}, ${sqlString(tagSlug)}, ${sqlString(now)})`,
 						'ON CONFLICT (publication_id, slug) DO NOTHING;',
 					].join('\n')
 				);
@@ -203,6 +203,9 @@ export function buildBackfillSql(records: BackfillInput[], options: BackfillOpti
 			);
 		}
 	}
+
+	// Tags created before the created_at column existed get the backfill date.
+	lines.push(`UPDATE tags SET created_at = ${sqlString(now)} WHERE created_at IS NULL;`);
 
 	return lines.join('\n');
 }

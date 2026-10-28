@@ -85,6 +85,13 @@
       "when": 1793178039677,
       "tag": "0011_media_blogger_images",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1793188151089,
+      "tag": "0012_tags_created_at",
+      "breakpoints": true
     }
   ]
 }

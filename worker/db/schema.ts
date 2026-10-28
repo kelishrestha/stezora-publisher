@@ -58,6 +58,9 @@ export const tags = sqliteTable(
 			.references(() => publications.id),
 		name: text('name').notNull(),
 		slug: text('slug').notNull(),
+		// Nullable: tags imported before the column existed carry the backfill
+		// date instead of a real creation date.
+		created_at: text('created_at'),
 	},
 	(table) => [uniqueIndex('tags_publication_slug_unique').on(table.publication_id, table.slug)]
 );

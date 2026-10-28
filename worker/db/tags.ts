@@ -7,6 +7,7 @@ export interface TagRow {
 	publication_id: string;
 	name: string;
 	slug: string;
+	created_at: string | null;
 }
 
 export interface NewTag {
@@ -30,7 +31,7 @@ export class TagRepository {
 
 	async list(publicationId?: string): Promise<TagRow[]> {
 		return this.db
-			.select({ id: tags.id, publication_id: tags.publication_id, name: tags.name, slug: tags.slug })
+			.select({ id: tags.id, publication_id: tags.publication_id, name: tags.name, slug: tags.slug, created_at: tags.created_at })
 			.from(tags)
 			.where(publicationId ? eq(tags.publication_id, publicationId) : undefined)
 			.orderBy(asc(tags.name));
@@ -38,7 +39,7 @@ export class TagRepository {
 
 	async getById(id: string): Promise<TagRow | null> {
 		const rows = await this.db
-			.select({ id: tags.id, publication_id: tags.publication_id, name: tags.name, slug: tags.slug })
+			.select({ id: tags.id, publication_id: tags.publication_id, name: tags.name, slug: tags.slug, created_at: tags.created_at })
 			.from(tags)
 			.where(eq(tags.id, id))
 			.limit(1);
@@ -64,6 +65,7 @@ export class TagRepository {
 			publication_id: input.publicationId,
 			name: input.name,
 			slug: input.slug,
+			created_at: new Date().toISOString(),
 		};
 		await this.db.insert(tags).values(row);
 		return row;
