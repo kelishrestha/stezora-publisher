@@ -3,12 +3,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Container from '../components/ui/Container.astro';
 import { Icon } from 'astro-icon/components';
 const testimonials = [
-	['Sarah Chen', 'San Francisco, CA', "Stezora's words don't just tell a story—they become part of your soul. 'The Rebellious Flame' changed how I see the world around me.", 'The Rebellious Flame', 'October 2024'],
-	['Marcus Rivera', 'Brooklyn, NY', "I've never been one for poetry, but 'The Peach Fall' found me during my darkest hour. These poems were like gentle hands guiding me back to myself.", 'The Peach Fall', 'September 2024'],
-	['Elena Moreau', 'Montreal, QC', "'The Soulful Incantations' is a masterpiece of emotional cartography. I found myself in these pages, and I found hope I didn't know I was looking for.", 'The Soulful Incantations', 'August 2024'],
-	['James Whitmore', 'London, UK', "Reading 'The Rebellious Flame' was like discovering a secret language I'd been trying to speak my whole life.", 'The Rebellious Flame', 'July 2024'],
-	['Priya Sharma', 'Mumbai, India', "'The Peach Fall' reads like a collection of secrets whispered between kindred spirits. Each story resonates with profound truth.", 'The Peach Fall', 'June 2024'],
-	['David Kim', 'Seoul, South Korea', "The depth of emotion in 'The Peach Fall' is breathtaking. Art that heals—this is what literature should be.", 'The Peach Fall', 'May 2024'],
+	{ name: "Sarah Chen", location: "San Francisco, CA", text: "Stezora's words don't just tell a story—they become part of your soul. 'The Rebellious Flame' changed how I see the world around me. Every page felt like a conversation with an old friend who understands the deepest parts of your heart.", work: "The Rebellious Flame", date: "October 2024" },
+	{ name: "Marcus Rivera", location: "Brooklyn, NY", text: "I've never been one for poetry, but 'The Peach Fall' found me during my darkest hour. These poems were like gentle hands guiding me back to myself. Stezora writes with the wisdom of someone who has walked through shadows and emerged with light.", work: "The Peach Fall", date: "September 2024" },
+	{ name: "Elena Moreau", location: "Montreal, QC", text: "'The Soulful Incantations' is a masterpiece of emotional cartography. Stezora maps the terrain of love and loss with such precision and tenderness. I found myself in these pages, and I found hope I didn't know I was looking for.", work: "The Soulful Incantations", date: "August 2024" },
+	{ name: "James Whitmore", location: "London, UK", text: "Reading 'The Rebellious Flame' was like discovering a secret language I'd been trying to speak my whole life. These poems give voice to the ineffable—the spaces between words where real meaning lives. Simply extraordinary.", work: "The Rebellious Flame", date: "July 2024" },
+	{ name: "Priya Sharma", location: "Mumbai, India", text: "'The Peach Fall' reads like a collection of secrets whispered between kindred spirits. Each story resonates with profound truth. Stezora has the rare gift of making you feel less alone in the universe.", work: "The Peach Fall", date: "June 2024" },
+	{ name: "David Kim", location: "Seoul, South Korea", text: "The depth of emotion in 'The Peach Fall' is breathtaking. These poems arrived at exactly the moment I needed them, as if Stezora had written them specifically for my journey. Art that heals—this is what literature should be.", work: "The Peach Fall", date: "May 2024" },
 ];
 const books = [
 	{
@@ -42,6 +42,8 @@ const poemCollections = [
 	{ title: 'The Soulful Incantations', subtitle: 'Poems of Soul Transformation', description: 'Soul-driven profound pieces that explore the liminal spaces of existence—the moments between what was and what might be, where transformation quietly blooms.', theme: 'Change & Growth', poemCount: 12, rating: 4.7, reviews: 234, preview: ['Blue waves from the ocean', 'Makes me stay a little longer on the shore'], icon: 'lucide:feather', href: '/poetry-collections/my-soulful-incantations' },
 ];
 
+const contactControl =
+	'w-full rounded-lg border border-border bg-background px-4 py-3 transition-all duration-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50';
 ---
 
 <BaseLayout path="/">
@@ -151,7 +153,7 @@ const poemCollections = [
 						<div class={`flex justify-center ${index % 2 ? 'lg:col-start-2' : ''}`}>
 							<div class="relative transition-transform duration-500 group-hover:scale-105">
 								<img src={book.image} alt={`${book.title} cover`} class="h-80 w-64 rounded-lg object-cover shadow-2xl" />
-								<span class="absolute -bottom-4 -right-4 flex h-16 w-16 items-center justify-center rounded-full border-4 border-border bg-background text-red-400 shadow-lg"><Icon name="lucide:heart" class="h-6 w-6 fill-current" aria-hidden="true" /></span>
+								<span class="absolute -bottom-4 -right-4 flex h-16 w-16 items-center justify-center rounded-full border-4 border-border bg-background text-red-500 shadow-lg"><svg viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6" aria-hidden="true"><path d="m11.645 20.91-.007-.003-.022-.012a15.247 15.247 0 0 1-.383-.218 25.18 25.18 0 0 1-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0 1 12 5.052 5.5 5.5 0 0 1 16.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 0 1-4.244 3.17 15.247 15.247 0 0 1-.383.219l-.022.012-.007.004-.003.001a.752.752 0 0 1-.704 0l-.003-.001Z" /></svg></span>
 							</div>
 						</div>
 						<div class={`space-y-6 ${index % 2 ? 'lg:col-start-1 lg:row-start-1' : ''}`}>
@@ -162,7 +164,7 @@ const poemCollections = [
 							<h3 class="font-serif text-3xl">{book.title}</h3>
 							<p class="text-lg text-muted-foreground">{book.subtitle}</p>
 							<p class="leading-relaxed text-foreground/80">{book.description}</p>
-							<div class="flex items-center gap-2 text-yellow-500"><span class="flex" aria-label={`${book.rating} out of 5 stars`}>{[1, 2, 3, 4, 5].map(() => <Icon name="lucide:star" class="h-4 w-4 fill-current" aria-hidden="true" />)}</span><span class="text-sm text-foreground">{book.rating} <span class="text-muted-foreground">({book.reviews} reviews)</span></span></div>
+							<div class="flex items-center gap-2 text-yellow-500"><span class="flex" aria-label={`${book.rating} out of 5 stars`}>{[1, 2, 3, 4, 5].map(() => <svg viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4" aria-hidden="true"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></svg>)}</span><span class="text-sm text-foreground">{book.rating} <span class="text-muted-foreground">({book.reviews} reviews)</span></span></div>
 							<div class="flex items-center justify-between border-t border-border pt-4">
 								<span class="font-serif text-2xl">{book.price}</span>
 								<span class="flex items-center gap-3">
@@ -203,7 +205,7 @@ const poemCollections = [
 							</div>
 						</div>
 						<div class="mt-6 rounded-lg bg-secondary/20 p-4"><p class="mb-2 text-xs uppercase tracking-widest text-muted-foreground">Preview</p><div class="space-y-1 font-serif italic text-foreground/70">{collection.preview.map((line) => <p class="text-sm">{line}</p>)}<p class="text-xs text-muted-foreground">Click to read more...</p></div></div>
-						<div class="mt-4 flex items-center gap-2 text-sm text-yellow-500"><span class="flex" aria-label={`${collection.rating} out of 5 stars`}>{[1, 2, 3, 4, 5].map(() => <Icon name="lucide:star" class="h-3 w-3 fill-current" aria-hidden="true" />)}</span><span class="text-foreground">{collection.rating}</span><span class="text-muted-foreground">({collection.reviews} reviews)</span></div>
+						<div class="mt-4 flex items-center gap-2 text-sm text-yellow-500"><span class="flex" aria-label={`${collection.rating} out of 5 stars`}>{[1, 2, 3, 4, 5].map(() => <svg viewBox="0 0 24 24" fill="currentColor" class="h-3 w-3" aria-hidden="true"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></svg>)}</span><span class="text-foreground">{collection.rating}</span><span class="text-muted-foreground">({collection.reviews} reviews)</span></div>
 						<div class="mt-4 flex justify-end border-t border-border pt-4"><a href={collection.href} class="inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-sm text-background transition-transform duration-300 hover:scale-105">View <Icon name="lucide:book-open-text" class="h-4 w-4" aria-hidden="true" /></a></div>
 						<div class="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent to-secondary/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
 					</article>
@@ -218,49 +220,157 @@ const poemCollections = [
 				<h2 class="font-serif text-4xl md:text-5xl">Reader Voices</h2>
 				<p class="mt-5 text-muted-foreground">Stories shared by souls who have journeyed through these pages and found pieces of themselves within.</p>
 			</div>
-			<div class="mt-10 rounded-2xl bg-gradient-to-br from-secondary/30 to-accent-soft/20 p-8 text-center md:p-12">
-				<div class="flex justify-center text-yellow-500" aria-label="5 out of 5 stars">{[1, 2, 3, 4, 5].map(() => <Icon name="lucide:star" class="h-6 w-6 fill-current" aria-hidden="true" />)}</div>
-				<blockquote class="mx-auto mt-6 max-w-4xl font-serif text-xl leading-relaxed md:text-2xl">“{testimonials[0][2]}”</blockquote>
-				<p class="mt-8 text-lg">{testimonials[0][0]}</p>
-				<p class="text-muted-foreground">{testimonials[0][1]}</p>
-				<p class="mt-2 text-sm text-muted-foreground">{testimonials[0][3]} · {testimonials[0][4]}</p>
+			<div class="relative mt-10">
+				<div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-secondary/30 to-accent-soft/20 p-8 md:p-12">
+					<div class="absolute left-4 top-4 text-secondary/40" aria-hidden="true"><Icon name="lucide:quote" class="h-16 w-16" /></div>
+					<div class="absolute right-4 top-4 flex gap-2">
+						<button type="button" data-voice-prev class="group rounded-full bg-background/80 p-2 transition-colors duration-300 hover:bg-background" aria-label="Previous testimonial"><Icon name="lucide:chevron-left" class="h-5 w-5 transition-colors duration-300 group-hover:text-primary" aria-hidden="true" /></button>
+						<button type="button" data-voice-next class="group rounded-full bg-background/80 p-2 transition-colors duration-300 hover:bg-background" aria-label="Next testimonial"><Icon name="lucide:chevron-right" class="h-5 w-5 transition-colors duration-300 group-hover:text-primary" aria-hidden="true" /></button>
+					</div>
+					<div class="relative z-10 mx-auto max-w-4xl">
+						{testimonials.map((voice, index) => (
+							<div data-voice-slide class={index === 0 ? '' : 'hidden'}>
+								<div class="mb-6 flex justify-center text-yellow-500" aria-label="5 out of 5 stars">{[1, 2, 3, 4, 5].map(() => <svg viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6" aria-hidden="true"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></svg>)}</div>
+								<blockquote class="mb-8 text-center font-serif text-xl leading-relaxed md:text-2xl">“{voice.text}”</blockquote>
+								<div class="space-y-2 text-center">
+									<div class="text-lg">{voice.name}</div>
+									<div class="font-light text-muted-foreground">{voice.location}</div>
+									<div class="flex items-center justify-center gap-2 text-sm text-muted-foreground"><span class="rounded-full bg-secondary px-3 py-1">{voice.work}</span><span>•</span><span>{voice.date}</span></div>
+								</div>
+							</div>
+						))}
+					</div>
+				</div>
+				<div class="mt-8 flex justify-center gap-2">
+					{testimonials.map((voice, index) => (
+						<button type="button" data-voice-dot aria-label={`Go to testimonial ${index + 1}`} class={`h-3 w-3 rounded-full transition-all duration-300 ${index === 0 ? 'scale-125 bg-foreground' : 'bg-muted-foreground/30 hover:bg-muted-foreground/60'}`}></button>
+					))}
+				</div>
 			</div>
-			<div class="mt-10 grid gap-6 md:grid-cols-3">
-				{testimonials.slice(0, 3).map((testimonial) => (
-					<figure class="rounded-lg border border-border bg-surface p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-						<div class="mb-3 flex text-yellow-500" aria-label="5 out of 5 stars">{[1, 2, 3, 4, 5].map(() => <Icon name="lucide:star" class="h-4 w-4 fill-current" aria-hidden="true" />)}</div>
-						<blockquote class="leading-relaxed text-foreground/80">“{testimonial[2]}”</blockquote>
-						<figcaption class="mt-6 text-sm">
-							<div>{testimonial[0]}</div><div class="text-muted-foreground">{testimonial[1]}</div>
-						</figcaption>
-					</figure>
+			<div class="mt-16 grid gap-6 md:grid-cols-3">
+				{testimonials.slice(0, 3).map((voice, index) => (
+					<button type="button" data-voice-jump={index} class="cursor-pointer rounded-lg border border-border bg-surface p-6 text-left transition-all duration-300 hover:scale-105 hover:shadow-lg">
+						<div class="mb-3 flex text-yellow-500" aria-label="5 out of 5 stars">{[1, 2, 3, 4, 5].map(() => <svg viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4" aria-hidden="true"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></svg>)}</div>
+						<p class="mb-4 leading-relaxed text-foreground/80">“{voice.text.substring(0, 120)}...”</p>
+						<div class="text-sm"><div>{voice.name}</div><div class="font-light text-muted-foreground">{voice.location}</div></div>
+					</button>
 				))}
 			</div>
-			<div class="mt-12 text-center"><div class="inline-block rounded-lg bg-surface p-6"><Icon name="lucide:heart" class="mx-auto mb-3 h-8 w-8 animate-pulse text-red-400" aria-hidden="true" /><h3 class="font-serif text-xl">Have you been touched by these words?</h3><p class="mt-2 text-sm text-muted-foreground">Your story matters, and I'd love to hear how these books have become part of your journey.</p></div></div>
+			<div class="mt-16 text-center">
+				<div class="inline-block rounded-lg bg-gradient-to-r from-secondary/20 to-accent-soft/20 p-6">
+					<svg viewBox="0 0 24 24" fill="currentColor" class="mx-auto mb-4 h-8 w-8 animate-pulse text-red-500" role="img" aria-label="With love"><path d="m11.645 20.91-.007-.003-.022-.012a15.247 15.247 0 0 1-.383-.218 25.18 25.18 0 0 1-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0 1 12 5.052 5.5 5.5 0 0 1 16.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 0 1-4.244 3.17 15.247 15.247 0 0 1-.383.219l-.022.012-.007.004-.003.001a.752.752 0 0 1-.704 0l-.003-.001Z" /></svg>
+					<h3 class="mb-2 font-serif text-xl">Share Your Voice</h3>
+					<p class="max-w-md font-light text-muted-foreground">Have you been touched by these words? Your story matters, and we'd love to hear how these books have become part of your journey.</p>
+				</div>
+			</div>
 		</section>
 
-		<section id="contact" class="border-y border-border py-16 text-center scroll-mt-24">
-			<div class="mb-6 flex items-center justify-center gap-3 text-muted-foreground" aria-hidden="true"><span class="h-px w-16 bg-current/40"></span><Icon name="lucide:mail" class="h-5 w-5 animate-pulse" /><span class="h-px w-16 bg-current/40"></span></div>
-			<h2 class="font-serif text-4xl md:text-5xl">Connect</h2>
-			<p class="mx-auto mt-4 max-w-xl text-muted-foreground">
-				For literary inquiries, collaboration opportunities, or simply to share how these words have touched your soul.
-			</p>
-			<div class="mx-auto mt-10 grid max-w-3xl gap-8 text-left md:grid-cols-2">
-				<div class="space-y-5 text-sm text-muted-foreground"><p>Every message is read with care and intention. Whether you're a fellow writer, a reader whose heart has been moved, or someone with a story to share, your words are welcome here.</p><p><strong class="text-foreground">Email</strong><br />stezora97@lunarshells.com</p><p><strong class="text-foreground">Location</strong><br />Melbourne, Australia · Response within 48 hours</p></div>
-				<form class="space-y-4 rounded-lg border border-border bg-surface p-6" action="mailto:stezora97@lunarshells.com" method="post" enctype="text/plain">
-					<input name="name" required placeholder="Name" class="w-full rounded-lg border border-border bg-background px-4 py-3" />
-					<input name="email" type="email" required placeholder="Email" class="w-full rounded-lg border border-border bg-background px-4 py-3" />
-					<input name="subject" required placeholder="Subject" class="w-full rounded-lg border border-border bg-background px-4 py-3" />
-					<textarea name="message" required rows="5" placeholder="Message" class="w-full resize-none rounded-lg border border-border bg-background px-4 py-3"></textarea>
-					<button class="flex w-full items-center justify-center gap-2 rounded-lg bg-foreground px-6 py-3 text-background transition-opacity hover:opacity-90" type="submit">Send Message <Icon name="lucide:send" class="h-4 w-4" aria-hidden="true" /></button>
-				</form>
+		<section id="contact" class="border-t border-border py-16 scroll-mt-24">
+			<div class="text-center">
+				<div class="mb-6 flex items-center justify-center gap-3 text-muted-foreground" aria-hidden="true"><span class="h-px w-16 bg-current/40"></span><Icon name="lucide:mail" class="h-5 w-5 animate-pulse" /><span class="h-px w-16 bg-current/40"></span></div>
+				<h2 class="font-serif text-4xl md:text-5xl">Connect</h2>
+				<p class="mx-auto mt-4 max-w-2xl font-light tracking-wide text-muted-foreground">
+					For literary inquiries, collaboration opportunities, or simply to share how these words have touched your soul.
+				</p>
+			</div>
+			<div class="mt-12 grid grid-cols-1 gap-12 text-left lg:grid-cols-2">
+				<div class="space-y-8">
+					<div>
+						<h3 class="mb-6 font-serif text-2xl">Let's Connect</h3>
+						<p class="mb-8 leading-relaxed text-foreground/80">Every message is read with care and intention. Whether you're a fellow writer seeking guidance, a reader whose heart has been moved, or someone with a story to share, your words are welcome here.</p>
+					</div>
+					<div class="space-y-6">
+						<div class="flex items-start gap-4">
+							<div class="rounded-full bg-secondary p-3"><Icon name="lucide:mail" class="h-5 w-5" aria-hidden="true" /></div>
+							<div><h4 class="mb-1">Email</h4><p class="font-light text-muted-foreground">stezora97@lunarshells.com</p></div>
+						</div>
+						<div class="flex items-start gap-4">
+							<div class="rounded-full bg-secondary p-3"><Icon name="lucide:map-pin" class="h-5 w-5" aria-hidden="true" /></div>
+							<div><h4 class="mb-1">Location</h4><p class="font-light text-muted-foreground">Melbourne, Australia</p></div>
+						</div>
+						<div class="flex items-start gap-4">
+							<div class="rounded-full bg-secondary p-3"><Icon name="lucide:clock-3" class="h-5 w-5" aria-hidden="true" /></div>
+							<div><h4 class="mb-1">Response Time</h4><p class="font-light text-muted-foreground">Within 48 hours</p></div>
+						</div>
+					</div>
+					<div class="rounded-r-lg border-l-4 border-border bg-surface/50 py-4 pl-6">
+						<blockquote class="mb-2 font-serif italic text-foreground/80">"Words are bridges between souls. Let us build one together."</blockquote>
+						<cite class="text-sm text-muted-foreground">&mdash; Stezora</cite>
+					</div>
+				</div>
+				<div class="rounded-lg border border-border bg-surface p-8">
+					<div class="mb-6 flex items-center gap-3"><Icon name="lucide:message-circle" class="h-6 w-6 text-muted-foreground" aria-hidden="true" /><h3 class="font-serif text-xl">Send a Message</h3></div>
+					<form class="space-y-6" action="mailto:stezora97@lunarshells.com" method="post" enctype="text/plain">
+						<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+							<div>
+								<label for="contact-name" class="mb-2 block text-sm">Name</label>
+								<input type="text" id="contact-name" name="name" required class={contactControl} />
+							</div>
+							<div>
+								<label for="contact-email" class="mb-2 block text-sm">Email</label>
+								<input type="email" id="contact-email" name="email" required class={contactControl} />
+							</div>
+						</div>
+						<div>
+							<label for="contact-subject" class="mb-2 block text-sm">Subject</label>
+							<select id="contact-subject" name="subject" required class={contactControl}>
+								<option value="">Select a subject</option>
+								<option value="general">General Inquiry</option>
+								<option value="collaboration">Collaboration</option>
+								<option value="press">Press/Media</option>
+								<option value="reader">Reader Feedback</option>
+								<option value="writing">Writing Question</option>
+							</select>
+						</div>
+						<div>
+							<label for="contact-message" class="mb-2 block text-sm">Message</label>
+							<textarea id="contact-message" name="message" rows="6" required placeholder="Share your thoughts, questions, or stories..." class={`${contactControl} resize-none`}></textarea>
+						</div>
+						<button type="submit" class="group flex w-full items-center justify-center gap-2 rounded-lg bg-foreground px-6 py-3 text-background transition-all duration-300 hover:bg-foreground/90">
+							<span>Send Message</span>
+							<Icon name="lucide:send" class="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
+						</button>
+					</form>
+				</div>
 			</div>
 		</section>
 	</Container>
 	<footer class="px-6 pb-16 pt-4 text-center">
 		<div class="inline-block max-w-md rounded-lg border border-border bg-surface/50 p-6">
-			<Icon name="lucide:heart" class="mx-auto mb-3 h-6 w-6 animate-pulse fill-current text-red-500" aria-label="With love" />
+			{/* Inline solid heart: the lucide sprite pins fill="none", so CSS cannot fill it. */}
+			<svg viewBox="0 0 24 24" fill="currentColor" class="mx-auto mb-3 h-6 w-6 animate-pulse text-red-500" role="img" aria-label="With love">
+				<path d="m11.645 20.91-.007-.003-.022-.012a15.247 15.247 0 0 1-.383-.218 25.18 25.18 0 0 1-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0 1 12 5.052 5.5 5.5 0 0 1 16.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 0 1-4.244 3.17 15.247 15.247 0 0 1-.383.219l-.022.012-.007.004-.003.001a.752.752 0 0 1-.704 0l-.003-.001Z" />
+			</svg>
 		<p class="text-sm font-light text-muted-foreground">To the ones who have felt everything too deeply, who held their breath through pain and kept walking, who questioned everything and still chose love — this is for you.</p>
 		</div>
 	</footer>
+	<script>
+		// Reader Voices carousel: auto-advances every 6s; any manual action stops it.
+		const slides = Array.from(document.querySelectorAll('[data-voice-slide]'));
+		const dots = Array.from(document.querySelectorAll('[data-voice-dot]'));
+		if (slides.length > 0) {
+			let index = 0;
+			const show = (next: number) => {
+				index = (next + slides.length) % slides.length;
+				slides.forEach((slide, i) => slide.classList.toggle('hidden', i !== index));
+				dots.forEach((dot, i) => {
+					dot.classList.toggle('bg-foreground', i === index);
+					dot.classList.toggle('scale-125', i === index);
+					dot.classList.toggle('bg-muted-foreground/30', i !== index);
+					dot.classList.toggle('hover:bg-muted-foreground/60', i !== index);
+				});
+			};
+			const timer = setInterval(() => show(index + 1), 6000);
+			const manual = (next: number) => {
+				clearInterval(timer);
+				show(next);
+			};
+			document.querySelector('[data-voice-prev]')?.addEventListener('click', () => manual(index - 1));
+			document.querySelector('[data-voice-next]')?.addEventListener('click', () => manual(index + 1));
+			dots.forEach((dot, i) => dot.addEventListener('click', () => manual(i)));
+			document.querySelectorAll<HTMLElement>('[data-voice-jump]').forEach((card) => {
+				card.addEventListener('click', () => manual(Number(card.dataset.voiceJump)));
+			});
+		}
+	</script>
 </BaseLayout>
