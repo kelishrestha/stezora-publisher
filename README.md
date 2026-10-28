@@ -70,7 +70,9 @@ EXPORT_CONTENT_URL=<url> pnpm deploy
 
 `EXPORT_CONTENT_URL` is required for production deploys so the build never
 depends on local D1 state. The build output is `./dist/`, served through the
-assets directory defined in `wrangler.jsonc`.
+assets directory defined in `wrangler.jsonc`. First-time setup (creating the
+D1 database and R2 bucket, bootstrapping data from local, secrets) is the
+step-by-step runbook in `docs/DEPLOY.md`.
 
 See `ARCHITECTURE.md` for the full architecture and implementation phases.
 

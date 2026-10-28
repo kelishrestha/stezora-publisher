@@ -38,7 +38,8 @@
     "backup:content": "tsx scripts/backup/export-all.ts",
     "backup:db": "tsx scripts/backup/dump-d1.ts",
     "backup:media": "scripts/backup/sync-media.sh",
-    "blogger:localize": "tsx --env-file=.env.development scripts/blogger/localize-images.ts"
+    "blogger:localize": "tsx --env-file=.env.development scripts/blogger/localize-images.ts",
+    "deploy:media": "tsx scripts/deploy/push-media.ts"
   },
   "dependencies": {
     "@astrojs/react": "^6.0.2",
