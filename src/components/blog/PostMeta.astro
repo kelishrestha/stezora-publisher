@@ -1,16 +1,12 @@
 ---
 import { formatDate } from '../../lib/seo/seo';
-import { slugify, tagPath } from '../../lib/publications';
-import { badgeClass } from '../ui/shared/classes';
 
 interface Props {
-	publicationSlug: string;
-	tags: string[];
 	pubDate: Date;
 	updatedDate?: Date;
 }
 
-const { publicationSlug, tags, pubDate, updatedDate } = Astro.props;
+const { pubDate, updatedDate } = Astro.props;
 
 function displayDateTime(date: Date): string {
 	const day = date.toLocaleDateString('en', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -47,16 +43,4 @@ const wasUpdated = updatedDate && updatedDate.getTime() > pubDate.getTime();
 			</span>
 		)}
 	</p>
-	{tags.length > 0 && (
-		<span class="flex flex-wrap items-center gap-2">
-			{tags.map((tag) => (
-				<a
-					href={tagPath(publicationSlug, slugify(tag))}
-					class={`${badgeClass('outline')} transition-colors hover:text-accent-foreground`}
-				>
-					{tag}
-				</a>
-			))}
-		</span>
-	)}
 </div>

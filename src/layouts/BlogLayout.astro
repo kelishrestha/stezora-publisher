@@ -4,7 +4,8 @@ import Breadcrumbs from '../components/blog/Breadcrumbs.astro';
 import PostMeta from '../components/blog/PostMeta.astro';
 import type { Post } from '../lib/publications/collections';
 import type { Publication } from '../lib/publications/types';
-import { PUBLICATIONS_PATH, publicationPath, postExcerpt, postPath } from '../lib/publications';
+import { PUBLICATIONS_PATH, publicationPath, postExcerpt, postPath, slugify, tagPath } from '../lib/publications';
+import { badgeClass } from '../components/ui/shared/classes';
 
 export interface Props {
 	post: Post;
@@ -38,16 +39,25 @@ const breadcrumbs = [
 			<Breadcrumbs items={breadcrumbs} />
 			<h1 class="mt-6 font-serif text-3xl font-bold tracking-tight sm:text-4xl">{post.data.title}</h1>
 			<div class="mt-4">
-				<PostMeta
-					publicationSlug={publication.slug}
-					tags={post.data.tags}
-					pubDate={post.data.pubDate}
-					updatedDate={post.data.updatedDate}
-				/>
+				<PostMeta pubDate={post.data.pubDate} updatedDate={post.data.updatedDate} />
 			</div>
 		</header>
 		<div class="prose mt-10 max-w-none dark:prose-invert">
 			<slot />
 		</div>
+		{post.data.tags.length > 0 && (
+			<footer class="clear-both mt-16 border-t border-border pt-8">
+				<div class="flex flex-wrap items-center gap-2">
+					{post.data.tags.map((tag) => (
+						<a
+							href={tagPath(publication.slug, slugify(tag))}
+							class={`${badgeClass('solid')} transition-opacity hover:opacity-80`}
+						>
+							#{tag}
+						</a>
+					))}
+				</div>
+			</footer>
+		)}
 	</article>
 </BaseLayout>
