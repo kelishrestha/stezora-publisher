@@ -3,6 +3,7 @@ import EmptyState from './EmptyState';
 import LoadingImage from './LoadingImage';
 import Pagination from './Pagination';
 import { MONTHS, filterSelectClass, matchesMonthYear, yearsOf } from './filters';
+import { badgeClass, buttonClass, statusBadgeClass } from '../ui/shared/classes';
 
 interface ListPost {
 	id: string;
@@ -31,19 +32,6 @@ const STATUS_LABELS: Record<string, string> = {
 const TABS = ['all', 'draft', 'scheduled', 'published', 'archived'];
 
 const TAB_LABELS: Record<string, string> = { all: 'All', ...STATUS_LABELS };
-
-function statusClass(status: string): string {
-	switch (status) {
-		case 'published':
-			// Published stands out in emerald rather than the theme accent.
-			return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300';
-		case 'scheduled':
-		case 'archived':
-			return 'bg-muted text-muted-foreground';
-		default:
-			return 'bg-muted text-foreground';
-	}
-}
 
 function formatDate(value: string): string {
 	const date = new Date(value);
@@ -354,7 +342,7 @@ export default function PostList() {
 						setYearFilter('all');
 						setPage(1);
 					}}
-					className="rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-accent"
+					className={buttonClass('outline', 'sm')}
 				>
 					Clear filters
 				</button>
@@ -455,7 +443,7 @@ export default function PostList() {
 									<div className="min-w-0">
 										<p className="truncate font-medium text-foreground">{post.title}</p>
 										<p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-											<span className="rounded-full bg-accent-soft px-2.5 py-0.5 whitespace-nowrap text-accent-foreground">
+											<span className={badgeClass('soft')}>
 												{publicationNames[post.publication] ?? post.publication}
 											</span>
 											{post.updatedAt && <span>Updated on {formatDate(post.updatedAt)}</span>}
@@ -464,7 +452,7 @@ export default function PostList() {
 								</a>
 								<div className="flex shrink-0 items-center gap-2">
 									<span
-										className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusClass(post.status)}`}
+										className={statusBadgeClass(post.status)}
 									>
 										{STATUS_LABELS[post.status] ?? post.status}
 									</span>
@@ -472,7 +460,7 @@ export default function PostList() {
 										href={`/admin/posts/${post.id}/view`}
 										aria-label={`View ${post.title}`}
 										title="View"
-										className="rounded-md border border-accent bg-accent-soft p-2 text-accent-foreground transition-colors hover:bg-accent hover:text-on-accent focus:outline-none focus:ring-2 focus:ring-accent"
+										className={buttonClass('accentOutline', 'icon')}
 									>
 										<EyeIcon />
 									</a>
@@ -480,7 +468,7 @@ export default function PostList() {
 										href={`/admin/posts/${post.id}/edit`}
 										aria-label={`Edit ${post.title}`}
 										title="Edit"
-										className="rounded-md border border-accent bg-accent-soft p-2 text-accent-foreground transition-colors hover:bg-accent hover:text-on-accent focus:outline-none focus:ring-2 focus:ring-accent"
+										className={buttonClass('accentOutline', 'icon')}
 									>
 										<PencilIcon />
 									</a>

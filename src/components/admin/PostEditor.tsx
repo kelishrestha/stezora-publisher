@@ -3,6 +3,7 @@ import AdminBreadcrumbs from './AdminBreadcrumbs';
 import LoadingImage from './LoadingImage';
 import Toast, { ToastStack } from './Toast';
 import ConfirmDialog from './ConfirmDialog';
+import { buttonClass, formControlClass } from '../ui/shared/classes';
 
 interface PublicationOption {
 	id: string;
@@ -76,8 +77,7 @@ const STATUS_LABELS: Record<string, string> = {
 	archived: 'Archived',
 };
 
-const inputClass =
-	'mt-0.5 w-full rounded border-border bg-background text-foreground shadow-sm sm:text-sm placeholder:text-muted-foreground focus:border-accent focus:ring-accent';
+const inputClass = formControlClass;
 
 function slugify(value: string): string {
 	const trimmed = value.toLowerCase().trim();
@@ -448,7 +448,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 							<button
 								type="button"
 								onClick={() => setPreviewImage(null)}
-								className="rounded-md border border-border bg-surface px-3 py-1.5 text-foreground hover:bg-surface-elevated"
+								className={buttonClass('outline', 'sm')}
 							>
 								Close
 							</button>
@@ -606,7 +606,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 													<button
 														type="button"
 														onClick={() => setFeaturedImageId(null)}
-														className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-accent"
+														className={buttonClass('outline', 'xs')}
 													>
 														Remove as featured
 													</button>
@@ -614,7 +614,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 													<button
 														type="button"
 														onClick={() => setFeaturedImageId(item.id)}
-														className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-on-accent transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+														className={buttonClass('primary', 'xs')}
 													>
 														Use as featured image
 													</button>
@@ -622,14 +622,14 @@ export default function PostEditor({ postId }: PostEditorProps) {
 												<button
 													type="button"
 													onClick={() => insertIntoContent(item)}
-													className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-accent"
+													className={buttonClass('outline', 'xs')}
 												>
 													Insert into content
 												</button>
 												<button
 													type="button"
 													onClick={() => setMediaToDelete(item)}
-													className="rounded-md border border-red-300 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-600 hover:text-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 dark:border-red-900 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-700 dark:hover:text-red-50"
+													className={buttonClass('dangerOutline', 'xs')}
 												>
 													Delete
 												</button>
@@ -657,7 +657,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 											<button
 												type="button"
 												onClick={() => removePendingFile(pending.url)}
-												className="shrink-0 rounded-md border border-border bg-surface px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-elevated"
+												className={`shrink-0 ${buttonClass('outline', 'xs')}`}
 											>
 												Remove
 											</button>
@@ -743,7 +743,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 							type="button"
 							onClick={requestSave}
 							disabled={saving}
-							className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60"
+							className={buttonClass('primary')}
 						>
 							{saving ? 'Saving…' : 'Save'}
 						</button>
@@ -751,7 +751,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 							type="button"
 							onClick={() => void runPreview()}
 							disabled={!editingPostId}
-							className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground hover:bg-surface-elevated disabled:cursor-not-allowed disabled:opacity-50"
+							className={buttonClass('outline')}
 						>
 							Preview
 						</button>
@@ -795,7 +795,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 								type="button"
 								onClick={() => setConfirmingSave(false)}
 								disabled={saving}
-								className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-accent"
+								className={buttonClass('outline')}
 							>
 								Cancel
 							</button>
@@ -806,7 +806,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 									setConfirmingSave(false);
 									void save();
 								}}
-								className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+								className={buttonClass('primary')}
 							>
 								{editingPostId ? 'Confirm save' : 'Confirm create'}
 							</button>

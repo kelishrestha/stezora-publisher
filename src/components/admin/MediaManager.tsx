@@ -3,6 +3,7 @@ import EmptyState from './EmptyState';
 import LoadingImage from './LoadingImage';
 import Pagination from './Pagination';
 import { MONTHS, filterSelectClass, matchesMonthYear, yearsOf } from './filters';
+import { badgeClass, buttonClass, formControlClass } from '../ui/shared/classes';
 
 interface MediaItem {
 	id: string;
@@ -36,8 +37,7 @@ interface Envelope<T> {
 	error?: { code?: string; message?: string };
 }
 
-const inputClass =
-	'mt-0.5 w-full rounded border-border bg-background text-foreground shadow-sm sm:text-sm placeholder:text-muted-foreground focus:border-accent focus:ring-accent';
+const inputClass = formControlClass;
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
 	const response = await fetch(path, { credentials: 'same-origin', ...init });
@@ -256,7 +256,7 @@ export default function MediaManager() {
 							<button
 								type="button"
 								onClick={() => setPreviewImage(null)}
-								className="rounded-md border border-border bg-surface px-3 py-1.5 text-foreground hover:bg-surface-elevated"
+								className={buttonClass('outline', 'sm')}
 							>
 								Close
 							</button>
@@ -297,7 +297,7 @@ export default function MediaManager() {
 										type="button"
 										disabled={uploading}
 										onClick={() => void upload(pendingFile)}
-										className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent disabled:pointer-events-none disabled:opacity-60"
+										className={buttonClass('primary')}
 									>
 										{uploading ? 'Uploading…' : 'Confirm upload'}
 									</button>
@@ -305,7 +305,7 @@ export default function MediaManager() {
 										type="button"
 										disabled={uploading}
 										onClick={() => setConfirming(false)}
-										className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-accent"
+										className={buttonClass('outline')}
 									>
 										Cancel
 									</button>
@@ -373,7 +373,7 @@ export default function MediaManager() {
 												<button
 													type="button"
 													onClick={() => setPendingFile(null)}
-													className="shrink-0 rounded-md border border-border bg-surface px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-elevated"
+													className={`shrink-0 ${buttonClass('outline', 'xs')}`}
 												>
 													Remove
 												</button>
@@ -400,14 +400,14 @@ export default function MediaManager() {
 									<button
 										type="button"
 										onClick={closeUploadModal}
-										className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-accent"
+										className={buttonClass('outline')}
 									>
 										Close
 									</button>
 									<button
 										type="button"
 										onClick={handleSave}
-										className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+										className={buttonClass('primary')}
 									>
 										Save
 									</button>
@@ -485,7 +485,7 @@ export default function MediaManager() {
 					<button
 						type="button"
 						onClick={clearFilters}
-						className="rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-accent"
+						className={buttonClass('outline', 'sm')}
 					>
 						Clear filters
 					</button>
@@ -528,7 +528,7 @@ export default function MediaManager() {
 												{post?.tags.map((tag) => (
 													<span
 														key={tag}
-														className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs whitespace-nowrap text-accent-foreground"
+														className={badgeClass('soft')}
 													>
 														{tag}
 													</span>
@@ -538,7 +538,7 @@ export default function MediaManager() {
 												{item.postId && (
 													<a
 														href={`/admin/posts/${item.postId}/view`}
-														className="inline-flex items-center gap-1.5 rounded-md border border-accent px-3 py-1.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent hover:text-on-accent focus:outline-none focus:ring-2 focus:ring-accent"
+														className={buttonClass('accentOutline', 'sm')}
 													>
 														View post
 														<svg
@@ -561,7 +561,7 @@ export default function MediaManager() {
 													<button
 														type="button"
 														onClick={() => setPreviewImage(item)}
-														className="inline-flex items-center gap-1.5 rounded-md border border-accent px-3 py-1.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent hover:text-on-accent focus:outline-none focus:ring-2 focus:ring-accent"
+														className={buttonClass('accentOutline', 'sm')}
 													>
 														View image
 														<svg

@@ -2,13 +2,16 @@
 import type { Post } from '../../lib/publications/collections';
 import { postExcerpt, postPath } from '../../lib/publications';
 import { formatDate } from '../../lib/seo/seo';
+import { badgeClass, buttonClass } from '../ui/shared/classes';
 
 interface Props {
 	post: Post;
 	publicationSlug: string;
+	/** Wide keeps the roomier proportions; slim is the default. */
+	wide?: boolean;
 }
 
-const { post, publicationSlug } = Astro.props;
+const { post, publicationSlug, wide = false } = Astro.props;
 
 const href = postPath(publicationSlug, post.id);
 
@@ -21,17 +24,16 @@ function displayDate(date: Date): string {
 <article class="group flex h-full flex-col overflow-hidden rounded-md border border-border bg-surface shadow-sm">
 	{post.data.featuredImage && (
 		<a href={href} class="block" tabindex="-1" aria-hidden="true">
-			<img src={post.data.featuredImage} alt="" loading="lazy" class="h-48 w-full object-cover" />
+			<img src={post.data.featuredImage} alt="" loading="lazy" class={`${wide ? 'h-64' : 'h-56'} w-full object-cover`} />
 		</a>
 	)}
-	<div class="flex flex-1 flex-col p-4 sm:p-6">
-		<h2 class="font-serif text-lg font-semibold text-pretty leading-snug sm:text-xl">
+	<div class={`flex flex-1 flex-col ${wide ? 'p-4 sm:p-6' : 'p-4'}`}>
+		<h2 class={`font-serif text-lg font-semibold text-pretty leading-snug ${wide ? 'sm:text-xl' : ''}`}>
 			<a href={href} class="transition-colors group-hover:text-accent-foreground">
 				{post.data.title}
 			</a>
 		</h2>
-		<p class="mt-2 line-clamp-3 text-sm leading-relaxed text-pretty text-muted-foreground">{postExcerpt(post.data)}</p>
-		<dl class="mt-4 flex items-center gap-2 text-muted-foreground">
+		<dl class="mt-2 flex items-center gap-2 text-muted-foreground">
 			<dt>
 				<span class="sr-only">Published on</span>
 				<svg
@@ -54,17 +56,18 @@ function displayDate(date: Date): string {
 				<time datetime={formatDate(post.data.pubDate)}>{displayDate(post.data.pubDate)}</time>
 			</dd>
 		</dl>
+		<p class="mt-3 line-clamp-3 text-sm leading-relaxed text-pretty text-muted-foreground">{postExcerpt(post.data)}</p>
 		{post.data.tags.length > 0 && (
 			<div class="mt-3 flex flex-wrap gap-1.5">
 				{post.data.tags.map((tag) => (
-					<span class="rounded-full bg-accent px-2.5 py-0.5 text-xs whitespace-nowrap text-on-accent">{tag}</span>
+					<span class={badgeClass('solid')}>{tag}</span>
 				))}
 			</div>
 		)}
 		<div class="mt-auto pt-5">
 			<a
 				href={href}
-				class="inline-flex items-center gap-1.5 rounded-md border border-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent hover:text-on-accent focus:outline-none focus:ring-2 focus:ring-accent"
+				class={buttonClass('accentOutline')}
 			>
 				View post
 				<span aria-hidden="true">&rarr;</span>

@@ -1,4 +1,5 @@
 ---
+import { buttonClass } from '../../../components/ui/shared/classes';
 import AdminLayout from '../../../layouts/AdminLayout.astro';
 import TagManager from '../../../components/admin/TagManager';
 
@@ -12,7 +13,7 @@ const description = 'Manage tags per publication.';
 		<button
 			type="button"
 			id="new-tag-button"
-			class="rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+			class={buttonClass('primary')}
 		>
 			New tag
 		</button>

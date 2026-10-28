@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import AdminBreadcrumbs from './AdminBreadcrumbs';
 import LoadingImage from './LoadingImage';
+import { badgeClass, buttonClass, statusBadgeClass } from '../ui/shared/classes';
 
 interface PostRecord {
 	id: string;
@@ -36,19 +37,6 @@ const STATUS_LABELS: Record<string, string> = {
 	published: 'Published',
 	archived: 'Archived',
 };
-
-function statusClass(status: string): string {
-	switch (status) {
-		case 'published':
-			// Published stands out in emerald rather than the theme accent.
-			return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300';
-		case 'scheduled':
-		case 'archived':
-			return 'bg-muted text-muted-foreground';
-		default:
-			return 'bg-muted text-foreground';
-	}
-}
 
 function formatDate(value: string | null): string {
 	if (!value) return 'Never';
@@ -148,12 +136,12 @@ export default function PostView() {
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<h2 className="font-serif text-2xl font-semibold text-foreground">{post.title}</h2>
 					<div className="flex items-center gap-2">
-						<span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusClass(post.status)}`}>
+						<span className={statusBadgeClass(post.status)}>
 							{STATUS_LABELS[post.status] ?? post.status}
 						</span>
 						<a
 							href={`/admin/posts/${post.id}/edit`}
-							className="inline-flex items-center gap-1.5 rounded-md border border-accent bg-accent-soft px-3 py-1.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent hover:text-on-accent focus:outline-none focus:ring-2 focus:ring-accent"
+							className={buttonClass('accentOutline', 'sm')}
 						>
 							<PencilIcon />
 							Edit post
@@ -166,7 +154,7 @@ export default function PostView() {
 						{post.tags.map((tag) => (
 							<span
 								key={tag}
-								className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs whitespace-nowrap text-accent-foreground"
+								className={badgeClass('soft')}
 							>
 								{tag}
 							</span>

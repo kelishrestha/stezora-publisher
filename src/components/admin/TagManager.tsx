@@ -3,6 +3,7 @@ import ConfirmDialog from './ConfirmDialog';
 import EmptyState from './EmptyState';
 import Pagination from './Pagination';
 import { MONTHS, filterSelectClass, matchesMonthYear, yearsOf } from './filters';
+import { badgeClass, buttonClass, formControlClass } from '../ui/shared/classes';
 
 interface TagRecord {
 	id: string;
@@ -31,8 +32,7 @@ interface Envelope<T> {
 	error?: { code?: string; message?: string };
 }
 
-const inputClass =
-	'mt-0.5 w-full rounded border-border bg-background text-foreground shadow-sm sm:text-sm placeholder:text-muted-foreground focus:border-accent focus:ring-accent';
+const inputClass = formControlClass;
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
 	const response = await fetch(path, { credentials: 'same-origin', ...init });
@@ -119,11 +119,9 @@ function TrashIcon({ className = 'size-4' }: { className?: string }) {
 	);
 }
 
-const iconButtonClass =
-	'rounded-md border border-accent bg-accent-soft p-2 text-accent-foreground transition-colors hover:bg-accent hover:text-on-accent focus:outline-none focus:ring-2 focus:ring-accent';
+const iconButtonClass = buttonClass('accentOutline', 'icon');
 
-const dangerButtonClass =
-	'rounded-md border border-red-300 bg-red-50 p-2 text-red-700 transition-colors hover:bg-red-600 hover:text-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 dark:border-red-900 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-700 dark:hover:text-red-50';
+const dangerButtonClass = buttonClass('dangerOutline', 'icon');
 
 export default function TagManager() {
 	const [tags, setTags] = useState<TagRecord[] | null>(null);
@@ -359,7 +357,7 @@ export default function TagManager() {
 								type="button"
 								onClick={closeModal}
 								disabled={busy}
-								className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-accent"
+								className={buttonClass('outline')}
 							>
 								Cancel
 							</button>
@@ -367,7 +365,7 @@ export default function TagManager() {
 								type="button"
 								onClick={() => void submit()}
 								disabled={busy}
-								className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60"
+								className={buttonClass('primary')}
 							>
 								{busy ? 'Saving…' : editing ? 'Save' : 'Create'}
 							</button>
@@ -450,7 +448,7 @@ export default function TagManager() {
 						setYearFilter('all');
 						setPage(1);
 					}}
-					className="rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-accent"
+					className={buttonClass('outline', 'sm')}
 				>
 					Clear filters
 				</button>
@@ -513,7 +511,7 @@ export default function TagManager() {
 								<div className="min-w-0">
 									<p className="flex items-center gap-2 font-semibold text-foreground">
 										<span className="truncate">{tag.name}</span>
-										<span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent-foreground">
+										<span className={`shrink-0 ${badgeClass('soft')}`}>
 											{postsFor(tag).length}
 										</span>
 									</p>
