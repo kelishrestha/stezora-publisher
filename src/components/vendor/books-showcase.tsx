@@ -1827,10 +1827,10 @@ export function BooksShowcase({
           </div>
           <div className={`mt-[26px] border-t border-[var(--bs-lav)]/[0.18] @max-[760px]:mt-4 ${dpChild(270)}`} />
           <div
-            className={`pointer-events-auto mt-8 inline-flex items-center gap-[10px] rounded-full bg-[#1a2140] p-[10px] shadow-[0_24px_60px_rgba(0,0,0,0.45)] @max-[760px]:mt-[18px] @max-[760px]:flex-wrap @max-[760px]:rounded-[28px] ${dpChild(330)}`}
+            className={`pointer-events-auto mt-8 inline-flex items-center gap-[10px] rounded-full bg-[#1a2140] p-1.5 shadow-[0_24px_60px_rgba(0,0,0,0.45)] @max-[760px]:mt-[18px] @max-[760px]:flex-wrap @max-[760px]:rounded-[28px] ${dpChild(330)}`}
           >
-            <button className="inline-flex h-[54px] items-center gap-[10px] rounded-full bg-[var(--bs-cream)] px-[26px] text-[16.5px] font-semibold text-[var(--bs-navy)] transition-[transform,filter] duration-[220ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.04] hover:brightness-105 @max-[760px]:h-12 @max-[760px]:px-5 @max-[760px]:text-[15px]">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} className="h-5 w-5">
+            <button className="inline-flex h-10 items-center gap-2 rounded-full bg-[var(--bs-cream)] px-4 text-sm font-semibold text-[var(--bs-navy)] transition-[transform,filter] duration-[220ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.04] hover:brightness-105 @max-[760px]:h-9 @max-[760px]:px-3 @max-[760px]:text-[13px]">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} className="h-4 w-4">
                 <circle cx="12" cy="12" r="9" />
                 <path d="M3 12h18M12 3c2.8 2.6 2.8 15.4 0 18M12 3c-2.8 2.6-2.8 15.4 0 18" />
               </svg>
@@ -1838,16 +1838,16 @@ export function BooksShowcase({
             </button>
             <button
               onClick={() => onCtaClick?.(selectedCfg)}
-              className="inline-flex h-[54px] items-center gap-[10px] rounded-full bg-[var(--bs-peri)] px-[26px] text-[16.5px] font-semibold text-[#10152c] transition-[transform,filter] duration-[220ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.04] hover:brightness-105 @max-[760px]:h-12 @max-[760px]:px-5 @max-[760px]:text-[15px]"
+              className="inline-flex h-10 items-center gap-2 rounded-full bg-[var(--bs-peri)] px-4 text-sm font-semibold text-[#10152c] transition-[transform,filter] duration-[220ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.04] hover:brightness-105 @max-[760px]:h-9 @max-[760px]:px-3 @max-[760px]:text-[13px]"
             >
               {ctaLabel}
             </button>
             {showSaveButton && (
             <button
               aria-label="Save"
-              className="inline-flex h-[54px] w-[54px] items-center justify-center gap-[10px] rounded-full bg-[#242c50] px-0 text-[var(--bs-lav)] transition-[transform,filter] duration-[220ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.04] hover:brightness-105"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#242c50] px-0 text-[var(--bs-lav)] transition-[transform,filter] duration-[220ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.04] hover:brightness-105"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} className="h-5 w-5">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} className="h-4 w-4">
                 <path d="M7 3h10v18l-5-4-5 4z" />
               </svg>
             </button>
