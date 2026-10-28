@@ -102,7 +102,7 @@ that already applied the old filenames must have its migration bookkeeping
 rewritten once, BEFORE the next `db:migrate:remote`:
 
 ```sh
-wrangler d1 execute stezora-publisher-db --remote --file scripts/db/reconcile-migration-rename.sql
+wrangler d1 execute stezora-app-db --remote --file scripts/db/reconcile-migration-rename.sql
 ```
 
 The local database has already been reconciled. Fresh databases must skip

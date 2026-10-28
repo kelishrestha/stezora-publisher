@@ -24,9 +24,14 @@
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "stezora-publisher-db",
+			"database_name": "stezora-app-db",
 			"database_id": "3cad3d3d-7cd6-4921-a371-aa6a5ce719e0",
 			"migrations_dir": "./migrations"
+		},
+		{
+			"binding": "stezora_app_db",
+			"database_name": "stezora-app-db",
+			"database_id": "6d0a3bef-a622-4b59-aa5d-da16f36b071b"
 		}
 	],
 	"vars": {

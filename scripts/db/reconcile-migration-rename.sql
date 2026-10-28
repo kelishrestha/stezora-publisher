@@ -4,8 +4,8 @@
 -- resulting schema is identical, so databases that already applied an old
 -- history must only have their d1_migrations bookkeeping rewritten.
 -- Run ONLY against a database that had the full old history applied:
---   wrangler d1 execute stezora-publisher-db --local  --file scripts/db/reconcile-migration-rename.sql
---   wrangler d1 execute stezora-publisher-db --remote --file scripts/db/reconcile-migration-rename.sql
+--   wrangler d1 execute stezora-app-db --local  --file scripts/db/reconcile-migration-rename.sql
+--   wrangler d1 execute stezora-app-db --remote --file scripts/db/reconcile-migration-rename.sql
 -- Fresh databases must NOT run this; they apply the new migrations normally
 -- via "wrangler d1 migrations apply".
 

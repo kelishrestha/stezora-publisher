@@ -41,7 +41,7 @@ mkdirSync(path.dirname(outFile), { recursive: true });
 
 const result = spawnSync(
 	'npx',
-	['wrangler', 'd1', 'export', 'stezora-publisher-db', target, '--output', outFile],
+	['wrangler', 'd1', 'export', 'stezora-app-db', target, '--output', outFile],
 	{ stdio: 'inherit' }
 );
 if (result.status !== 0) {

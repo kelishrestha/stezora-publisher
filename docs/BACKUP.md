@@ -9,7 +9,7 @@ truth; everything else exists so that no single failure can lose it.
 | SQL dump | Byte-exact `wrangler d1 export` of the whole database, auth tables included | Private backup repo, `db/` | Weekly (Sundays) |
 | Media files | Every local R2 object written to a folder in this repository, keyed as the database references them | This repo, `media-backup/` | Manual, after uploads or localizations |
 
-Layer zero is D1 Time Travel: `wrangler d1 time-travel info stezora-publisher-db`
+Layer zero is D1 Time Travel: `wrangler d1 time-travel info stezora-app-db`
 shows the restore window; it covers bad writes, not account loss, and expires.
 
 ## Running by hand
@@ -40,12 +40,12 @@ whenever media changes.
 Run this once after setup, and after any schema change you are unsure about.
 
 1. Create a scratch database: add a temporary D1 binding or use
-   `wrangler d1 execute stezora-publisher-db --local` against a fresh checkout
+   `wrangler d1 execute stezora-app-db --local` against a fresh checkout
    (`rm -rf .wrangler/state` first if you want a clean slate).
-2. Replay the dump: `wrangler d1 execute stezora-publisher-db --local --file db/stezora-publisher.sql`.
+2. Replay the dump: `wrangler d1 execute stezora-app-db --local --file db/stezora-publisher.sql`.
 3. Rebuild the site from it: `pnpm export:content && pnpm build`. The build
    refuses to produce an empty site, so success here proves the data restored.
-4. Spot-check: `wrangler d1 execute stezora-publisher-db --local --command
+4. Spot-check: `wrangler d1 execute stezora-app-db --local --command
    "SELECT count(*) FROM posts"` should match the manifest counts in the
    content backup.
 

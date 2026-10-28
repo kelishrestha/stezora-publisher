@@ -21,7 +21,7 @@ npx wrangler whoami
 ## 1. Create the database
 
 ```sh
-npx wrangler d1 create stezora-publisher-db
+npx wrangler d1 create stezora-app-db
 ```
 
 Paste the printed `database_id` into `wrangler.jsonc` and commit that change.
@@ -38,7 +38,7 @@ via UPDATE statements, then indexes:
 
 ```sh
 pnpm backup:db backups/bootstrap.sql --local
-npx wrangler d1 execute stezora-publisher-db --remote --file backups/bootstrap.sql
+npx wrangler d1 execute stezora-app-db --remote --file backups/bootstrap.sql
 ```
 
 The dump includes the schema, every content table, the admin user, and the
@@ -49,7 +49,7 @@ fresh database.
 Sanity check:
 
 ```sh
-npx wrangler d1 execute stezora-publisher-db --remote --command "SELECT count(*) FROM posts"
+npx wrangler d1 execute stezora-app-db --remote --command "SELECT count(*) FROM posts"
 ```
 
 Expect the local post count (84 at the time of writing).

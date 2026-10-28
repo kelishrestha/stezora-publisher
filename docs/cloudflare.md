@@ -8,7 +8,7 @@ update it as commands and policies change.
 
 | Resource | Binding | Purpose |
 | --- | --- | --- |
-| D1 database `stezora-publisher-db` | `DB` | Relational persistent data (BetterAuth users/sessions, publications, posts, tags, media, sync state) |
+| D1 database `stezora-app-db` | `DB` | Relational persistent data (BetterAuth users/sessions, publications, posts, tags, media, sync state) |
 | R2 bucket `stezora-publisher-media` | `MEDIA` | Uploaded media (images, PDFs) |
 | Worker `stezora-publisher` | — | Serves static assets + `/api/*` |
 | Static assets | `ASSETS` | Astro build output in `./dist` |
@@ -26,7 +26,7 @@ Run these from a dev machine with `wrangler` authenticated. They only need to
 happen once per account/worker:
 
 ```bash
-wrangler d1 create stezora-publisher-db
+wrangler d1 create stezora-app-db
 wrangler r2 bucket create stezora-publisher-media
 ```
 
