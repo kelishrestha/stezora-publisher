@@ -1,8 +1,9 @@
 ---
 import PublicationLayout from '../../../layouts/PublicationLayout.astro';
 import PostList from '../../../components/blog/PostList.astro';
+import PaginationNav from '../../../components/blog/PaginationNav.astro';
 import { getPostsForPublication } from '../../../lib/publications/collections';
-import { getPublications, publicationPath } from '../../../lib/publications';
+import { POSTS_PAGE_SIZE, getPublications, publicationPath } from '../../../lib/publications';
 
 export function getStaticPaths() {
 	return getPublications().map((publication) => ({
@@ -15,15 +16,18 @@ const { slug } = Astro.params;
 const { publication } = Astro.props;
 
 const posts = await getPostsForPublication(slug);
+const totalPages = Math.max(1, Math.ceil(posts.length / POSTS_PAGE_SIZE));
+const pagePosts = posts.slice(0, POSTS_PAGE_SIZE);
 ---
 
 <PublicationLayout publication={publication} path={publicationPath(publication.slug)}>
-	{posts.length > 0 ? (
+	{pagePosts.length > 0 ? (
 		<section>
 			<h2 class="font-serif text-2xl font-semibold">Latest writing</h2>
 			<div class="mt-6">
-				<PostList posts={posts} publicationSlug={publication.slug} />
+				<PostList posts={pagePosts} publicationSlug={publication.slug} />
 			</div>
+			<PaginationNav currentPage={1} totalPages={totalPages} basePath={publicationPath(publication.slug)} />
 		</section>
 	) : (
 		<section>

@@ -157,6 +157,7 @@
 	--color-surface-elevated: oklch(94% 0.01 270);
 	--color-border: oklch(82% 0.012 270);
 	--color-accent: oklch(40% 0.018 270);
+	--color-on-accent: oklch(98.5% 0 0);
 	--color-accent-foreground: oklch(28% 0.014 270);
 	--color-accent-soft: oklch(90% 0.01 270);
 }
@@ -167,6 +168,7 @@
 	--color-surface-elevated: var(--color-space-indigo-800);
 	--color-border: var(--color-space-indigo-700);
 	--color-accent: var(--color-space-indigo-300);
+	--color-on-accent: var(--color-space-indigo-950);
 	--color-accent-foreground: var(--color-space-indigo-100);
 	--color-accent-soft: var(--color-space-indigo-800);
 }
@@ -179,6 +181,7 @@
 	--color-surface-elevated: var(--color-dark-amaranth-200);
 	--color-border: var(--color-dark-amaranth-300);
 	--color-accent: var(--color-dark-amaranth-500);
+	--color-on-accent: oklch(98.5% 0 0);
 	--color-accent-foreground: var(--color-dark-amaranth-700);
 	--color-accent-soft: var(--color-dark-amaranth-200);
 }
@@ -189,6 +192,7 @@
 	--color-surface-elevated: var(--color-dark-amaranth-800);
 	--color-border: var(--color-dark-amaranth-700);
 	--color-accent: var(--color-dark-amaranth-300);
+	--color-on-accent: var(--color-dark-amaranth-950);
 	--color-accent-foreground: var(--color-dark-amaranth-200);
 	--color-accent-soft: var(--color-dark-amaranth-800);
 }
@@ -201,6 +205,7 @@
 	--color-surface-elevated: var(--color-soft-periwinkle-200);
 	--color-border: var(--color-soft-periwinkle-200);
 	--color-accent: var(--color-soft-periwinkle-500);
+	--color-on-accent: oklch(98.5% 0 0);
 	--color-accent-foreground: var(--color-soft-periwinkle-600);
 	--color-accent-soft: var(--color-soft-periwinkle-100);
 }
@@ -211,6 +216,7 @@
 	--color-surface-elevated: var(--color-soft-periwinkle-800);
 	--color-border: var(--color-soft-periwinkle-700);
 	--color-accent: var(--color-soft-periwinkle-300);
+	--color-on-accent: var(--color-soft-periwinkle-950);
 	--color-accent-foreground: var(--color-soft-periwinkle-200);
 	--color-accent-soft: var(--color-soft-periwinkle-800);
 }

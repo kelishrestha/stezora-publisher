@@ -1,0 +1,43 @@
+---
+import PublicationLayout from '../../../../layouts/PublicationLayout.astro';
+import PostList from '../../../../components/blog/PostList.astro';
+import PaginationNav from '../../../../components/blog/PaginationNav.astro';
+import { getPostsForPublication } from '../../../../lib/publications/collections';
+import { POSTS_PAGE_SIZE, getPublications, publicationPath } from '../../../../lib/publications';
+
+export async function getStaticPaths() {
+	const paths = [];
+	for (const publication of getPublications()) {
+		const posts = await getPostsForPublication(publication.slug);
+		const totalPages = Math.max(1, Math.ceil(posts.length / POSTS_PAGE_SIZE));
+		// Page 1 is the publication index; this route serves pages 2 and up.
+		for (let page = 2; page <= totalPages; page += 1) {
+			paths.push({
+				params: { slug: publication.slug, page: String(page) },
+				props: { publication, page, totalPages },
+			});
+		}
+	}
+	return paths;
+}
+
+const { slug } = Astro.params;
+const { publication, page, totalPages } = Astro.props;
+
+const posts = await getPostsForPublication(slug);
+const pagePosts = posts.slice((page - 1) * POSTS_PAGE_SIZE, page * POSTS_PAGE_SIZE);
+---
+
+<PublicationLayout
+	publication={publication}
+	title={`${publication.name}, page ${page}`}
+	path={`${publicationPath(publication.slug)}/page/${page}`}
+>
+	<section>
+		<h2 class="font-serif text-2xl font-semibold">Latest writing</h2>
+		<div class="mt-6">
+			<PostList posts={pagePosts} publicationSlug={publication.slug} />
+		</div>
+		<PaginationNav currentPage={page} totalPages={totalPages} basePath={publicationPath(publication.slug)} />
+	</section>
+</PublicationLayout>

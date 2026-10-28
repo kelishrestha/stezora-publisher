@@ -1,7 +1,7 @@
 ---
 import type { Post } from '../../lib/publications/collections';
 import { postExcerpt, postPath } from '../../lib/publications';
-import PostMeta from './PostMeta.astro';
+import { formatDate } from '../../lib/seo/seo';
 
 interface Props {
 	post: Post;
@@ -9,25 +9,66 @@ interface Props {
 }
 
 const { post, publicationSlug } = Astro.props;
+
+const href = postPath(publicationSlug, post.id);
+
+function displayDate(date: Date): string {
+	return date.toLocaleDateString('en', { year: 'numeric', month: 'long', day: 'numeric' });
+}
 ---
 
-<!-- HyperUI blog card pattern (bordered card, clamped excerpt, meta row) on theme tokens. -->
-<article class="group rounded-md border border-border bg-surface p-4 shadow-sm sm:p-6">
-	<h2 class="font-serif text-lg font-semibold text-pretty leading-snug sm:text-xl">
-		<a
-			href={postPath(publicationSlug, post.id)}
-			class="transition-colors group-hover:text-accent-foreground"
-		>
-			{post.data.title}
+<!-- HyperUI blog card: image, title, excerpt, published date, tags, CTA. -->
+<article class="group flex h-full flex-col overflow-hidden rounded-md border border-border bg-surface shadow-sm">
+	{post.data.featuredImage && (
+		<a href={href} class="block" tabindex="-1" aria-hidden="true">
+			<img src={post.data.featuredImage} alt="" loading="lazy" class="h-48 w-full object-cover" />
 		</a>
-	</h2>
-	<p class="mt-2 line-clamp-2 text-sm leading-relaxed text-pretty text-muted-foreground">{postExcerpt(post.data)}</p>
-	<div class="mt-4">
-		<PostMeta
-			publicationSlug={publicationSlug}
-			tags={post.data.tags}
-			pubDate={post.data.pubDate}
-			updatedDate={post.data.updatedDate}
-		/>
+	)}
+	<div class="flex flex-1 flex-col p-4 sm:p-6">
+		<h2 class="font-serif text-lg font-semibold text-pretty leading-snug sm:text-xl">
+			<a href={href} class="transition-colors group-hover:text-accent-foreground">
+				{post.data.title}
+			</a>
+		</h2>
+		<p class="mt-2 line-clamp-3 text-sm leading-relaxed text-pretty text-muted-foreground">{postExcerpt(post.data)}</p>
+		<dl class="mt-4 flex items-center gap-2 text-muted-foreground">
+			<dt>
+				<span class="sr-only">Published on</span>
+				<svg
+					aria-hidden="true"
+					xmlns="http://www.w3.org/2000/svg"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke-width="1.5"
+					stroke="currentColor"
+					class="size-4"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"
+					/>
+				</svg>
+			</dt>
+			<dd class="text-xs">
+				<time datetime={formatDate(post.data.pubDate)}>{displayDate(post.data.pubDate)}</time>
+			</dd>
+		</dl>
+		{post.data.tags.length > 0 && (
+			<div class="mt-3 flex flex-wrap gap-1.5">
+				{post.data.tags.map((tag) => (
+					<span class="rounded-full bg-accent px-2.5 py-0.5 text-xs whitespace-nowrap text-on-accent">{tag}</span>
+				))}
+			</div>
+		)}
+		<div class="mt-auto pt-5">
+			<a
+				href={href}
+				class="inline-flex items-center gap-1.5 rounded-md border border-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent hover:text-on-accent focus:outline-none focus:ring-2 focus:ring-accent"
+			>
+				View post
+				<span aria-hidden="true">&rarr;</span>
+			</a>
+		</div>
 	</div>
 </article>

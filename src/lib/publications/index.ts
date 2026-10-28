@@ -5,6 +5,9 @@ export { deriveExcerpt, postExcerpt } from './excerpt';
 
 export const PUBLICATIONS_PATH = '/publications';
 
+/** Posts per page on the public publication listing. */
+export const POSTS_PAGE_SIZE = 6;
+
 export function getPublications(): Publication[] {
 	return publications;
 }
