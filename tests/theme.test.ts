@@ -52,13 +52,13 @@ describe('COLORS.md → theme.css', () => {
 	});
 
 	it('defines the three assigned per-publication accent overrides', () => {
-		for (const accent of ['space-indigo', 'dark-amaranth', 'ocean-deep']) {
+		for (const accent of ['space-indigo', 'dark-amaranth', 'bright-amber']) {
 			expect(themeCss).toContain(`[data-accent='${accent}']`);
 		}
 	});
 
 	it('publication palettes override only the accent family, never the background', () => {
-		for (const palette of ['space-indigo', 'dark-amaranth', 'ocean-deep']) {
+		for (const palette of ['space-indigo', 'dark-amaranth', 'bright-amber']) {
 			for (const selector of [`:root:not(.dark)[data-accent='${palette}']`, `.dark[data-accent='${palette}']`]) {
 				expect(themeCss).toContain(selector);
 				const start = themeCss.indexOf(selector);

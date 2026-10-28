@@ -178,16 +178,17 @@
 	--color-accent-soft: var(--color-dark-amaranth-900);
 }
 
-/* My Soulful Incantations: deep ocean blues. */
-:root:not(.dark)[data-accent='ocean-deep'] {
-	--color-accent: var(--color-ocean-deep-600);
-	--color-on-accent: oklch(98.5% 0 0);
-	--color-accent-foreground: var(--color-ocean-deep-700);
-	--color-accent-soft: var(--color-ocean-deep-100);
+/* My Soulful Incantations: bright amber. The ramp is light, so solid accents
+   carry dark amber text instead of white. */
+:root:not(.dark)[data-accent='bright-amber'] {
+	--color-accent: var(--color-bright-amber-600);
+	--color-on-accent: var(--color-bright-amber-950);
+	--color-accent-foreground: var(--color-bright-amber-800);
+	--color-accent-soft: var(--color-bright-amber-100);
 }
-.dark[data-accent='ocean-deep'] {
-	--color-accent: var(--color-ocean-deep-400);
-	--color-on-accent: oklch(98.5% 0 0);
-	--color-accent-foreground: var(--color-ocean-deep-300);
-	--color-accent-soft: var(--color-ocean-deep-900);
+.dark[data-accent='bright-amber'] {
+	--color-accent: var(--color-bright-amber-400);
+	--color-on-accent: var(--color-bright-amber-950);
+	--color-accent-foreground: var(--color-bright-amber-300);
+	--color-accent-soft: var(--color-bright-amber-900);
 }
