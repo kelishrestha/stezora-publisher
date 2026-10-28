@@ -132,6 +132,14 @@ export default function MediaManager() {
 	}, [previewImage, uploadOpen]);
 
 	useEffect(() => {
+		const button = document.getElementById('upload-media-button');
+		if (!button) return;
+		const onClick = () => setUploadOpen(true);
+		button.addEventListener('click', onClick);
+		return () => button.removeEventListener('click', onClick);
+	}, []);
+
+	useEffect(() => {
 		if (!pendingFile) {
 			setFilePreviewUrl(null);
 			return;
@@ -416,8 +424,7 @@ export default function MediaManager() {
 			)}
 			{notice && <p className="rounded-lg bg-accent-soft px-4 py-3 text-sm text-accent-foreground">{notice}</p>}
 
-			<div className="flex flex-wrap items-end justify-between gap-4">
-				<div className="flex flex-wrap items-end gap-4">
+			<div className="flex flex-wrap items-end gap-4">
 					<label htmlFor="media-filter-publication" className="block w-44">
 						<span className="text-sm font-medium text-foreground">Publication</span>
 						<select
@@ -482,14 +489,6 @@ export default function MediaManager() {
 					>
 						Clear filters
 					</button>
-				</div>
-				<button
-					type="button"
-					onClick={() => setUploadOpen(true)}
-					className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
-				>
-					Upload media
-				</button>
 			</div>
 
 			<div>
