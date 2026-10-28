@@ -23,6 +23,18 @@ const API_VERSION = '4.4';
 const USER_ID = '82019';
 const root = path.resolve(import.meta.dirname, '..', '..');
 
+/** Neobook titles that differ from the post titles (normalized on both sides). */
+const TITLE_ALIASES: Record<string, string> = {
+	'the end of the rebellious flame': 'the end',
+	'the clueless nights': 'clueless nights',
+	'the queen of knights': 'queen of knights',
+};
+
+/** Neobook items with no post yet, created on sync into the given publication. */
+const NEW_POSTS: Record<string, string> = {
+	rare: 'the-rebellious-flame',
+};
+
 interface NeobookItem {
 	id: string;
 	type: string;
@@ -110,6 +122,50 @@ function mediaSuffix(attachmentId: string): string {
 	return Number.parseInt(attachmentId, 10).toString(36);
 }
 
+interface PostRow {
+	id: string;
+	title: string;
+	featured_image_id: string | null;
+	content: string;
+	publication_id: string;
+	publication_slug: string;
+	slug: string;
+}
+
+type LocalD1 = Awaited<ReturnType<Miniflare['getD1Database']>>;
+
+/** Publishes a Neobook item as a new post following the p-<pub>-<slug> id scheme. */
+async function createPost(db: LocalD1, publicationSlug: string, item: NeobookItem): Promise<PostRow> {
+	const publication = await db
+		.prepare('SELECT id FROM publications WHERE slug = ?')
+		.bind(publicationSlug)
+		.first<{ id: string }>();
+	if (!publication) {
+		throw new Error(`Unknown publication slug: ${publicationSlug}`);
+	}
+	const slug = normalizeTitle(item.title).replace(/ /g, '-');
+	const id = `p-${publicationSlug}-${slug}`;
+	const content = neobookTextToHtml(item.text);
+	const publishedAt = neobookDateToIso(item.date_publish) ?? new Date().toISOString();
+	const updatedAt = neobookDateToIso(item.date_edit) ?? publishedAt;
+	await db
+		.prepare(
+			'INSERT INTO posts (id, publication_id, title, slug, excerpt, content, status, published_at, updated_at, created_at) ' +
+				"VALUES (?, ?, ?, ?, '', ?, 'published', ?, ?, ?)"
+		)
+		.bind(id, publication.id, item.title, slug, content, publishedAt, updatedAt, new Date().toISOString())
+		.run();
+	return {
+		id,
+		title: item.title,
+		featured_image_id: null,
+		content,
+		publication_id: publication.id,
+		publication_slug: publicationSlug,
+		slug,
+	};
+}
+
 async function main(): Promise<void> {
 	const wrangler = await fs.readFile(path.join(root, 'wrangler.jsonc'), 'utf-8');
 	const databaseId = /"database_id"\s*:\s*"([^"]+)"/.exec(wrangler)?.[1];
@@ -137,26 +193,26 @@ async function main(): Promise<void> {
 				'SELECT p.id, p.title, p.featured_image_id, p.content, pub.id AS publication_id, pub.slug AS publication_slug, p.slug ' +
 					'FROM posts p JOIN publications pub ON pub.id = p.publication_id'
 			)
-			.all<{
-				id: string;
-				title: string;
-				featured_image_id: string | null;
-				content: string;
-				publication_id: string;
-				publication_slug: string;
-				slug: string;
-			}>();
+			.all<PostRow>();
 		const byTitle = new Map(posts.map((post) => [normalizeTitle(post.title), post]));
 
 		let contentUpdates = 0;
 		let imagesAttached = 0;
+		let postsCreated = 0;
 		const unmatched: string[] = [];
 
 		for (const item of items) {
 			if (item.type === 'book') {
 				continue;
 			}
-			const post = byTitle.get(normalizeTitle(item.title));
+			const normalized = normalizeTitle(item.title);
+			let post = byTitle.get(TITLE_ALIASES[normalized] ?? normalized);
+			if (!post && NEW_POSTS[normalized]) {
+				post = await createPost(db, NEW_POSTS[normalized], item);
+				byTitle.set(normalized, post);
+				postsCreated += 1;
+				console.error(`  created: ${post.publication_slug}/${post.slug}`);
+			}
 			if (!post) {
 				unmatched.push(`${item.type}: ${item.title}`);
 				continue;
@@ -219,7 +275,7 @@ async function main(): Promise<void> {
 		}
 
 		console.error(
-			`neobook:sync: ${contentUpdates} content update(s), ${imagesAttached} featured image(s) attached`
+			`neobook:sync: ${postsCreated} post(s) created, ${contentUpdates} content update(s), ${imagesAttached} featured image(s) attached`
 		);
 		if (unmatched.length > 0) {
 			console.error(`neobook:sync: ${unmatched.length} item(s) with no matching post:`);
