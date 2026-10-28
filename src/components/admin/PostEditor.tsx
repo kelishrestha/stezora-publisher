@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import AdminBreadcrumbs from './AdminBreadcrumbs';
 import LoadingImage from './LoadingImage';
 import Toast, { ToastStack } from './Toast';
+import ConfirmDialog from './ConfirmDialog';
 
 interface PublicationOption {
 	id: string;
@@ -130,6 +131,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 	const [error, setError] = useState<string | null>(null);
 	const [notice, setNotice] = useState<string | null>(null);
 	const [confirmingSave, setConfirmingSave] = useState(false);
+	const [mediaToDelete, setMediaToDelete] = useState<MediaItem | null>(null);
 
 	const [title, setTitle] = useState('');
 	// Loaded post title, frozen for the breadcrumb while the user edits `title`.
@@ -368,7 +370,6 @@ export default function PostEditor({ postId }: PostEditorProps) {
 	}
 
 	async function handleDeleteMedia(item: MediaItem) {
-		if (!window.confirm(`Delete "${item.filename}" from this post?`)) return;
 		setError(null);
 		try {
 			await json(`/api/admin/media/${item.id}`, { method: 'DELETE' });
@@ -379,6 +380,8 @@ export default function PostEditor({ postId }: PostEditorProps) {
 			setNotice('Media deleted.');
 		} catch (reason) {
 			setError(reason instanceof Error ? reason.message : 'Failed to delete media.');
+		} finally {
+			setMediaToDelete(null);
 		}
 	}
 
@@ -621,7 +624,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 												</button>
 												<button
 													type="button"
-													onClick={() => void handleDeleteMedia(item)}
+													onClick={() => setMediaToDelete(item)}
 													className="rounded-md border border-red-300 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-600 hover:text-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 dark:border-red-900 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-700 dark:hover:text-red-50"
 												>
 													Delete
@@ -729,6 +732,14 @@ export default function PostEditor({ postId }: PostEditorProps) {
 				</div>
 			</div>
 
+			{mediaToDelete && (
+				<ConfirmDialog
+					title="Delete media?"
+					message={`Delete "${mediaToDelete.filename}" from this post? This cannot be undone.`}
+					onConfirm={() => void handleDeleteMedia(mediaToDelete)}
+					onCancel={() => setMediaToDelete(null)}
+				/>
+			)}
 			{confirmingSave && (
 				<div
 					className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6 backdrop-blur-sm"

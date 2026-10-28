@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import ConfirmDialog from './ConfirmDialog';
 import EmptyState from './EmptyState';
 import Pagination from './Pagination';
 import { MONTHS, filterSelectClass, matchesMonthYear, yearsOf } from './filters';
@@ -134,6 +135,7 @@ export default function TagManager() {
 
 	// Create/edit modal.
 	const [modalOpen, setModalOpen] = useState(false);
+	const [tagToDelete, setTagToDelete] = useState<TagRecord | null>(null);
 	const [editing, setEditing] = useState<TagRecord | null>(null);
 	const [formPublicationId, setFormPublicationId] = useState('');
 	const [name, setName] = useState('');
@@ -249,7 +251,6 @@ export default function TagManager() {
 	}
 
 	async function remove(tag: TagRecord) {
-		if (!window.confirm(`Delete the tag "${tag.name}"?`)) return;
 		setBusy(true);
 		setError(null);
 		setNotice(null);
@@ -261,6 +262,7 @@ export default function TagManager() {
 			setError(reason instanceof Error ? reason.message : 'Failed to delete tag.');
 		} finally {
 			setBusy(false);
+			setTagToDelete(null);
 		}
 	}
 
@@ -292,6 +294,15 @@ export default function TagManager() {
 
 	return (
 		<div className="space-y-4">
+			{tagToDelete && (
+				<ConfirmDialog
+					title="Delete tag?"
+					message={`Delete the tag "${tagToDelete.name}"? Posts keep working; deletion is blocked while any post still uses it.`}
+					busy={busy}
+					onConfirm={() => void remove(tagToDelete)}
+					onCancel={() => setTagToDelete(null)}
+				/>
+			)}
 			{modalOpen && (
 				<div
 					className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6 backdrop-blur-sm"
@@ -524,7 +535,7 @@ export default function TagManager() {
 									</button>
 									<button
 										type="button"
-										onClick={() => void remove(tag)}
+										onClick={() => setTagToDelete(tag)}
 										disabled={busy}
 										aria-label={`Delete ${tag.name}`}
 										title="Delete"
