@@ -6,7 +6,7 @@ const title = 'Media';
 const description = 'Upload and manage media for your posts.';
 ---
 
-<AdminLayout title={title} description={description} path="/admin/media">
+<AdminLayout title={title} description={description} path="/admin/media" breadcrumbs={[{ name: 'All media' }]}>
 	<h1 class="text-2xl font-semibold tracking-tight text-foreground">Media</h1>
 	<p class="mt-1 text-sm text-muted-foreground">Upload images and documents. Files are stored in R2, metadata in D1.</p>
 	<div class="mt-6">

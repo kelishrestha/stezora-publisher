@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import AdminBreadcrumbs from './AdminBreadcrumbs';
 
 interface PublicationOption {
 	id: string;
@@ -122,6 +123,8 @@ export default function PostEditor({ postId }: PostEditorProps) {
 	const [preview, setPreview] = useState<{ html: string; title: string } | null>(null);
 
 	const [title, setTitle] = useState('');
+	// Loaded post title, frozen for the breadcrumb while the user edits `title`.
+	const [loadedTitle, setLoadedTitle] = useState('');
 	const [publicationId, setPublicationId] = useState('');
 	const [slug, setSlug] = useState('');
 	const [excerpt, setExcerpt] = useState('');
@@ -163,6 +166,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 		try {
 			const { post } = await json<{ post: PostRecord }>(`/api/admin/posts/${editingPostId}`);
 			setTitle(post.title);
+			setLoadedTitle(post.title);
 			setPublicationId(post.publicationId);
 			setSlug(post.slug);
 			setExcerpt(post.excerpt);
@@ -325,6 +329,17 @@ export default function PostEditor({ postId }: PostEditorProps) {
 
 	return (
 		<div className="space-y-6">
+			<AdminBreadcrumbs
+				items={
+					editingPostId
+						? [
+								{ name: 'All posts', href: '/admin/posts' },
+								{ name: loadedTitle || 'Post', href: `/admin/posts/${editingPostId}/view` },
+								{ name: 'Edit' },
+							]
+						: [{ name: 'All posts', href: '/admin/posts' }, { name: 'New post' }]
+				}
+			/>
 			{previewImage && (
 				<div
 					className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6 backdrop-blur-sm"

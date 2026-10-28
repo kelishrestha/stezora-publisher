@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import AdminBreadcrumbs from './AdminBreadcrumbs';
 
 interface PostRecord {
 	id: string;
@@ -100,6 +101,7 @@ export default function PostView() {
 
 	return (
 		<div className="space-y-6">
+			<AdminBreadcrumbs items={[{ name: 'All posts', href: '/admin/posts' }, { name: post.title }]} />
 			<div className="rounded-md border border-border bg-surface shadow-sm p-6">
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<h2 className="font-serif text-2xl font-semibold text-foreground">{post.title}</h2>

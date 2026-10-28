@@ -6,7 +6,7 @@ const title = 'Tags';
 const description = 'Manage tags per publication.';
 ---
 
-<AdminLayout title={title} description={description} path="/admin/tags">
+<AdminLayout title={title} description={description} path="/admin/tags" breadcrumbs={[{ name: 'All tags' }]}>
 	<h1 class="text-2xl font-semibold tracking-tight text-foreground">Tags</h1>
 	<p class="mt-1 text-sm text-muted-foreground">Tags belong to one publication. Delete is blocked while a post uses one.</p>
 	<div class="mt-6">

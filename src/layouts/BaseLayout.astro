@@ -27,6 +27,8 @@ export interface Props {
 	noindex?: boolean;
 	breadcrumbs?: BreadcrumbItem[];
 	accent?: PublicationAccent;
+	/** Render the public site header/footer. The admin shell brings its own. */
+	chrome?: boolean;
 }
 
 const {
@@ -41,6 +43,7 @@ const {
 	noindex = false,
 	breadcrumbs = [],
 	accent,
+	chrome = true,
 } = Astro.props;
 
 const pageTitle = seoTitle ? `${seoTitle} | ${SITE.name}` : title ? `${title} | ${SITE.name}` : `${SITE.name} — ${SITE.description}`;
@@ -104,10 +107,16 @@ const jsonLd = breadcrumbs.length > 0 ? renderJsonLd(websiteJsonLd(), pageJsonLd
 		))}
 	</head>
 	<body class="flex min-h-screen flex-col bg-background font-sans text-foreground antialiased">
-		<SiteHeader />
-		<main class="flex-1">
+		{chrome ? (
+			<>
+				<SiteHeader />
+				<main class="flex-1">
+					<slot />
+				</main>
+				<SiteFooter />
+			</>
+		) : (
 			<slot />
-		</main>
-		<SiteFooter />
+		)}
 	</body>
 </html>

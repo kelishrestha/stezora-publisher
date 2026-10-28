@@ -1,53 +1,115 @@
 ---
 import BaseLayout from './BaseLayout.astro';
+import Breadcrumbs from '../components/blog/Breadcrumbs.astro';
+import ThemeToggle from '../components/ui/ThemeToggle.astro';
+
+interface Crumb {
+	name: string;
+	href?: string;
+}
 
 interface Props {
 	title?: string;
 	description?: string;
 	path?: string;
+	breadcrumbs?: Crumb[];
 }
 
-const { title, description, path = '/admin' } = Astro.props;
+const { title, description, path = '/admin', breadcrumbs = [] } = Astro.props;
+
+const navItems = [
+	{ href: '/admin', label: 'Dashboard' },
+	{ href: '/admin/posts', label: 'Posts' },
+	{ href: '/admin/media', label: 'Media' },
+	{ href: '/admin/tags', label: 'Tags' },
+];
+
+function isActive(href: string): boolean {
+	return href === '/admin' ? path === '/admin' : path.startsWith(href);
+}
+
+const activeLink = 'block rounded-lg bg-surface-elevated px-4 py-2 text-sm font-medium text-foreground';
+const inactiveLink =
+	'block rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-surface-elevated hover:text-foreground';
 ---
 
+<BaseLayout title={title} description={description} path={path} noindex chrome={false}>
+	<!-- Top bar: logo only, with the theme toggle (HyperUI header on theme tokens). -->
+	<header class="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur">
+		<div class="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
+			<a href="/admin" class="block" aria-label="Stezora CMS">
+				<span class="sr-only">Stezora CMS</span>
+				<span class="relative inline-block h-8 w-8 align-middle">
+					<img src="/stezora-logo-light.png" alt="Stezora" class="absolute inset-0 h-8 w-8 object-contain dark:hidden" />
+					<img src="/stezora-logo-dark.png" alt="" class="absolute inset-0 hidden h-8 w-8 object-contain dark:block" />
+				</span>
+			</a>
+			<ThemeToggle />
+		</div>
+	</header>
 
-<BaseLayout title={title} description={description} path={path} noindex>
-	<header class="border-b border-border bg-surface">
-		<nav class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3" aria-label="Admin">
-			<div class="flex items-center gap-6">
-				<a href="/admin" class="text-sm font-semibold tracking-tight text-accent-foreground">
-					Stezora CMS
-				</a>
-				<ul class="flex items-center gap-1 text-sm">
+	<div class="flex flex-1">
+		<!-- HyperUI side menu on theme tokens: nav on top, sign out pinned at the bottom. -->
+		<aside class="sticky top-16 hidden h-[calc(100vh-4rem)] w-56 shrink-0 flex-col justify-between border-e border-border bg-surface sm:flex">
+			<div class="p-4">
+				<ul class="space-y-1">
+					{navItems.map((item) => (
+						<li>
+							<a href={item.href} class={isActive(item.href) ? activeLink : inactiveLink}>
+								{item.label}
+							</a>
+						</li>
+					))}
 					<li>
-						<a href="/admin" class="rounded-md px-3 py-1.5 text-foreground hover:bg-surface-elevated">Dashboard</a>
-					</li>
-					<li>
-						<a href="/admin/posts" class="rounded-md px-3 py-1.5 text-muted-foreground hover:bg-surface-elevated hover:text-foreground">Posts</a>
-					</li>
-					<li>
-						<a href="/admin/media" class="rounded-md px-3 py-1.5 text-muted-foreground hover:bg-surface-elevated hover:text-foreground">Media</a>
-					</li>
-					<li>
-						<a href="/admin/tags" class="rounded-md px-3 py-1.5 text-muted-foreground hover:bg-surface-elevated hover:text-foreground">Tags</a>
+						<a href="/" class={inactiveLink}>View site</a>
 					</li>
 				</ul>
 			</div>
-			<div class="flex items-center gap-3 text-sm">
-				<a href="/" class="text-muted-foreground hover:text-foreground">View site</a>
+			<div class="sticky inset-x-0 bottom-0 border-t border-border bg-surface p-4">
 				<button
 					type="button"
 					id="admin-sign-out"
-					class="rounded-md bg-accent-soft px-3 py-1.5 font-medium text-accent-foreground hover:opacity-90"
+					class="w-full rounded-lg px-4 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-surface-elevated hover:text-foreground"
 				>
 					Sign out
 				</button>
 			</div>
-		</nav>
-	</header>
-	<main class="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
-		<slot />
-	</main>
+		</aside>
+
+		<main class="min-w-0 flex-1 px-4 py-8 sm:px-6 lg:px-8">
+			<!-- Small screens get the same navigation as a scrollable strip. -->
+			<nav aria-label="Admin" class="mb-6 flex gap-1 overflow-x-auto border-b border-border pb-3 text-sm sm:hidden">
+				{navItems.map((item) => (
+					<a
+						href={item.href}
+						class={`shrink-0 rounded-lg px-3 py-1.5 ${
+							isActive(item.href)
+								? 'bg-surface-elevated font-medium text-foreground'
+								: 'text-muted-foreground hover:bg-surface-elevated hover:text-foreground'
+						}`}
+					>
+						{item.label}
+					</a>
+				))}
+				<a href="/" class="shrink-0 rounded-lg px-3 py-1.5 text-muted-foreground hover:bg-surface-elevated hover:text-foreground">
+					View site
+				</a>
+				<button
+					type="button"
+					id="admin-sign-out-mobile"
+					class="shrink-0 rounded-lg px-3 py-1.5 text-muted-foreground hover:bg-surface-elevated hover:text-foreground"
+				>
+					Sign out
+				</button>
+			</nav>
+			{breadcrumbs.length > 0 && (
+				<div class="mb-6">
+					<Breadcrumbs items={breadcrumbs} />
+				</div>
+			)}
+			<slot />
+		</main>
+	</div>
 </BaseLayout>
 
 <script>
@@ -55,8 +117,11 @@ const { title, description, path = '/admin' } = Astro.props;
 
 	const authClient = createAuthClient();
 
-	document.getElementById('admin-sign-out')?.addEventListener('click', async () => {
+	async function signOut() {
 		await authClient.signOut();
 		window.location.href = '/admin/login';
-	});
+	}
+
+	document.getElementById('admin-sign-out')?.addEventListener('click', () => void signOut());
+	document.getElementById('admin-sign-out-mobile')?.addEventListener('click', () => void signOut());
 </script>

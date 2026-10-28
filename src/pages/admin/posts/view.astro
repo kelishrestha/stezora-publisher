@@ -12,9 +12,6 @@ const description = 'View a post.';
 	so the URL scheme /admin/posts/:id/view stays intact.
 -->
 <AdminLayout title={title} description={description} path="/admin/posts">
-	<h1 class="text-2xl font-semibold tracking-tight text-foreground">View post</h1>
-	<p class="mt-1 text-sm text-muted-foreground">Read-only view of a post.</p>
-	<div class="mt-6">
-		<PostView client:load />
-	</div>
+	<h1 class="sr-only">View post</h1>
+	<PostView client:load />
 </AdminLayout>

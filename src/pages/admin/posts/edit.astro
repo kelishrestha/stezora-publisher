@@ -13,9 +13,6 @@ const description = 'Edit an existing post.';
 	the URL scheme /admin/posts/:id/edit stays intact.
 -->
 <AdminLayout title={title} description={description} path="/admin/posts">
-	<h1 class="text-2xl font-semibold tracking-tight text-foreground">Edit post</h1>
-	<p class="mt-1 text-sm text-muted-foreground">Update your post and save or publish.</p>
-	<div class="mt-6">
-		<PostEditor client:load />
-	</div>
+	<h1 class="sr-only">Edit post</h1>
+	<PostEditor client:load />
 </AdminLayout>
