@@ -6,6 +6,8 @@ interface PaginationProps {
 	onPageSizeChange: (size: number) => void;
 	/** Plural noun for the range summary, e.g. "posts". */
 	itemsLabel: string;
+	/** Per-page choices offered in the selector. */
+	sizeOptions?: number[];
 }
 
 /**
@@ -20,6 +22,7 @@ export default function Pagination({
 	onPageChange,
 	onPageSizeChange,
 	itemsLabel,
+	sizeOptions = [5, 10, 25, 50],
 }: PaginationProps) {
 	if (totalItems === 0) {
 		return null;
@@ -42,7 +45,7 @@ export default function Pagination({
 						onChange={(event) => onPageSizeChange(Number(event.target.value))}
 						className="rounded border-border bg-background py-1 text-xs text-foreground shadow-sm focus:border-accent focus:ring-accent"
 					>
-						{[5, 10, 25, 50].map((size) => (
+						{sizeOptions.map((size) => (
 							<option key={size} value={size}>
 								{size}
 							</option>

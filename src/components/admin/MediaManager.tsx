@@ -11,6 +11,7 @@ interface MediaItem {
 	mimeType: string;
 	size: number;
 	url: string;
+	external?: boolean;
 	createdAt: string;
 }
 
@@ -62,10 +63,6 @@ function formatDate(value: string): string {
 	return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-function isImage(mimeType: string): boolean {
-	return mimeType.startsWith('image/');
-}
-
 export default function MediaManager() {
 	const [items, setItems] = useState<MediaItem[] | null>(null);
 	const [posts, setPosts] = useState<PostOption[] | null>(null);
@@ -76,7 +73,8 @@ export default function MediaManager() {
 	const [error, setError] = useState<string | null>(null);
 	const [notice, setNotice] = useState<string | null>(null);
 	const [page, setPage] = useState(1);
-	const [pageSize, setPageSize] = useState(10);
+	const [previewImage, setPreviewImage] = useState<MediaItem | null>(null);
+	const [pageSize, setPageSize] = useState(12);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -111,6 +109,15 @@ export default function MediaManager() {
 			cancelled = true;
 		};
 	}, []);
+
+	useEffect(() => {
+		if (!previewImage) return;
+		const onKeyDown = (event: KeyboardEvent) => {
+			if (event.key === 'Escape') setPreviewImage(null);
+		};
+		window.addEventListener('keydown', onKeyDown);
+		return () => window.removeEventListener('keydown', onKeyDown);
+	}, [previewImage]);
 
 	const postsForPublication = (posts ?? []).filter((post) => post.publicationId === publicationId);
 
@@ -157,6 +164,34 @@ export default function MediaManager() {
 
 	return (
 		<div className="space-y-6">
+			{previewImage && (
+				<div
+					className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6 backdrop-blur-sm"
+					role="dialog"
+					aria-modal="true"
+					onClick={() => setPreviewImage(null)}
+				>
+					<figure
+						className="max-h-full max-w-3xl rounded-lg border border-border bg-surface p-3 shadow-lg"
+						onClick={(event) => event.stopPropagation()}
+					>
+						<img src={previewImage.url} alt={previewImage.filename} className="max-h-[75vh] w-auto rounded-md" />
+						<figcaption className="mt-2 flex items-center justify-between gap-4 text-xs text-muted-foreground">
+							<span>
+								{previewImage.filename}
+								{previewImage.external ? ' · Blogger-hosted' : ''}
+							</span>
+							<button
+								type="button"
+								onClick={() => setPreviewImage(null)}
+								className="rounded-md border border-border bg-surface px-3 py-1.5 text-foreground hover:bg-surface-elevated"
+							>
+								Close
+							</button>
+						</figcaption>
+					</figure>
+				</div>
+			)}
 			{error && (
 				<p className="rounded-lg bg-accent-soft px-4 py-3 text-sm text-accent-foreground" role="alert">
 					{error}
@@ -237,21 +272,26 @@ export default function MediaManager() {
 								<li key={item.id}>
 									{/* Blog card: media image, post title, tags, View post action. */}
 									<article className="flex h-full flex-col overflow-hidden rounded-md border border-border bg-surface shadow-sm">
-										<a href={item.url} target="_blank" rel="noopener noreferrer" className="block" title={item.filename}>
-											{isImage(item.mimeType) ? (
-												<LoadingImage src={item.url} alt={item.filename} wrapperClassName="h-40 w-full" />
-											) : (
+										{item.mimeType === 'application/pdf' ? (
+											<a href={item.url} target="_blank" rel="noopener noreferrer" className="block" title={item.filename}>
 												<div className="flex h-40 w-full items-center justify-center bg-surface-elevated">
 													<span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">PDF</span>
 												</div>
-											)}
-										</a>
+											</a>
+										) : (
+											// Imported Blogger media has an unknown mime type until it is
+											// localized into R2, so render everything that is not a PDF;
+											// LoadingImage falls back to a glyph if it cannot render.
+											<LoadingImage src={item.url} alt={item.filename} wrapperClassName="h-40 w-full" />
+										)}
 										<div className="flex flex-1 flex-col p-4">
 											<h3 className="font-serif text-base font-semibold text-pretty text-foreground">
 												{post?.title ?? postTitle(item.postId)}
 											</h3>
 											<p className="mt-1 truncate text-xs text-muted-foreground" title={item.filename}>
-												{item.filename} · {formatSize(item.size)} · {formatDate(item.createdAt)}
+												{item.filename}
+												{item.size > 0 ? ` · ${formatSize(item.size)}` : ''}
+												{item.external ? ' · Blogger-hosted' : ''} · {formatDate(item.createdAt)}
 											</p>
 											<div className="mt-3 flex flex-1 flex-wrap content-start gap-1.5">
 												<span className="rounded-full border border-border px-2.5 py-0.5 text-xs whitespace-nowrap text-muted-foreground">
@@ -270,15 +310,27 @@ export default function MediaManager() {
 													<span className="text-xs text-muted-foreground">No tags</span>
 												)}
 											</div>
-											{item.postId && (
-												<a
-													href={`/admin/posts/${item.postId}/view`}
-													className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent-foreground transition-colors hover:opacity-80"
-												>
-													View post
-													<span aria-hidden="true">&rarr;</span>
-												</a>
-											)}
+											<div className="mt-4 flex flex-wrap items-center gap-4">
+												{item.postId && (
+													<a
+														href={`/admin/posts/${item.postId}/view`}
+														className="inline-flex items-center gap-1 text-sm font-medium text-accent-foreground transition-colors hover:opacity-80"
+													>
+														View post
+														<span aria-hidden="true">&rarr;</span>
+													</a>
+												)}
+												{item.mimeType !== 'application/pdf' && (
+													<button
+														type="button"
+														onClick={() => setPreviewImage(item)}
+														className="inline-flex items-center gap-1 text-sm font-medium text-accent-foreground transition-colors hover:opacity-80"
+													>
+														View image
+														<span aria-hidden="true">&rarr;</span>
+													</button>
+												)}
+											</div>
 										</div>
 									</article>
 								</li>
@@ -297,6 +349,7 @@ export default function MediaManager() {
 							setPage(1);
 						}}
 						itemsLabel="media items"
+						sizeOptions={[12, 24, 48]}
 					/>
 				</div>
 			</div>
