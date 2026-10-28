@@ -261,6 +261,14 @@ const contactControl =
 					<svg viewBox="0 0 24 24" fill="currentColor" class="mx-auto mb-4 h-8 w-8 animate-pulse text-red-500" role="img" aria-label="With love"><path d="m11.645 20.91-.007-.003-.022-.012a15.247 15.247 0 0 1-.383-.218 25.18 25.18 0 0 1-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0 1 12 5.052 5.5 5.5 0 0 1 16.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 0 1-4.244 3.17 15.247 15.247 0 0 1-.383.219l-.022.012-.007.004-.003.001a.752.752 0 0 1-.704 0l-.003-.001Z" /></svg>
 					<h3 class="mb-2 font-serif text-xl">Share Your Voice</h3>
 					<p class="max-w-md font-light text-muted-foreground">Have you been touched by these words? Your story matters, and we'd love to hear how these books have become part of your journey.</p>
+					<a
+						href="#contact"
+						data-share-voice
+						class="mt-5 inline-flex items-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm text-background transition-transform duration-300 hover:scale-105"
+					>
+						<Icon name="lucide:message-circle" class="h-4 w-4" aria-hidden="true" />
+						Share your story
+					</a>
 				</div>
 			</div>
 		</section>
@@ -319,6 +327,7 @@ const contactControl =
 								<option value="collaboration">Collaboration</option>
 								<option value="press">Press/Media</option>
 								<option value="reader">Reader Feedback</option>
+							<option value="testimonials">Testimonials</option>
 								<option value="writing">Writing Question</option>
 							</select>
 						</div>
@@ -345,6 +354,14 @@ const contactControl =
 		</div>
 	</footer>
 	<script>
+		// Share Your Voice: jump to the contact form with the subject preselected.
+		document.querySelector('[data-share-voice]')?.addEventListener('click', () => {
+			const subject = document.getElementById('contact-subject');
+			if (subject instanceof HTMLSelectElement) {
+				subject.value = 'testimonials';
+			}
+		});
+
 		// Reader Voices carousel: auto-advances every 6s; any manual action stops it.
 		const slides = Array.from(document.querySelectorAll('[data-voice-slide]'));
 		const dots = Array.from(document.querySelectorAll('[data-voice-dot]'));
