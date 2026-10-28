@@ -1,6 +1,5 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Button from '../components/ui/Button.astro';
 import Container from '../components/ui/Container.astro';
 import { Icon } from 'astro-icon/components';
 const testimonials = [
@@ -64,8 +63,18 @@ const poemCollections = [
 					quiet hours.
 				</p>
 				<div class="home-fade-up mt-8 flex flex-wrap gap-4" style="animation-delay: 360ms">
-					<Button href="/poetry-collections" variant="primary">Explore poetry collections</Button>
-					<Button href="/publications" variant="secondary">Browse books</Button>
+					<a
+						href="/poetry-collections"
+						class="inline-flex items-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm text-background transition-transform duration-300 hover:scale-105"
+					>
+						Explore poetry collections
+					</a>
+					<a
+						href="/publications"
+						class="inline-flex items-center gap-2 rounded-full border border-border px-6 py-3 text-sm transition-colors hover:bg-surface-elevated"
+					>
+						Browse books
+					</a>
 				</div>
 			</div>
 			<div class="relative mx-auto mt-12 hidden h-[28rem] w-full max-w-lg md:mt-0 md:block" aria-hidden="true">
