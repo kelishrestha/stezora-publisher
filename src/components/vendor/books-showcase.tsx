@@ -73,6 +73,10 @@ export interface BooksShowcaseProps {
   /** Label for the detail panel's main action. */
   ctaLabel?: string;
   onCtaClick?: (book: BookCfg | null) => void;
+  /** Disable the main action (e.g. store links not live yet). */
+  ctaDisabled?: boolean;
+  /** Small note shown beside a disabled action. */
+  ctaHint?: string;
   /** Show the bookmark/save pill in the detail panel. */
   showSaveButton?: boolean;
 }
@@ -100,6 +104,8 @@ export function BooksShowcase({
   heroTitle = 'Books',
   ctaLabel = 'Read',
   onCtaClick,
+  ctaDisabled = false,
+  ctaHint,
   showSaveButton = true,
   navTitle = 'Bestsellers',
   showNav = true,
@@ -1842,8 +1848,11 @@ export function BooksShowcase({
               <span>English</span>
             </button>
             <button
-              onClick={() => onCtaClick?.(selectedCfg)}
-              className="inline-flex h-10 items-center gap-2 rounded-full bg-[var(--bs-peri)] px-4 text-sm font-semibold text-[#10152c] transition-[transform,filter] duration-[220ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.04] hover:brightness-105 @max-[760px]:h-9 @max-[760px]:px-3 @max-[760px]:text-[13px]"
+              disabled={ctaDisabled}
+              onClick={() => {
+                if (!ctaDisabled) onCtaClick?.(selectedCfg);
+              }}
+              className="inline-flex h-10 items-center gap-2 rounded-full bg-[var(--bs-peri)] px-4 text-sm font-semibold text-[#10152c] transition-[transform,filter] duration-[220ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.04] hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 disabled:hover:brightness-100 @max-[760px]:h-9 @max-[760px]:px-3 @max-[760px]:text-[13px]"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
                 <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
@@ -1851,6 +1860,9 @@ export function BooksShowcase({
               </svg>
               {ctaLabel}
             </button>
+            {ctaDisabled && ctaHint && (
+              <span className="px-2 text-[13px] italic text-[#98a4d6]">{ctaHint}</span>
+            )}
             {showSaveButton && (
             <button
               aria-label="Save"

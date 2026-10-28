@@ -71,10 +71,8 @@ export default function BookShelf({ books }: Props) {
 					className="h-full min-h-0"
 					books={cfgs}
 					ctaLabel="Buy Now"
-					onCtaClick={(cfg) => {
-						const book = books.find((candidate) => candidate.id === cfg?.id);
-						if (book) window.location.href = book.href;
-					}}
+					ctaDisabled
+					ctaHint={'Coming soon'}
 					showSaveButton={false}
 					showNav={false}
 					showDetailPanel
