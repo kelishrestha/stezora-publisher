@@ -30,11 +30,11 @@ interface Props {
  * ramps (canvas painters need concrete colors that old engines also parse).
  */
 const COVERS: Record<string, { spineBg: string; spineInk: string; backBg: string; backInk: string; edge: string }> = {
-	'space-indigo': { spineBg: '#32375f', spineInk: '#eef0fa', backBg: '#262b4a', backInk: '#eef0fa', edge: '#e9e7dc' },
+	'space-indigo': { spineBg: '#3d44a0', spineInk: '#eef0fa', backBg: '#2e3379', backInk: '#eef0fa', edge: '#e9e7dc' },
 	'ocean-deep': { spineBg: '#1f4f78', spineInk: '#eaf2f9', backBg: '#173a59', backInk: '#eaf2f9', edge: '#e9e7dc' },
-	'dark-amaranth': { spineBg: '#8c1f3f', spineInk: '#fdeef2', backBg: '#5f142b', backInk: '#fdeef2', edge: '#efe2d6' },
+	'dark-amaranth': { spineBg: '#731631', spineInk: '#fdeef2', backBg: '#4d0f21', backInk: '#fdeef2', edge: '#efe2d6' },
 	'bright-amber': { spineBg: '#a87d1b', spineInk: '#fff8e3', backBg: '#7a5a12', backInk: '#fff8e3', edge: '#efe2d6' },
-	'soft-periwinkle': { spineBg: '#31308f', spineInk: '#eceafc', backBg: '#242370', backInk: '#eceafc', edge: '#e9e7dc' },
+	'soft-periwinkle': { spineBg: '#4a2583', spineInk: '#f1eafc', backBg: '#371b63', backInk: '#f1eafc', edge: '#e9e7dc' },
 };
 
 export default function PublicationShowcase({ publications }: Props) {

@@ -150,44 +150,44 @@
 }
 
 /* Publication palettes: accent family only; pages keep the neutral background. */
-/* The Sore Transition. */
+/* The Sore Transition: bright indigo accent. */
 :root:not(.dark)[data-accent='space-indigo'] {
-	--color-accent: oklch(40% 0.018 270);
+	--color-accent: var(--color-space-indigo-500);
 	--color-on-accent: oklch(98.5% 0 0);
-	--color-accent-foreground: oklch(28% 0.014 270);
-	--color-accent-soft: oklch(90% 0.01 270);
+	--color-accent-foreground: var(--color-space-indigo-600);
+	--color-accent-soft: var(--color-space-indigo-100);
 }
 .dark[data-accent='space-indigo'] {
 	--color-accent: var(--color-space-indigo-300);
 	--color-on-accent: var(--color-space-indigo-950);
-	--color-accent-foreground: var(--color-space-indigo-100);
+	--color-accent-foreground: var(--color-space-indigo-200);
 	--color-accent-soft: var(--color-space-indigo-800);
 }
 
-/* The Rebellious Flame: red, urgent manifesto palette. */
+/* The Rebellious Flame: deep red manifesto palette. */
 :root:not(.dark)[data-accent='dark-amaranth'] {
-	--color-accent: var(--color-dark-amaranth-500);
+	--color-accent: var(--color-dark-amaranth-700);
 	--color-on-accent: oklch(98.5% 0 0);
-	--color-accent-foreground: var(--color-dark-amaranth-700);
-	--color-accent-soft: var(--color-dark-amaranth-200);
+	--color-accent-foreground: var(--color-dark-amaranth-800);
+	--color-accent-soft: var(--color-dark-amaranth-100);
 }
 .dark[data-accent='dark-amaranth'] {
-	--color-accent: var(--color-dark-amaranth-300);
-	--color-on-accent: var(--color-dark-amaranth-950);
-	--color-accent-foreground: var(--color-dark-amaranth-200);
-	--color-accent-soft: var(--color-dark-amaranth-800);
+	--color-accent: var(--color-dark-amaranth-400);
+	--color-on-accent: oklch(98.5% 0 0);
+	--color-accent-foreground: var(--color-dark-amaranth-300);
+	--color-accent-soft: var(--color-dark-amaranth-900);
 }
 
 /* My Soulful Incantations: contemplative periwinkle poetry palette. */
 :root:not(.dark)[data-accent='soft-periwinkle'] {
-	--color-accent: var(--color-soft-periwinkle-500);
+	--color-accent: oklch(45% 0.24 300);
 	--color-on-accent: oklch(98.5% 0 0);
-	--color-accent-foreground: var(--color-soft-periwinkle-600);
-	--color-accent-soft: var(--color-soft-periwinkle-100);
+	--color-accent-foreground: oklch(38% 0.2 300);
+	--color-accent-soft: oklch(92% 0.05 300);
 }
 .dark[data-accent='soft-periwinkle'] {
-	--color-accent: var(--color-soft-periwinkle-300);
-	--color-on-accent: var(--color-soft-periwinkle-950);
-	--color-accent-foreground: var(--color-soft-periwinkle-200);
-	--color-accent-soft: var(--color-soft-periwinkle-800);
+	--color-accent: oklch(70% 0.17 300);
+	--color-on-accent: oklch(16% 0.06 300);
+	--color-accent-foreground: oklch(86% 0.08 300);
+	--color-accent-soft: oklch(30% 0.12 300);
 }
