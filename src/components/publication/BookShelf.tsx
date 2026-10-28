@@ -6,8 +6,10 @@ export interface ShelfBook {
 	id: string;
 	title: string;
 	author: string;
-	/** Imprint line under the title in the detail panel. */
+	/** Publication year, shown next to the rating row. */
 	year: string;
+	/** Line under the description (genre, pages, price). */
+	meta?: string;
 	stars: number;
 	desc: string;
 	cover: string;
@@ -40,6 +42,7 @@ export default function BookShelf({ books, hint }: Props) {
 		year: book.year,
 		stars: book.stars,
 		desc: book.desc,
+		meta: book.meta,
 		images: { front: book.cover },
 	})), [books]);
 

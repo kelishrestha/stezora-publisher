@@ -35,6 +35,8 @@ export interface BookCfg {
   coverURL?: string | null;
 
   // Page-edge trim color.
+  /** Short line rendered under the description in the detail panel. */
+  meta?: string;
   edge?: string;
   backBg?: string;
   backInk?: string;
@@ -1809,6 +1811,9 @@ export function BooksShowcase({
           <p className={`mt-[26px] max-w-[54ch] text-[var(--bs-lav)] text-[clamp(16px,1.25cqw,19px)] leading-[1.65] @max-[760px]:mt-4 @max-[760px]:line-clamp-4 @max-[760px]:text-[15px] ${dpChild(130)}`}>
             {selectedCfg?.desc}
           </p>
+          {selectedCfg?.meta && (
+            <p className={`mt-3 text-[15px] text-[#98a4d6] ${dpChild(180)}`}>{selectedCfg.meta}</p>
+          )}
           <div className={`mt-[34px] flex items-center gap-[18px] @max-[760px]:mt-[18px] ${dpChild(210)}`}>
             <div className="flex gap-[5px]">
               {[0, 1, 2, 3, 4].map((i) => (
