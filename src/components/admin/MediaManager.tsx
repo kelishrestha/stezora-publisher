@@ -310,10 +310,9 @@ export default function MediaManager() {
 												{item.postId && (
 													<a
 														href={`/admin/posts/${item.postId}/view`}
-														aria-label="View post"
-														title="View post"
-														className="rounded-md border border-accent bg-accent-soft p-2 text-accent-foreground transition-colors hover:bg-accent hover:text-on-accent focus:outline-none focus:ring-2 focus:ring-accent"
+														className="inline-flex items-center gap-1.5 rounded-md border border-accent px-3 py-1.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent hover:text-on-accent focus:outline-none focus:ring-2 focus:ring-accent"
 													>
+														View post
 														<svg
 															aria-hidden="true"
 															xmlns="http://www.w3.org/2000/svg"
@@ -325,8 +324,8 @@ export default function MediaManager() {
 															strokeLinejoin="round"
 															className="size-4"
 														>
-															<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
-															<path d="M14 2v4a2 2 0 0 0 2 2h4" />
+															<path d="M5 12h14" />
+															<path d="m12 5 7 7-7 7" />
 														</svg>
 													</a>
 												)}
@@ -334,10 +333,9 @@ export default function MediaManager() {
 													<button
 														type="button"
 														onClick={() => setPreviewImage(item)}
-														aria-label="View image"
-														title="View image"
-														className="rounded-md border border-accent bg-accent-soft p-2 text-accent-foreground transition-colors hover:bg-accent hover:text-on-accent focus:outline-none focus:ring-2 focus:ring-accent"
+														className="inline-flex items-center gap-1.5 rounded-md border border-accent px-3 py-1.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent hover:text-on-accent focus:outline-none focus:ring-2 focus:ring-accent"
 													>
+														View image
 														<svg
 															aria-hidden="true"
 															xmlns="http://www.w3.org/2000/svg"
@@ -349,9 +347,8 @@ export default function MediaManager() {
 															strokeLinejoin="round"
 															className="size-4"
 														>
-															<rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-															<circle cx="9" cy="9" r="2" />
-															<path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+															<path d="M5 12h14" />
+															<path d="m12 5 7 7-7 7" />
 														</svg>
 													</button>
 												)}
