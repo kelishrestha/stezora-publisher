@@ -1,13 +1,16 @@
 ---
 import type { Publication } from '../../lib/publications/types';
 import { publicationPath } from '../../lib/publications';
-import { buttonClass, cardClass } from '../ui/shared/classes';
+import { badgeClass, buttonClass, cardClass } from '../ui/shared/classes';
+import { getPostsForPublication } from '../../lib/publications/collections';
 
 interface Props {
 	publication: Publication;
 }
 
 const { publication } = Astro.props;
+
+const postCount = (await getPostsForPublication(publication.slug)).length;
 ---
 
 <!-- HyperUI card pattern on theme tokens. -->
@@ -17,6 +20,9 @@ const { publication } = Astro.props;
 			{publication.name}
 		</a>
 	</h2>
+	<p class="mt-2">
+		<span class={badgeClass('soft')}>{postCount} {postCount === 1 ? 'poem' : 'poems'}</span>
+	</p>
 	<p class="mt-3 flex-1 line-clamp-3 text-sm leading-relaxed text-pretty text-muted-foreground">
 		{publication.description}
 	</p>
