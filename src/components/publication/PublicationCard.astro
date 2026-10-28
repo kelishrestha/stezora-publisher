@@ -1,7 +1,7 @@
 ---
 import type { Publication } from '../../lib/publications/types';
 import { publicationPath } from '../../lib/publications';
-import { badgeClass, buttonClass } from '../ui/shared/classes';
+import { badgeClass } from '../ui/shared/classes';
 import { getPostsForPublication } from '../../lib/publications/collections';
 
 interface Props {
@@ -21,6 +21,23 @@ const accentCard: Record<string, string> = {
 	'bright-amber': 'bg-bright-amber-50 border-bright-amber-200 dark:bg-bright-amber-900 dark:border-bright-amber-700',
 	'soft-periwinkle': 'bg-soft-periwinkle-50 border-soft-periwinkle-200 dark:bg-soft-periwinkle-900 dark:border-soft-periwinkle-700',
 };
+
+// Outlined button tinted to the same palette as the card.
+const accentButton: Record<string, string> = {
+	'space-indigo':
+		'border-space-indigo-500 text-space-indigo-700 hover:bg-space-indigo-500 hover:text-space-indigo-50 focus:ring-space-indigo-500 dark:border-space-indigo-300 dark:text-space-indigo-200 dark:hover:bg-space-indigo-300 dark:hover:text-space-indigo-950',
+	'ocean-deep':
+		'border-ocean-deep-500 text-ocean-deep-700 hover:bg-ocean-deep-500 hover:text-ocean-deep-50 focus:ring-ocean-deep-500 dark:border-ocean-deep-300 dark:text-ocean-deep-200 dark:hover:bg-ocean-deep-300 dark:hover:text-ocean-deep-950',
+	'dark-amaranth':
+		'border-dark-amaranth-500 text-dark-amaranth-700 hover:bg-dark-amaranth-500 hover:text-dark-amaranth-50 focus:ring-dark-amaranth-500 dark:border-dark-amaranth-300 dark:text-dark-amaranth-200 dark:hover:bg-dark-amaranth-300 dark:hover:text-dark-amaranth-950',
+	'bright-amber':
+		'border-bright-amber-600 text-bright-amber-800 hover:bg-bright-amber-400 hover:text-bright-amber-950 focus:ring-bright-amber-500 dark:border-bright-amber-400 dark:text-bright-amber-300 dark:hover:bg-bright-amber-400 dark:hover:text-bright-amber-950',
+	'soft-periwinkle':
+		'border-soft-periwinkle-500 text-soft-periwinkle-700 hover:bg-soft-periwinkle-500 hover:text-soft-periwinkle-50 focus:ring-soft-periwinkle-500 dark:border-soft-periwinkle-300 dark:text-soft-periwinkle-200 dark:hover:bg-soft-periwinkle-300 dark:hover:text-soft-periwinkle-950',
+};
+
+const buttonBase =
+	'inline-flex items-center justify-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus:ring-2';
 ---
 
 <!-- HyperUI card pattern on theme tokens. -->
@@ -36,7 +53,7 @@ const accentCard: Record<string, string> = {
 	<p class="mt-3 flex-1 line-clamp-3 text-sm leading-relaxed text-pretty text-muted-foreground">
 		{publication.description}
 	</p>
-	<a href={publicationPath(publication.slug)} class={`mt-5 self-start ${buttonClass('accentOutline', 'sm')}`}>
+	<a href={publicationPath(publication.slug)} class={`mt-5 self-start ${buttonBase} ${accentButton[publication.accent]}`}>
 		View publication
 		<span aria-hidden="true">&rarr;</span>
 	</a>
