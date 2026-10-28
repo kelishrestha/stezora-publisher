@@ -100,7 +100,7 @@ export default function PostView() {
 
 	return (
 		<div className="space-y-6">
-			<div className="rounded-xl border border-border bg-surface p-6">
+			<div className="rounded-md border border-border bg-surface shadow-sm p-6">
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<h2 className="font-serif text-2xl font-semibold text-foreground">{post.title}</h2>
 					<span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusClass(post.status)}`}>
@@ -113,45 +113,45 @@ export default function PostView() {
 				{post.excerpt && <p className="mt-3 text-sm text-muted-foreground">{post.excerpt}</p>}
 			</div>
 
-			<div className="rounded-xl border border-border bg-surface">
+			<div className="rounded-md border border-border bg-surface shadow-sm">
 				<h3 className="border-b border-border px-5 py-4 text-sm font-semibold uppercase tracking-wide text-foreground">Details</h3>
 				<ul className="divide-y divide-border text-sm">
-					<li className="flex gap-4 px-5 py-3">
+					<li className="flex gap-4 px-3 py-2">
 						<span className="w-40 shrink-0 text-muted-foreground">Publication</span>
 						<span className="text-foreground">{post.publication}</span>
 					</li>
-					<li className="flex gap-4 px-5 py-3">
+					<li className="flex gap-4 px-3 py-2">
 						<span className="w-40 shrink-0 text-muted-foreground">Slug</span>
 						<span className="text-foreground">/{post.slug}</span>
 					</li>
-					<li className="flex gap-4 px-5 py-3">
+					<li className="flex gap-4 px-3 py-2">
 						<span className="w-40 shrink-0 text-muted-foreground">Tags</span>
 						<span className="text-foreground">
 							{post.tags.length > 0 ? post.tags.map((tag) => `#${tag}`).join(' ') : '—'}
 						</span>
 					</li>
-					<li className="flex gap-4 px-5 py-3">
+					<li className="flex gap-4 px-3 py-2">
 						<span className="w-40 shrink-0 text-muted-foreground">Published</span>
 						<span className="text-foreground">{formatDate(post.publishedAt)}</span>
 					</li>
-					<li className="flex gap-4 px-5 py-3">
+					<li className="flex gap-4 px-3 py-2">
 						<span className="w-40 shrink-0 text-muted-foreground">Updated</span>
 						<span className="text-foreground">{formatDate(post.updatedAt)}</span>
 					</li>
 					{post.seoTitle && (
-						<li className="flex gap-4 px-5 py-3">
+						<li className="flex gap-4 px-3 py-2">
 							<span className="w-40 shrink-0 text-muted-foreground">SEO title</span>
 							<span className="text-foreground">{post.seoTitle}</span>
 						</li>
 					)}
 					{post.seoDescription && (
-						<li className="flex gap-4 px-5 py-3">
+						<li className="flex gap-4 px-3 py-2">
 							<span className="w-40 shrink-0 text-muted-foreground">SEO description</span>
 							<span className="text-foreground">{post.seoDescription}</span>
 						</li>
 					)}
 					{post.canonicalUrl && (
-						<li className="flex gap-4 px-5 py-3">
+						<li className="flex gap-4 px-3 py-2">
 							<span className="w-40 shrink-0 text-muted-foreground">Canonical URL</span>
 							<a href={post.canonicalUrl} target="_blank" rel="noopener noreferrer" className="text-accent-foreground hover:underline">
 								{post.canonicalUrl}
@@ -161,7 +161,7 @@ export default function PostView() {
 				</ul>
 			</div>
 
-			<div className="rounded-xl border border-border bg-surface">
+			<div className="rounded-md border border-border bg-surface shadow-sm">
 				<h3 className="border-b border-border px-5 py-4 text-sm font-semibold uppercase tracking-wide text-foreground">Content</h3>
 				{post.featuredImage && (
 					<img
@@ -179,7 +179,7 @@ export default function PostView() {
 			<div className="flex gap-3">
 				<a
 					href={`/admin/posts/${post.id}/edit`}
-					className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent hover:opacity-90"
+					className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
 				>
 					Edit post
 				</a>

@@ -82,7 +82,7 @@ export default function PostList() {
 	const visible = filter === 'all' ? posts : posts.filter((post) => post.status === filter);
 
 	return (
-		<div className="rounded-xl border border-border bg-surface">
+		<div className="rounded-md border border-border bg-surface shadow-sm">
 			<div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
 				<h2 className="text-base font-semibold text-foreground">Posts</h2>
 				<a
@@ -93,7 +93,7 @@ export default function PostList() {
 				</a>
 			</div>
 
-			<div className="flex flex-wrap gap-1 border-b border-border px-5 py-3 text-sm">
+			<div className="flex flex-wrap gap-1 border-b border-border px-3 py-2 whitespace-nowrap text-sm">
 				{STATUS_ORDER.map((option) => (
 					<button
 						key={option}
@@ -115,7 +115,7 @@ export default function PostList() {
 			) : (
 				<ul className="divide-y divide-border">
 					{visible.map((post) => (
-						<li key={post.id} className="flex items-center justify-between gap-4 px-5 py-3 hover:bg-surface-elevated">
+						<li key={post.id} className="flex items-center justify-between gap-4 px-3 py-2 whitespace-nowrap hover:bg-surface-elevated">
 							<a href={`/admin/posts/${post.id}/view`} className="min-w-0 flex-1">
 								<p className="truncate font-medium text-foreground">{post.title}</p>
 								<p className="text-xs text-muted-foreground">

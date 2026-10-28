@@ -9,18 +9,21 @@ interface Props {
 const { publication } = Astro.props;
 ---
 
-<article class="flex flex-col rounded-xl border border-border bg-surface p-6 shadow-sm transition-shadow hover:shadow-md">
-	<h2 class="font-serif text-2xl font-semibold">
+<!-- HyperUI card pattern on theme tokens. -->
+<article class="flex flex-col rounded-md border border-border bg-surface p-4 shadow-sm transition-shadow hover:shadow-md sm:p-6">
+	<h2 class="font-serif text-xl font-semibold text-pretty sm:text-2xl">
 		<a href={publicationPath(publication.slug)} class="transition-colors hover:text-accent-foreground">
 			{publication.name}
 		</a>
 	</h2>
-	<p class="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">{publication.description}</p>
+	<p class="mt-3 flex-1 line-clamp-3 text-sm leading-relaxed text-pretty text-muted-foreground">
+		{publication.description}
+	</p>
 	<a
 		href={publicationPath(publication.slug)}
 		class="mt-5 inline-flex items-center gap-1 text-sm font-medium text-foreground transition-colors hover:text-accent-foreground"
 	>
 		View publication
-		<span aria-hidden="true">→</span>
+		<span aria-hidden="true">&rarr;</span>
 	</a>
 </article>

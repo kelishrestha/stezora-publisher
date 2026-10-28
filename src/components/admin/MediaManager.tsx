@@ -31,7 +31,7 @@ interface Envelope<T> {
 }
 
 const inputClass =
-	'mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none';
+	'mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-accent';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
 	const response = await fetch(path, { credentials: 'same-origin', ...init });
@@ -144,7 +144,7 @@ export default function MediaManager() {
 			)}
 			{notice && <p className="rounded-lg bg-accent-soft px-4 py-3 text-sm text-accent-foreground">{notice}</p>}
 
-			<div className="rounded-xl border border-border bg-surface p-5">
+			<div className="rounded-md border border-border bg-surface shadow-sm p-5">
 				<h2 className="text-base font-semibold text-foreground">Upload</h2>
 				<p className="mt-1 text-sm text-muted-foreground">
 					Media belongs to a post and that post's publication (one media item per post).
@@ -206,7 +206,7 @@ export default function MediaManager() {
 				</label>
 			</div>
 
-			<div className="rounded-xl border border-border bg-surface">
+			<div className="rounded-md border border-border bg-surface shadow-sm">
 				<h2 className="border-b border-border px-5 py-4 text-base font-semibold text-foreground">All media</h2>
 				{items.length === 0 ? (
 					<p className="px-5 py-8 text-sm text-muted-foreground">No media uploaded yet.</p>

@@ -43,9 +43,9 @@ const links = [
 				{tags.map((tag) => (
 					<a
 						href={tagPath(publication.slug, tag.slug)}
-						class="text-xs text-muted-foreground transition-colors hover:text-accent-foreground"
+						class="rounded-full border border-border px-2.5 py-0.5 text-xs whitespace-nowrap text-muted-foreground transition-colors hover:text-accent-foreground"
 					>
-						#{tag.name}
+						{tag.name}
 					</a>
 				))}
 			</div>

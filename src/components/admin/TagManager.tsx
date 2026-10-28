@@ -20,7 +20,7 @@ interface Envelope<T> {
 }
 
 const inputClass =
-	'mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none';
+	'mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-accent';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
 	const response = await fetch(path, { credentials: 'same-origin', ...init });
@@ -141,7 +141,7 @@ export default function TagManager() {
 			)}
 			{notice && <p className="rounded-lg bg-accent-soft px-4 py-3 text-sm text-accent-foreground">{notice}</p>}
 
-			<div className="rounded-xl border border-border bg-surface p-5">
+			<div className="rounded-md border border-border bg-surface shadow-sm p-5">
 				<h2 className="text-base font-semibold text-foreground">{editing ? `Edit "${editing.name}"` : 'New tag'}</h2>
 				<div className="mt-4 grid gap-4 sm:grid-cols-[220px_minmax(0,1fr)_auto]">
 					<div>
@@ -179,7 +179,7 @@ export default function TagManager() {
 							type="button"
 							onClick={() => void submit()}
 							disabled={busy}
-							className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+							className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60"
 						>
 							{busy ? 'Saving…' : editing ? 'Save' : 'Create'}
 						</button>
@@ -199,7 +199,7 @@ export default function TagManager() {
 				</div>
 			</div>
 
-			<div className="rounded-xl border border-border bg-surface">
+			<div className="rounded-md border border-border bg-surface shadow-sm">
 				<div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
 					<h2 className="text-base font-semibold text-foreground">Tags</h2>
 					<div className="flex gap-1 text-sm">
@@ -235,7 +235,7 @@ export default function TagManager() {
 				) : (
 					<ul className="divide-y divide-border">
 						{tagsByPublication.map((tag) => (
-							<li key={tag.id} className="flex items-center justify-between gap-4 px-5 py-3">
+							<li key={tag.id} className="flex items-center justify-between gap-4 px-3 py-2 whitespace-nowrap">
 								<div className="min-w-0">
 									<p className="truncate font-medium text-foreground">{tag.name}</p>
 									<p className="text-xs text-muted-foreground">/{tag.slug}</p>

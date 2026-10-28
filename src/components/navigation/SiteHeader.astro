@@ -13,27 +13,31 @@ const navLinks = [
 ];
 ---
 
+<!-- HyperUI header pattern (logo left, nav and actions right) on theme tokens. -->
 <header class="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur">
-	<Container class="flex items-center justify-between py-4">
-		<a href="/" class="font-serif text-lg font-semibold tracking-tight" aria-label={`${SITE.name} home`}>
-			<span class="relative mr-2 inline-block h-8 w-8 align-middle">
+	<Container class="flex h-16 items-center gap-8">
+		<a href="/" class="block" aria-label={`${SITE.name} home`}>
+			<span class="sr-only">Home</span>
+			<span class="relative inline-block h-8 w-8 align-middle">
 				<img src="/stezora-logo-light.png" alt="Stezora" class="absolute inset-0 h-8 w-8 object-contain dark:hidden" />
 				<img src="/stezora-logo-dark.png" alt="" class="absolute inset-0 hidden h-8 w-8 object-contain dark:block" />
 			</span>
 		</a>
-		<nav aria-label="Main">
-			<ul class="flex items-center gap-6">
-				{navLinks.map((link) => (
-					<li>
-						<a href={link.href} class="text-sm font-medium text-muted-foreground transition-colors hover:text-accent-foreground">
-							{link.label}
-						</a>
-					</li>
-				))}
-				<li>
-					<ThemeToggle />
-				</li>
-			</ul>
-		</nav>
+		<div class="flex flex-1 items-center justify-end gap-8">
+			<nav aria-label="Main">
+				<ul class="flex flex-wrap items-center gap-6 text-sm">
+					{navLinks.map((link) => (
+						<li>
+							<a href={link.href} class="text-muted-foreground transition-colors hover:text-accent-foreground">
+								{link.label}
+							</a>
+						</li>
+					))}
+				</ul>
+			</nav>
+			<div class="flex items-center gap-4">
+				<ThemeToggle />
+			</div>
+		</div>
 	</Container>
 </header>

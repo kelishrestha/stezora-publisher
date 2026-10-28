@@ -92,7 +92,7 @@ export default function Dashboard() {
 		return (
 			<div className="grid gap-4 md:grid-cols-2">
 				{[0, 1, 2].map((i) => (
-					<div key={i} className="h-32 animate-pulse rounded-xl border border-border bg-surface" />
+					<div key={i} className="h-32 animate-pulse rounded-md border border-border bg-surface shadow-sm" />
 				))}
 			</div>
 		);
@@ -103,37 +103,37 @@ export default function Dashboard() {
 	return (
 		<div className="space-y-6">
 			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-				<div className="rounded-xl border border-border bg-surface p-5">
+				<div className="rounded-md border border-border bg-surface shadow-sm p-5">
 					<p className="text-sm text-muted-foreground">Publications</p>
 					<p className="mt-1 text-3xl font-semibold text-foreground">{stats.publications.length}</p>
 				</div>
-				<div className="rounded-xl border border-border bg-surface p-5">
+				<div className="rounded-md border border-border bg-surface shadow-sm p-5">
 					<p className="text-sm text-muted-foreground">Total posts</p>
 					<p className="mt-1 text-3xl font-semibold text-foreground">{totalPosts}</p>
 				</div>
-				<div className="rounded-xl border border-border bg-surface p-5">
+				<div className="rounded-md border border-border bg-surface shadow-sm p-5">
 					<p className="text-sm text-muted-foreground">Published</p>
 					<p className="mt-1 text-3xl font-semibold text-foreground">
 						{stats.publications.reduce((sum, p) => sum + p.published, 0)}
 					</p>
 				</div>
-				<div className="rounded-xl border border-border bg-surface p-5">
+				<div className="rounded-md border border-border bg-surface shadow-sm p-5">
 					<p className="text-sm text-muted-foreground">Media files</p>
 					<p className="mt-1 text-3xl font-semibold text-foreground">{stats.totalMedia}</p>
 				</div>
 			</div>
 
-			<div className="rounded-xl border border-border bg-surface">
+			<div className="rounded-md border border-border bg-surface shadow-sm">
 				<h2 className="border-b border-border px-5 py-4 text-base font-semibold text-foreground">
 					Posts per publication
 				</h2>
 				<div className="overflow-x-auto">
-					<table className="w-full text-left text-sm">
+					<table className="min-w-full divide-y-2 divide-border text-left text-sm">
 						<thead className="text-xs uppercase tracking-wide text-muted-foreground">
 							<tr>
-								<th className="px-5 py-3 font-medium">Publication</th>
+								<th className="px-3 py-2 whitespace-nowrap font-medium">Publication</th>
 								{STATUS_ORDER.map((status) => (
-									<th key={status} className="px-5 py-3 font-medium">
+									<th key={status} className="px-3 py-2 whitespace-nowrap font-medium">
 										{STATUS_LABELS[status]}
 									</th>
 								))}
@@ -142,9 +142,9 @@ export default function Dashboard() {
 						<tbody className="divide-y divide-border">
 							{stats.publications.map((publication) => (
 								<tr key={publication.slug} className="text-foreground">
-									<td className="px-5 py-3 font-medium">{publication.name}</td>
+									<td className="px-3 py-2 whitespace-nowrap font-medium">{publication.name}</td>
 									{STATUS_ORDER.map((status) => (
-										<td key={status} className="px-5 py-3 tabular-nums">
+										<td key={status} className="px-3 py-2 whitespace-nowrap tabular-nums">
 											{publication[status]}
 										</td>
 									))}
@@ -155,7 +155,7 @@ export default function Dashboard() {
 				</div>
 			</div>
 
-			<div className="rounded-xl border border-border bg-surface">
+			<div className="rounded-md border border-border bg-surface shadow-sm">
 				<h2 className="border-b border-border px-5 py-4 text-base font-semibold text-foreground">
 					Recent posts
 				</h2>
@@ -164,7 +164,7 @@ export default function Dashboard() {
 				) : (
 					<ul className="divide-y divide-border">
 						{stats.recentPosts.map((post) => (
-							<li key={post.id} className="flex items-center justify-between gap-4 px-5 py-3">
+							<li key={post.id} className="flex items-center justify-between gap-4 px-3 py-2 whitespace-nowrap">
 								<div className="min-w-0">
 									<p className="truncate font-medium text-foreground">{post.title}</p>
 									<p className="text-xs text-muted-foreground">

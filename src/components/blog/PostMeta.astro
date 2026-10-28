@@ -14,27 +14,55 @@ const { publicationSlug, tags, pubDate, updatedDate } = Astro.props;
 function displayDate(date: Date): string {
 	return date.toLocaleDateString('en', { year: 'numeric', month: 'long', day: 'numeric' });
 }
+
+const wasUpdated = updatedDate && updatedDate.getTime() > pubDate.getTime();
 ---
 
-<p class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-	<time datetime={formatDate(pubDate)}>{displayDate(pubDate)}</time>
-	{updatedDate && updatedDate.getTime() > pubDate.getTime() && (
-		<span aria-hidden="true">·</span>
-	)}
-	{updatedDate && updatedDate.getTime() > pubDate.getTime() && (
-		<time datetime={formatDate(updatedDate)}>Updated {displayDate(updatedDate)}</time>
-	)}
+<!-- HyperUI card meta row (icon dl pairs) plus bordered badge tags, on theme tokens. -->
+<div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+	<dl class="flex flex-wrap items-center gap-4">
+		<div class="flex items-center gap-2 text-muted-foreground">
+			<dt>
+				<span class="sr-only">Published on</span>
+				<svg
+					aria-hidden="true"
+					xmlns="http://www.w3.org/2000/svg"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke-width="1.5"
+					stroke="currentColor"
+					class="size-4"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"
+					/>
+				</svg>
+			</dt>
+			<dd class="text-xs">
+				<time datetime={formatDate(pubDate)}>{displayDate(pubDate)}</time>
+			</dd>
+		</div>
+		{wasUpdated && updatedDate && (
+			<div class="flex items-center gap-2 text-muted-foreground">
+				<dt class="text-xs">Updated</dt>
+				<dd class="text-xs">
+					<time datetime={formatDate(updatedDate)}>{displayDate(updatedDate)}</time>
+				</dd>
+			</div>
+		)}
+	</dl>
 	{tags.length > 0 && (
-		<span class="flex flex-wrap items-center gap-x-2">
-			<span aria-hidden="true">·</span>
+		<span class="flex flex-wrap items-center gap-2">
 			{tags.map((tag) => (
 				<a
 					href={tagPath(publicationSlug, slugify(tag))}
-					class="transition-colors hover:text-accent-foreground"
+					class="rounded-full border border-border px-2.5 py-0.5 text-xs whitespace-nowrap text-muted-foreground transition-colors hover:text-accent-foreground"
 				>
-					#{tag}
+					{tag}
 				</a>
 			))}
 		</span>
 	)}
-</p>
+</div>

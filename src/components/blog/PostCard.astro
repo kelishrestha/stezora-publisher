@@ -11,8 +11,9 @@ interface Props {
 const { post, publicationSlug } = Astro.props;
 ---
 
-<article class="group border-b border-border pb-8">
-	<h2 class="font-serif text-xl font-semibold leading-snug">
+<!-- HyperUI blog card pattern (bordered card, clamped excerpt, meta row) on theme tokens. -->
+<article class="group rounded-md border border-border bg-surface p-4 shadow-sm sm:p-6">
+	<h2 class="font-serif text-lg font-semibold text-pretty leading-snug sm:text-xl">
 		<a
 			href={postPath(publicationSlug, post.id)}
 			class="transition-colors group-hover:text-accent-foreground"
@@ -20,8 +21,8 @@ const { post, publicationSlug } = Astro.props;
 			{post.data.title}
 		</a>
 	</h2>
-	<p class="mt-2 text-sm leading-relaxed text-muted-foreground">{postExcerpt(post.data)}</p>
-	<div class="mt-3">
+	<p class="mt-2 line-clamp-2 text-sm leading-relaxed text-pretty text-muted-foreground">{postExcerpt(post.data)}</p>
+	<div class="mt-4">
 		<PostMeta
 			publicationSlug={publicationSlug}
 			tags={post.data.tags}

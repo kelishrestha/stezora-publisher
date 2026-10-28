@@ -66,7 +66,7 @@ interface MediaItem {
 const STATUS_OPTIONS = ['draft', 'scheduled', 'published', 'archived'];
 
 const inputClass =
-	'mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none';
+	'mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-accent';
 
 function slugify(value: string): string {
 	const trimmed = value.toLowerCase().trim();
@@ -431,7 +431,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 							value={contentMarkdown}
 							onChange={(event) => setContentMarkdown(event.target.value)}
 							rows={18}
-							className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none"
+							className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-accent"
 							placeholder={'## A heading\n\nWrite your post in Markdown…'}
 						/>
 					</div>
@@ -515,7 +515,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 													<button
 														type="button"
 														onClick={() => setFeaturedImageId(null)}
-														className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-foreground hover:bg-surface-elevated"
+														className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-accent"
 													>
 														Remove as featured
 													</button>
@@ -523,7 +523,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 													<button
 														type="button"
 														onClick={() => setFeaturedImageId(item.id)}
-														className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-on-accent hover:opacity-90"
+														className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-on-accent transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
 													>
 														Use as featured image
 													</button>
@@ -531,7 +531,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 												<button
 													type="button"
 													onClick={() => insertIntoContent(item)}
-													className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-foreground hover:bg-surface-elevated"
+													className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-accent"
 												>
 													Insert into content
 												</button>
@@ -618,7 +618,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 							type="button"
 							onClick={() => void save()}
 							disabled={saving}
-							className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+							className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60"
 						>
 							{saving ? 'Saving…' : 'Save'}
 						</button>
@@ -635,7 +635,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 			</div>
 
 			{preview && (
-				<div className="rounded-xl border border-border bg-surface">
+				<div className="rounded-md border border-border bg-surface shadow-sm">
 					<h2 className="border-b border-border px-5 py-4 text-base font-semibold text-foreground">Preview</h2>
 					<article
 						className="prose prose-neutral max-w-none px-5 py-6 dark:prose-invert"
