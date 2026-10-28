@@ -77,6 +77,8 @@ export default function MediaManager() {
 	const [previewImage, setPreviewImage] = useState<MediaItem | null>(null);
 	const [uploadOpen, setUploadOpen] = useState(false);
 	const [pendingFile, setPendingFile] = useState<File | null>(null);
+	const [confirming, setConfirming] = useState(false);
+	const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
 	const [pageSize, setPageSize] = useState(12);
 	const [publicationFilter, setPublicationFilter] = useState('all');
 	const [monthFilter, setMonthFilter] = useState('all');
@@ -123,12 +125,47 @@ export default function MediaManager() {
 			setPreviewImage(null);
 			setUploadOpen(false);
 			setPendingFile(null);
+			setConfirming(false);
 		};
 		window.addEventListener('keydown', onKeyDown);
 		return () => window.removeEventListener('keydown', onKeyDown);
 	}, [previewImage, uploadOpen]);
 
+	useEffect(() => {
+		if (!pendingFile) {
+			setFilePreviewUrl(null);
+			return;
+		}
+		const url = URL.createObjectURL(pendingFile);
+		setFilePreviewUrl(url);
+		return () => URL.revokeObjectURL(url);
+	}, [pendingFile]);
+
 	const postsForPublication = (posts ?? []).filter((post) => post.publicationId === publicationId);
+
+	function closeUploadModal() {
+		setUploadOpen(false);
+		setPendingFile(null);
+		setConfirming(false);
+	}
+
+	/** Save validates the full selection before the confirmation step. */
+	function handleSave() {
+		if (!publicationId) {
+			setError('Choose a publication before saving.');
+			return;
+		}
+		if (!postId) {
+			setError('Choose a post before saving.');
+			return;
+		}
+		if (!pendingFile) {
+			setError('Choose a file before saving.');
+			return;
+		}
+		setError(null);
+		setConfirming(true);
+	}
 
 	async function upload(file: File) {
 		if (!postId) {
@@ -154,6 +191,7 @@ export default function MediaManager() {
 			setNotice(`Uploaded ${result.media.filename}.`);
 			setItems((current) => (current ? [result.media, ...current] : [result.media]));
 			setPendingFile(null);
+			setConfirming(false);
 			setUploadOpen(false);
 		} catch (reason) {
 			setError(reason instanceof Error ? reason.message : 'Failed to upload media.');
@@ -223,10 +261,7 @@ export default function MediaManager() {
 					className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6 backdrop-blur-sm"
 					role="dialog"
 					aria-modal="true"
-					onClick={() => {
-						setUploadOpen(false);
-						setPendingFile(null);
-					}}
+					onClick={closeUploadModal}
 				>
 					<div
 						className="w-full max-w-md rounded-lg border border-border bg-surface p-5 shadow-lg"
@@ -241,101 +276,136 @@ export default function MediaManager() {
 								{error}
 							</p>
 						)}
-						<div className="mt-4 space-y-4">
-							<div>
-								<label htmlFor="media-publication" className="block text-sm font-medium text-foreground">
-									Publication
-								</label>
-								<select
-									id="media-publication"
-									value={publicationId}
-									onChange={(event) => {
-										setPublicationId(event.target.value);
-										setPostId('');
-									}}
-									className={inputClass}
-								>
-									{publications.map((publication) => (
-										<option key={publication.id} value={publication.id}>
-											{publication.name}
-										</option>
-									))}
-								</select>
-							</div>
-							<div>
-								<label htmlFor="media-post" className="block text-sm font-medium text-foreground">
-									Post
-								</label>
-								<select
-									id="media-post"
-									value={postId}
-									onChange={(event) => setPostId(event.target.value)}
-									className={inputClass}
-								>
-									<option value="">Select a post</option>
-									{postsForPublication.map((post) => (
-										<option key={post.id} value={post.id}>
-											{post.title}
-										</option>
-									))}
-								</select>
-							</div>
-							{pendingFile ? (
-								<div className="rounded-lg border border-border bg-background p-4">
-									<p className="text-sm font-medium text-foreground">Confirm upload</p>
-									<p className="mt-1 text-sm text-muted-foreground">
-										Upload {pendingFile.name} ({formatSize(pendingFile.size)}) to{' '}
-										<span className="text-foreground">{postTitle(postId) ?? 'the selected post'}</span> in{' '}
-										<span className="text-foreground">{publicationName(publicationId)}</span>?
-									</p>
-									<div className="mt-4 flex gap-2">
-										<button
-											type="button"
-											disabled={uploading}
-											onClick={() => void upload(pendingFile)}
-											className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent disabled:pointer-events-none disabled:opacity-60"
-										>
-											{uploading ? 'Uploading…' : 'Confirm upload'}
-										</button>
-										<button
-											type="button"
-											disabled={uploading}
-											onClick={() => setPendingFile(null)}
-											className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-accent"
-										>
-											Cancel
-										</button>
-									</div>
+						{confirming && pendingFile ? (
+							<div className="mt-4 rounded-lg border border-border bg-background p-4">
+								<p className="text-sm font-medium text-foreground">Confirm upload</p>
+								<p className="mt-1 text-sm text-muted-foreground">
+									Upload {pendingFile.name} ({formatSize(pendingFile.size)}) to{' '}
+									<span className="text-foreground">{postTitle(postId)}</span> in{' '}
+									<span className="text-foreground">{publicationName(publicationId)}</span>?
+								</p>
+								<div className="mt-4 flex gap-2">
+									<button
+										type="button"
+										disabled={uploading}
+										onClick={() => void upload(pendingFile)}
+										className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent disabled:pointer-events-none disabled:opacity-60"
+									>
+										{uploading ? 'Uploading…' : 'Confirm upload'}
+									</button>
+									<button
+										type="button"
+										disabled={uploading}
+										onClick={() => setConfirming(false)}
+										className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-accent"
+									>
+										Cancel
+									</button>
 								</div>
-							) : (
-								<label className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border px-6 py-10 text-center hover:bg-surface-elevated">
-									<span className="text-sm font-medium text-foreground">Choose a file to upload</span>
-									<span className="text-xs text-muted-foreground">Images (JPEG, PNG, GIF, WebP, AVIF) or PDF · up to 10 MB</span>
-									<input
-										type="file"
-										className="sr-only"
-										accept="image/jpeg,image/png,image/gif,image/webp,image/avif,application/pdf"
-										onChange={(event) => {
-											const file = event.target.files?.[0];
-											if (file) setPendingFile(file);
-											event.target.value = '';
-										}}
-									/>
-								</label>
-							)}
-						</div>
-						<div className="mt-5 flex justify-end">
-							<button
-								type="button"
-								onClick={() => {
-									setUploadOpen(false);
-									setPendingFile(null);
-								}}
-								className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-foreground hover:bg-surface-elevated"
-							>
-								Close
-							</button>
-						</div>
+							</div>
+						) : (
+							<>
+								<div className="mt-4 space-y-4">
+									<div>
+										<label htmlFor="media-publication" className="block text-sm font-medium text-foreground">
+											Publication
+										</label>
+										<select
+											id="media-publication"
+											value={publicationId}
+											onChange={(event) => {
+												setPublicationId(event.target.value);
+												setPostId('');
+											}}
+											className={inputClass}
+										>
+											<option value="">Select a publication</option>
+											{publications.map((publication) => (
+												<option key={publication.id} value={publication.id}>
+													{publication.name}
+												</option>
+											))}
+										</select>
+									</div>
+									<div>
+										<label htmlFor="media-post" className="block text-sm font-medium text-foreground">
+											Post
+										</label>
+										<select
+											id="media-post"
+											value={postId}
+											onChange={(event) => setPostId(event.target.value)}
+											className={inputClass}
+										>
+											<option value="">Select a post</option>
+											{postsForPublication.map((post) => (
+												<option key={post.id} value={post.id}>
+													{post.title}
+												</option>
+											))}
+										</select>
+									</div>
+									{pendingFile ? (
+										// The chosen file is temporary until confirmed; its preview
+										// takes the uploader's place.
+										<div className="rounded-lg border border-border p-3">
+											{filePreviewUrl && pendingFile.type.startsWith('image/') ? (
+												<img src={filePreviewUrl} alt={pendingFile.name} className="max-h-40 w-full rounded object-cover" />
+											) : (
+												<div className="flex h-24 w-full items-center justify-center rounded bg-surface-elevated">
+													<span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+														{pendingFile.type === 'application/pdf' ? 'PDF' : 'File'}
+													</span>
+												</div>
+											)}
+											<div className="mt-2 flex items-center justify-between gap-3">
+												<p className="truncate text-xs text-muted-foreground" title={pendingFile.name}>
+													{pendingFile.name} · {formatSize(pendingFile.size)} · not uploaded yet
+												</p>
+												<button
+													type="button"
+													onClick={() => setPendingFile(null)}
+													className="shrink-0 rounded-md border border-border bg-surface px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-elevated"
+												>
+													Remove
+												</button>
+											</div>
+										</div>
+									) : (
+										<label className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border px-6 py-10 text-center hover:bg-surface-elevated">
+											<span className="text-sm font-medium text-foreground">Choose a file to upload</span>
+											<span className="text-xs text-muted-foreground">Images (JPEG, PNG, GIF, WebP, AVIF) or PDF · up to 10 MB</span>
+											<input
+												type="file"
+												className="sr-only"
+												accept="image/jpeg,image/png,image/gif,image/webp,image/avif,application/pdf"
+												onChange={(event) => {
+													const file = event.target.files?.[0];
+													if (file) setPendingFile(file);
+													event.target.value = '';
+												}}
+											/>
+										</label>
+									)}
+								</div>
+								<div className="mt-5 flex justify-end gap-2">
+									<button
+										type="button"
+										onClick={closeUploadModal}
+										className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-accent"
+									>
+										Close
+									</button>
+									<button
+										type="button"
+										onClick={handleSave}
+										className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background"
+									>
+										Save
+									</button>
+								</div>
+							</>
+						)}
 					</div>
 				</div>
 			)}
