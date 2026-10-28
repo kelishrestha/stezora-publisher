@@ -102,6 +102,35 @@ export const uploadMedia: AuthenticatedHandler = async ({ env, request }) => {
 };
 
 /**
+ * DELETE /api/admin/media/:id
+ * Removes a media row and its R2 object (external Blogger rows have none).
+ * Blocked while a post uses the media as its featured image.
+ */
+export const deleteAdminMedia: AuthenticatedHandler = async ({ env, params }) => {
+	const repository = new MediaRepository(env.DB);
+	const row = await repository.getById(params.id);
+	if (!row) {
+		throw new ApiError(404, 'MEDIA_NOT_FOUND', 'Media was not found.');
+	}
+
+	const db = createDb(env.DB);
+	const referencing = await db
+		.select({ id: posts.id })
+		.from(posts)
+		.where(eq(posts.featured_image_id, row.id))
+		.limit(1);
+	if (referencing.length > 0) {
+		throw new ApiError(409, 'IN_USE', 'This media is the featured image of a post and cannot be deleted.');
+	}
+
+	if (row.r2_key) {
+		await env.MEDIA.delete(row.r2_key);
+	}
+	await repository.deleteById(row.id);
+	return ok({ deleted: true });
+};
+
+/**
  * Resolves the publication that owns a post, failing fast when the post
  * does not exist so media can never be attached to an unknown post.
  */

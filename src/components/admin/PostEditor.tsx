@@ -367,6 +367,21 @@ export default function PostEditor({ postId }: PostEditorProps) {
 		}
 	}
 
+	async function handleDeleteMedia(item: MediaItem) {
+		if (!window.confirm(`Delete "${item.filename}" from this post?`)) return;
+		setError(null);
+		try {
+			await json(`/api/admin/media/${item.id}`, { method: 'DELETE' });
+			setPostMedia((previous) => previous.filter((media) => media.id !== item.id));
+			if (featuredImageId === item.id) {
+				setFeaturedImageId(null);
+			}
+			setNotice('Media deleted.');
+		} catch (reason) {
+			setError(reason instanceof Error ? reason.message : 'Failed to delete media.');
+		}
+	}
+
 	function insertIntoContent(item: MediaItem) {
 		const el = document.getElementById('post-content') as HTMLTextAreaElement | null;
 		const start = el?.selectionStart ?? contentMarkdown.length;
@@ -603,6 +618,13 @@ export default function PostEditor({ postId }: PostEditorProps) {
 													className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-accent"
 												>
 													Insert into content
+												</button>
+												<button
+													type="button"
+													onClick={() => void handleDeleteMedia(item)}
+													className="rounded-md border border-red-300 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-600 hover:text-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 dark:border-red-900 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-700 dark:hover:text-red-50"
+												>
+													Delete
 												</button>
 											</div>
 										</div>
