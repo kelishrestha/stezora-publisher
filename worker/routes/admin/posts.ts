@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { createDb } from '../../db/client';
+import { isMediaStorageEnabled } from '../../db/media';
 import { media, publications } from '../../db/schema';
 import { PostRepository, isPostStatus, type PostStatus } from '../../db/posts';
 import { ApiError } from '../../lib/errors';
@@ -47,7 +48,7 @@ export const listPosts: AuthenticatedHandler = async ({ env, request }) => {
 	const statusParam = url.searchParams.get('status') ?? undefined;
 	const status = statusParam ? parseStatus(statusParam) : undefined;
 
-	const repository = new PostRepository(env.DB);
+	const repository = new PostRepository(env.DB, isMediaStorageEnabled(env));
 	const posts = await repository.list({ publicationId, status, ...pagination });
 	return ok({ posts, limit: pagination.limit, offset: pagination.offset });
 };
@@ -69,7 +70,7 @@ export const editorMeta: AuthenticatedHandler = async ({ env }) => {
 			})
 			.from(publications)
 			.orderBy(publications.slug),
-		new PostRepository(env.DB).listTags(),
+		new PostRepository(env.DB, isMediaStorageEnabled(env)).listTags(),
 	]);
 	return ok({ publications: publicationsResult, tags: tagsResult });
 };
@@ -89,7 +90,7 @@ export const createPost: AuthenticatedHandler = async ({ env, request }) => {
 	const publication = await resolvePublication(env.DB, body.publicationId);
 	const slug = normalizeSlug(body.slug, body.title, publication.slug);
 
-	const repository = new PostRepository(env.DB);
+	const repository = new PostRepository(env.DB, isMediaStorageEnabled(env));
 	if (await repository.existsBySlug(publication.id, slug)) {
 		throw new ApiError(409, 'SLUG_CONFLICT', `A post with the slug '${slug}' already exists in this publication.`);
 	}
@@ -132,7 +133,7 @@ export const createPost: AuthenticatedHandler = async ({ env, request }) => {
  * GET /api/admin/posts/:id
  */
 export const getPost: AuthenticatedHandler = async ({ env, params }) => {
-	const repository = new PostRepository(env.DB);
+	const repository = new PostRepository(env.DB, isMediaStorageEnabled(env));
 	const post = await repository.getById(params.id);
 	if (!post) {
 		throw new ApiError(404, 'POST_NOT_FOUND', 'Post was not found.');
@@ -146,7 +147,7 @@ export const getPost: AuthenticatedHandler = async ({ env, params }) => {
  * (DEVELOPER.md §83 rule 1).
  */
 export const updatePost: AuthenticatedHandler = async ({ env, request, params }) => {
-	const repository = new PostRepository(env.DB);
+	const repository = new PostRepository(env.DB, isMediaStorageEnabled(env));
 	const existing = await repository.getById(params.id);
 	if (!existing) {
 		throw new ApiError(404, 'POST_NOT_FOUND', 'Post was not found.');
@@ -198,7 +199,7 @@ export const updatePost: AuthenticatedHandler = async ({ env, request, params })
  * when it is absent, so re-publishing never rewrites history.
  */
 export const publishPost: AuthenticatedHandler = async ({ env, params }) => {
-	const repository = new PostRepository(env.DB);
+	const repository = new PostRepository(env.DB, isMediaStorageEnabled(env));
 	const post = await repository.setStatus(params.id, 'published', new Date().toISOString());
 	return ok({ post });
 };
@@ -207,11 +208,13 @@ export const publishPost: AuthenticatedHandler = async ({ env, params }) => {
  * DELETE /api/admin/posts/:id
  */
 export const deletePost: AuthenticatedHandler = async ({ env, params }) => {
-	const repository = new PostRepository(env.DB);
+	const repository = new PostRepository(env.DB, isMediaStorageEnabled(env));
 	const mediaKeys = await repository.getMediaKeys(params.id);
 	// Clean up R2 first. If this fails, the D1 rows remain and the operation can
 	// be retried without losing the reference to the object.
-	await Promise.all(mediaKeys.map((key) => env.MEDIA.delete(key)));
+	if (env.MEDIA) {
+		await Promise.all(mediaKeys.map((key) => env.MEDIA!.delete(key)));
+	}
 	const deleted = await repository.delete(params.id);
 	if (!deleted) {
 		throw new ApiError(404, 'POST_NOT_FOUND', 'Post was not found.');
@@ -226,7 +229,7 @@ export const deletePost: AuthenticatedHandler = async ({ env, params }) => {
  * be previewed. Auth is required (a draft preview is never public).
  */
 export const previewPost: AuthenticatedHandler = async ({ env, request, params }) => {
-	const repository = new PostRepository(env.DB);
+	const repository = new PostRepository(env.DB, isMediaStorageEnabled(env));
 	const existing = await repository.getById(params.id);
 	if (!existing) {
 		throw new ApiError(404, 'POST_NOT_FOUND', 'Post was not found.');

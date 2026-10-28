@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, lte } from 'drizzle-orm';
 import { createDb } from '../db/client';
 import { media, posts, postTags, publications, tags } from '../db/schema';
-import { mediaUrl } from '../db/media';
+import { isMediaStorageEnabled, mediaUrl } from '../db/media';
 import type { RouteHandler } from '../router';
 
 interface ContentPublication {
@@ -145,7 +145,10 @@ export const content: RouteHandler = async ({ env }) => {
 		if (row.canonical_url) {
 			post.bloggerUrl = row.canonical_url;
 		}
-		const featured = mediaUrl({ r2_key: row.featured_r2_key, source_url: row.featured_source_url });
+		const featured = mediaUrl(
+			{ r2_key: row.featured_r2_key, source_url: row.featured_source_url },
+			isMediaStorageEnabled(env)
+		);
 		if (featured) {
 			post.featuredImage = featured;
 		}

@@ -144,6 +144,7 @@ async function fetchLocalContent(): Promise<ContentResponse> {
 		compatibilityFlags: ['nodejs_compat'],
 		d1Databases: { [d1.binding]: databaseId },
 		r2Buckets: r2 ? { [r2.binding]: r2.bucket_name } : undefined,
+		bindings: (config.vars as Record<string, string> | undefined) ?? {},
 		resourcePersistencePath: path.join(root, '.wrangler', 'state', 'v3'),
 	});
 	try {

@@ -85,9 +85,11 @@ interface TagRow {
 
 export class PostRepository {
 	private readonly db: Db;
+	private readonly mediaStorageEnabled: boolean;
 
-	constructor(binding: D1Database) {
+	constructor(binding: D1Database, mediaStorageEnabled = true) {
 		this.db = createDb(binding);
+		this.mediaStorageEnabled = mediaStorageEnabled;
 	}
 
 	async list(options: {
@@ -347,7 +349,7 @@ export class PostRepository {
 			for (const row of mediaRows) {
 				imagesByPost.set(row.post_id, {
 					id: row.id,
-					url: mediaUrl(row),
+					url: mediaUrl(row, this.mediaStorageEnabled),
 					filename: row.filename,
 					mimeType: row.mime_type,
 				});

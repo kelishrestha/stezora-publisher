@@ -2,6 +2,9 @@ import type { RouteHandler } from '../router';
 
 export const media: RouteHandler = async ({ env, params }) => {
 	const key = params.key;
+	if (!env.MEDIA || env.ENABLE_MEDIA_STORAGE === 'false') {
+		return new Response('Media storage is disabled.', { status: 404 });
+	}
 	const object = await env.MEDIA.get(key);
 	if (!object) {
 		return new Response(null, { status: 404 });

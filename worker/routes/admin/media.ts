@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { createDb } from '../../db/client';
 import { media, posts } from '../../db/schema';
-import { MediaRepository, mediaUrl } from '../../db/media';
+import { MediaRepository, isMediaStorageEnabled, mediaUrl } from '../../db/media';
 import { MediaService } from '../../services/media';
 import { ApiError } from '../../lib/errors';
 import { ok } from '../../lib/http';
@@ -29,7 +29,7 @@ export const listAdminMedia: AuthenticatedHandler = async ({ env, request }) => 
 		filename: row.filename,
 		mimeType: row.mime_type,
 		size: row.size,
-		url: mediaUrl(row),
+		url: mediaUrl(row, isMediaStorageEnabled(env)),
 		external: row.r2_key === null,
 		createdAt: row.created_at,
 	}));
@@ -74,6 +74,9 @@ export const uploadMedia: AuthenticatedHandler = async ({ env, request }) => {
 		);
 	}
 
+	if (!isMediaStorageEnabled(env) || !env.MEDIA) {
+		throw new ApiError(503, 'MEDIA_STORAGE_DISABLED', 'Media storage is disabled on this deployment (ENABLE_MEDIA_STORAGE).');
+	}
 	const service = new MediaService(env.MEDIA, new MediaRepository(env.DB));
 	const row = await service.put({
 		filename: file.name,
@@ -92,7 +95,7 @@ export const uploadMedia: AuthenticatedHandler = async ({ env, request }) => {
 				filename: row.filename,
 				mimeType: row.mime_type,
 				size: row.size,
-				url: mediaUrl(row),
+				url: mediaUrl(row, isMediaStorageEnabled(env)),
 				external: row.r2_key === null,
 				createdAt: row.created_at,
 			},
@@ -123,7 +126,7 @@ export const deleteAdminMedia: AuthenticatedHandler = async ({ env, params }) =>
 		throw new ApiError(409, 'IN_USE', 'This media is the featured image of a post and cannot be deleted.');
 	}
 
-	if (row.r2_key) {
+	if (row.r2_key && env.MEDIA) {
 		await env.MEDIA.delete(row.r2_key);
 	}
 	await repository.deleteById(row.id);
@@ -152,7 +155,7 @@ export const localizeMedia: AuthenticatedHandler = async ({ env, params }) => {
 		throw new ApiError(404, 'MEDIA_NOT_FOUND', 'Media was not found.');
 	}
 	if (row.r2_key) {
-		return ok({ media: { id: row.id, url: mediaUrl(row) }, alreadyLocalized: true });
+		return ok({ media: { id: row.id, url: mediaUrl(row, isMediaStorageEnabled(env)) }, alreadyLocalized: true });
 	}
 	if (!row.source_url) {
 		throw new ApiError(400, 'NO_SOURCE', 'This media has neither an R2 object nor a source URL.');
@@ -179,6 +182,9 @@ export const localizeMedia: AuthenticatedHandler = async ({ env, params }) => {
 	const contentType = response.headers.get('content-type')?.split(';')[0] ?? 'image/jpeg';
 	const extension = EXT_BY_MIME[contentType] ?? 'img';
 	const key = `localized/${row.id}.${extension}`;
+	if (!isMediaStorageEnabled(env) || !env.MEDIA) {
+		throw new ApiError(503, 'MEDIA_STORAGE_DISABLED', 'Media storage is disabled on this deployment (ENABLE_MEDIA_STORAGE).');
+	}
 	await env.MEDIA.put(key, bytes, { httpMetadata: { contentType } });
 
 	const db = createDb(env.DB);

@@ -18,9 +18,22 @@ export interface MediaRow {
 
 export type NewMediaRow = MediaRow;
 
-/** Public URL for a media row: R2-served when localized, external otherwise. */
-export function mediaUrl(row: Pick<MediaRow, 'r2_key' | 'source_url'>): string {
-	return row.r2_key ? `/media/${row.r2_key}` : (row.source_url ?? '');
+/**
+ * Public URL for a media row. With media storage enabled, R2-backed rows are
+ * served from /media/<key>; with storage disabled (ENABLE_MEDIA_STORAGE=false
+ * or no bucket bound), rows fall back to their external source URL (the
+ * Blogger CDN) so the site keeps working without R2.
+ */
+export function mediaUrl(row: Pick<MediaRow, 'r2_key' | 'source_url'>, storageEnabled = true): string {
+	if (storageEnabled && row.r2_key) {
+		return `/media/${row.r2_key}`;
+	}
+	return row.source_url ?? (row.r2_key ? `/media/${row.r2_key}` : '');
+}
+
+/** Media storage is on only when the bucket is bound and not switched off. */
+export function isMediaStorageEnabled(env: Env): boolean {
+	return Boolean(env.MEDIA) && env.ENABLE_MEDIA_STORAGE !== 'false';
 }
 
 export class MediaRepository {

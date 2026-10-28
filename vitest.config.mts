@@ -20,8 +20,12 @@ export default defineConfig(async () => {
 						cloudflareTest({
 							wrangler: { configPath: './wrangler.jsonc' },
 							miniflare: {
+								// wrangler.jsonc ships without R2 (media storage disabled in
+								// production for now); tests keep exercising storage mode.
+								r2Buckets: ['MEDIA'],
 								bindings: {
 									TEST_MIGRATIONS: migrations,
+									ENABLE_MEDIA_STORAGE: 'true',
 									// Test-only value; never a real secret.
 									BETTER_AUTH_SECRET: 'vitest-better-auth-secret',
 								},

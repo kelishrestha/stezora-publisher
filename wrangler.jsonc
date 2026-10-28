@@ -29,10 +29,11 @@
 			"migrations_dir": "./migrations"
 		}
 	],
-	"r2_buckets": [
-		{
-			"binding": "MEDIA",
-			"bucket_name": "stezora-publisher-media"
-		}
-	]
+	"vars": {
+		// "false" removes the R2 dependency: media URLs resolve to their
+		// external source (Blogger CDN) and upload/localize endpoints return
+		// 503. Flip to "true" AND restore the r2_buckets binding to enable R2:
+		// { "binding": "MEDIA", "bucket_name": "stezora-publisher-media" }
+		"ENABLE_MEDIA_STORAGE": "false"
+	}
 }
