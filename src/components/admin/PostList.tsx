@@ -166,6 +166,7 @@ export default function PostList() {
 	const [publications, setPublications] = useState<PublicationOption[]>([]);
 	const [publicationNames, setPublicationNames] = useState<Record<string, string>>({});
 	const [filter, setFilter] = useState('all');
+	const [nameFilter, setNameFilter] = useState('');
 	const [publicationFilter, setPublicationFilter] = useState('all');
 	const [monthFilter, setMonthFilter] = useState('all');
 	const [yearFilter, setYearFilter] = useState('all');
@@ -235,7 +236,7 @@ export default function PostList() {
 		return (
 			<div className="space-y-4">
 				<div className="flex flex-wrap items-end gap-4 pb-4">
-					{[0, 1, 2, 3].map((index) => (
+					{[0, 1, 2, 3, 4].map((index) => (
 						<SkeletonBlock key={index} className="h-14 w-44" />
 					))}
 				</div>
@@ -245,8 +246,12 @@ export default function PostList() {
 		);
 	}
 
-	// Publication, month, and year narrow the pool; the tabs count within it.
+	// Name, publication, month, and year narrow the pool; the tabs count within it.
+	const nameQuery = nameFilter.trim().toLowerCase();
 	const pool = posts.filter((post) => {
+		if (nameQuery && !post.title.toLowerCase().includes(nameQuery)) {
+			return false;
+		}
 		if (publicationFilter !== 'all' && post.publication !== publicationFilter) {
 			return false;
 		}
@@ -268,8 +273,22 @@ export default function PostList() {
 
 	return (
 		<div className="space-y-4">
-			{/* Filters (HyperUI selects): publication, status, month, year. */}
+			{/* Filters (HyperUI form controls): post name, publication, status, month, year. */}
 			<div className="flex flex-wrap items-end gap-4 pb-4">
+				<label htmlFor="filter-name" className="block w-64">
+					<span className="text-sm font-medium text-foreground">Post name</span>
+					<input
+						id="filter-name"
+						type="search"
+						value={nameFilter}
+						onChange={(event) => {
+							setNameFilter(event.target.value);
+							setPage(1);
+						}}
+						placeholder="Search by name"
+						className={filterSelectClass}
+					/>
+				</label>
 				<label htmlFor="filter-publication" className="block w-64">
 					<span className="text-sm font-medium text-foreground">Publication</span>
 					<select
@@ -349,6 +368,7 @@ export default function PostList() {
 					type="button"
 					onClick={() => {
 						setFilter('all');
+						setNameFilter('');
 						setPublicationFilter('all');
 						setMonthFilter('all');
 						setYearFilter('all');
