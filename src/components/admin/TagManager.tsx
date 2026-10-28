@@ -121,6 +121,9 @@ function TrashIcon({ className = 'size-4' }: { className?: string }) {
 const iconButtonClass =
 	'rounded-md border border-accent bg-accent-soft p-2 text-accent-foreground transition-colors hover:bg-accent hover:text-on-accent focus:outline-none focus:ring-2 focus:ring-accent';
 
+const dangerButtonClass =
+	'rounded-md border border-red-300 bg-red-50 p-2 text-red-700 transition-colors hover:bg-red-600 hover:text-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 dark:border-red-900 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-700 dark:hover:text-red-50';
+
 export default function TagManager() {
 	const [tags, setTags] = useState<TagRecord[] | null>(null);
 	const [publications, setPublications] = useState<PublicationOption[]>([]);
@@ -524,7 +527,7 @@ export default function TagManager() {
 										disabled={busy}
 										aria-label={`Delete ${tag.name}`}
 										title="Delete"
-										className={iconButtonClass}
+										className={dangerButtonClass}
 									>
 										<TrashIcon />
 									</button>
