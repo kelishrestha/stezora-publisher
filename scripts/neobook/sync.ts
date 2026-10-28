@@ -245,7 +245,9 @@ async function main(): Promise<void> {
 				continue;
 			}
 			const normalized = normalizeTitle(item.title);
-			let post = byTitle.get(TITLE_ALIASES[normalized] ?? normalized);
+			// Direct match first: once a title update lands, the DB carries the
+			// Neobook title and the alias points at a name that no longer exists.
+			let post = byTitle.get(normalized) ?? byTitle.get(TITLE_ALIASES[normalized] ?? '');
 			if (!post && NEW_POSTS[normalized]) {
 				post = await createPost(db, NEW_POSTS[normalized], item);
 				byTitle.set(normalized, post);
@@ -259,14 +261,23 @@ async function main(): Promise<void> {
 
 			tagsCreated += await syncTags(db, post, item.tags ?? [], tagIds);
 
-			if (htmlToComparableText(item.text) !== htmlToComparableText(post.content)) {
+			// Neobook holds the current revision, so its title and content win
+			// over the Blogger import. Slugs stay stable to keep URLs working.
+			const title = item.title.replace(/\u00a0/g, ' ').trim();
+			const titleChanged = title !== post.title;
+			const contentChanged = htmlToComparableText(item.text) !== htmlToComparableText(post.content);
+			if (titleChanged || contentChanged) {
 				const updatedAt = neobookDateToIso(item.date_edit) ?? new Date().toISOString();
+				const content = contentChanged ? neobookTextToHtml(item.text) : post.content;
 				await db
-					.prepare('UPDATE posts SET content = ?, updated_at = ? WHERE id = ?')
-					.bind(neobookTextToHtml(item.text), updatedAt, post.id)
+					.prepare('UPDATE posts SET title = ?, content = ?, updated_at = ? WHERE id = ?')
+					.bind(title, content, updatedAt, post.id)
 					.run();
 				contentUpdates += 1;
-				console.error(`  content: ${post.publication_slug}/${post.slug}`);
+				const changes = [titleChanged ? `title -> ${title}` : '', contentChanged ? 'content' : '']
+					.filter(Boolean)
+					.join(', ');
+				console.error(`  updated: ${post.publication_slug}/${post.slug} (${changes})`);
 			}
 
 			const imageUrl = item.attachment?.has === '1' ? item.attachment.image?.l : undefined;

@@ -141,6 +141,7 @@ export default function TagManager() {
 	const [name, setName] = useState('');
 
 	// Filters, tabs (publication tabs double as the publication filter).
+	const [nameFilter, setNameFilter] = useState('');
 	const [publicationFilter, setPublicationFilter] = useState('all');
 	const [monthFilter, setMonthFilter] = useState('all');
 	const [yearFilter, setYearFilter] = useState('all');
@@ -281,7 +282,13 @@ export default function TagManager() {
 	}
 
 	// Month and year narrow the pool; the publication tabs count within it.
-	const pool = tags.filter((tag) => matchesMonthYear(tagDate(tag), monthFilter, yearFilter));
+	const nameQuery = nameFilter.trim().toLowerCase();
+	const pool = tags.filter((tag) => {
+		if (nameQuery && !tag.name.toLowerCase().includes(nameQuery)) {
+			return false;
+		}
+		return matchesMonthYear(tagDate(tag), monthFilter, yearFilter);
+	});
 	const counts: Record<string, number> = { all: pool.length };
 	for (const publication of publications) {
 		counts[publication.id] = pool.filter((tag) => tag.publication_id === publication.id).length;
@@ -398,8 +405,22 @@ export default function TagManager() {
 			)}
 			{notice && <p className="rounded-lg bg-accent-soft px-4 py-3 text-sm text-accent-foreground">{notice}</p>}
 
-			{/* Filters (HyperUI selects): publication, month, year. */}
+			{/* Filters (HyperUI form controls): tag name, publication, month, year. */}
 			<div className="flex flex-wrap items-end gap-4 pb-4">
+				<label htmlFor="tag-filter-name" className="block w-64">
+					<span className="text-sm font-medium text-foreground">Tag name</span>
+					<input
+						id="tag-filter-name"
+						type="search"
+						value={nameFilter}
+						onChange={(event) => {
+							setNameFilter(event.target.value);
+							setPage(1);
+						}}
+						placeholder="Search by name"
+						className={filterSelectClass}
+					/>
+				</label>
 				<label htmlFor="tag-filter-publication" className="block w-64">
 					<span className="text-sm font-medium text-foreground">Publication</span>
 					<select
@@ -460,6 +481,7 @@ export default function TagManager() {
 				<button
 					type="button"
 					onClick={() => {
+						setNameFilter('');
 						setPublicationFilter('all');
 						setMonthFilter('all');
 						setYearFilter('all');
