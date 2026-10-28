@@ -17,6 +17,13 @@ interface PublicationOption {
 	slug: string;
 }
 
+interface PostOption {
+	id: string;
+	title: string;
+	publicationId: string;
+	tags: string[];
+}
+
 interface Envelope<T> {
 	success: boolean;
 	data?: T;
@@ -117,6 +124,7 @@ const iconButtonClass =
 export default function TagManager() {
 	const [tags, setTags] = useState<TagRecord[] | null>(null);
 	const [publications, setPublications] = useState<PublicationOption[]>([]);
+	const [posts, setPosts] = useState<PostOption[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [notice, setNotice] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
@@ -139,11 +147,13 @@ export default function TagManager() {
 		Promise.all([
 			request<{ tags: TagRecord[] }>('/api/admin/tags'),
 			request<{ publications: PublicationOption[] }>('/api/admin/posts/meta'),
+			request<{ posts: PostOption[] }>('/api/admin/posts?limit=100'),
 		])
-			.then(([tagsResult, meta]) => {
+			.then(([tagsResult, meta, postsResult]) => {
 				if (cancelled) return;
 				setTags(tagsResult.tags);
 				setPublications(meta.publications);
+				setPosts(postsResult.posts);
 			})
 			.catch((reason: unknown) => {
 				if (!cancelled) setError(reason instanceof Error ? reason.message : 'Failed to load tags.');
@@ -271,6 +281,11 @@ export default function TagManager() {
 	const pageItems = visible.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
 	const publicationName = (id: string) => publications.find((p) => p.id === id)?.name ?? id;
+	const postNamesFor = (tag: TagRecord) =>
+		posts
+			.filter((post) => post.publicationId === tag.publication_id && post.tags.includes(tag.name))
+			.map((post) => post.title)
+			.join(', ');
 
 	const tabs = [{ id: 'all', name: 'All' }, ...publications];
 
@@ -484,12 +499,13 @@ export default function TagManager() {
 						{pageItems.map((tag) => (
 							<li key={tag.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3">
 								<div className="min-w-0">
-									<p className="truncate font-medium text-foreground">{tag.name}</p>
-									<p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-										<span className="rounded-full bg-accent-soft px-2.5 py-0.5 whitespace-nowrap text-accent-foreground">
-											{publicationName(tag.publication_id)}
-										</span>
-										{formatDate(tag.created_at) && <span>Created on {formatDate(tag.created_at)}</span>}
+									<span className="inline-flex max-w-full rounded-full bg-accent-soft px-3 py-1 text-sm font-medium text-accent-foreground">
+										<span className="truncate">#{tag.name}</span>
+									</span>
+									<p className="mt-1.5 truncate text-xs text-muted-foreground" title={postNamesFor(tag) || undefined}>
+										{publicationName(tag.publication_id)}
+										{postNamesFor(tag) ? ` · ${postNamesFor(tag)}` : ''}
+										{formatDate(tag.created_at) ? ` · Created on ${formatDate(tag.created_at)}` : ''}
 									</p>
 								</div>
 								<div className="flex shrink-0 gap-2">
