@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import EmptyState from './EmptyState';
+import LoadingImage from './LoadingImage';
 
 interface MediaItem {
 	id: string;
@@ -217,11 +218,10 @@ export default function MediaManager() {
 							<li key={item.id} className="bg-surface p-3">
 								<a href={item.url} target="_blank" rel="noopener noreferrer" className="block">
 									{isImage(item.mimeType) ? (
-										<img
+										<LoadingImage
 											src={item.url}
 											alt={item.filename}
-											loading="lazy"
-											className="h-40 w-full rounded-md border border-border object-cover"
+											wrapperClassName="h-40 w-full rounded-md border border-border"
 										/>
 									) : (
 										<div className="flex h-40 w-full items-center justify-center rounded-md border border-border bg-surface-elevated">

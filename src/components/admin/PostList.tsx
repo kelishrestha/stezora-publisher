@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import EmptyState from './EmptyState';
+import LoadingImage from './LoadingImage';
 
 interface ListPost {
 	id: string;
@@ -451,11 +452,10 @@ export default function PostList() {
 							>
 								<a href={`/admin/posts/${post.id}/view`} className="flex min-w-0 flex-1 items-center gap-3">
 									{post.featuredImage ? (
-										<img
+										<LoadingImage
 											src={post.featuredImage.url}
 											alt=""
-											loading="lazy"
-											className="size-12 shrink-0 rounded-md border border-border object-cover"
+											wrapperClassName="size-12 shrink-0 rounded-md border border-border"
 										/>
 									) : (
 										<span className="grid size-12 shrink-0 place-content-center rounded-md border border-border bg-muted text-muted-foreground">

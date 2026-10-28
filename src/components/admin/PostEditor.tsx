@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import AdminBreadcrumbs from './AdminBreadcrumbs';
+import LoadingImage from './LoadingImage';
 
 interface PublicationOption {
 	id: string;
@@ -513,11 +514,10 @@ export default function PostEditor({ postId }: PostEditorProps) {
 												title="Click to preview"
 												className="block w-full"
 											>
-												<img
+												<LoadingImage
 													src={item.url}
 													alt={item.filename}
-													loading="lazy"
-													className="max-h-32 w-full rounded object-cover"
+													wrapperClassName="h-32 w-full rounded"
 												/>
 											</button>
 											<p className="mt-1 text-xs text-muted-foreground">
