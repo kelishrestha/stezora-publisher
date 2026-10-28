@@ -1,10 +1,15 @@
 # Deploying to Cloudflare
 
 The site ships as one Worker: static assets from `dist/` plus the CMS API,
-with D1 for content and R2 for media. The local database is currently the
-source of truth (fully imported, localized, and curated), so production is
-bootstrapped FROM local state: the SQL dump carries every table and the media
-push carries the R2 bytes. Do the steps in order.
+with D1 for content. Media storage (R2) is currently DISABLED
+(`ENABLE_MEDIA_STORAGE=false` in `wrangler.jsonc`): the site serves images
+straight from the Blogger CDN via each media row's `source_url`, so no R2
+bucket and no paid plan are needed. The file bytes are safe in `media-backup/`
+in this repository.
+
+The local database is the source of truth (fully imported and curated), so
+production is bootstrapped FROM local state with a SQL dump. Do the steps in
+order.
 
 ## 0. Prerequisites
 
@@ -13,20 +18,21 @@ npx wrangler login            # or set CLOUDFLARE_API_TOKEN
 npx wrangler whoami
 ```
 
-## 1. Create the resources
+## 1. Create the database
 
 ```sh
 npx wrangler d1 create stezora-publisher-db
-npx wrangler r2 bucket create stezora-publisher-media
 ```
 
-Paste the printed `database_id` into `wrangler.jsonc` (it currently holds a
-zero placeholder) and commit that change.
+Paste the printed `database_id` into `wrangler.jsonc` and commit that change.
+(Already done if `wrangler.jsonc` carries a real id.)
 
 ## 2. Bootstrap the database from local
 
 The JSON backfill can no longer rebuild media rows or featured images (images
-were segregated out of content and localized), so use the byte-exact dump:
+were segregated out of content), so use the byte-exact dump. `backup:db`
+reorders statements so the dump replays cleanly (tables, then data, then
+indexes):
 
 ```sh
 pnpm backup:db backups/bootstrap.sql --local
@@ -46,16 +52,7 @@ npx wrangler d1 execute stezora-publisher-db --remote --command "SELECT count(*)
 
 Expect the local post count (83 at the time of writing).
 
-## 3. Push the media objects
-
-```sh
-pnpm deploy:media
-```
-
-Uploads every local R2 object (the localized Blogger images and any uploads)
-to the remote bucket under the same keys the database rows reference.
-
-## 4. Secrets
+## 3. Secrets
 
 ```sh
 openssl rand -hex 32 | npx wrangler secret put BETTER_AUTH_SECRET
@@ -66,7 +63,7 @@ Record the backup token wherever the GitHub backup secrets live (see
 `docs/BACKUP.md`). Auth needs no URL configuration: the Worker derives its
 origin from each request. Blogger mirror secrets come later with Phase 6C.
 
-## 5. First deploy (bootstrap)
+## 4. First deploy (bootstrap)
 
 `pnpm deploy` requires `EXPORT_CONTENT_URL`, which does not exist until the
 site is live, so the first deploy builds from local D1:
@@ -79,10 +76,10 @@ npx wrangler deploy
 Note the `*.workers.dev` URL (or attach a custom domain in the dashboard
 under Workers & Pages -> stezora-publisher -> Settings -> Domains & Routes).
 
-## 6. Verify
+## 5. Verify
 
 - `https://<site>/` renders; publication pages and post pages load with
-  images served from `/media/...`.
+  images served from `blogger.googleusercontent.com`.
 - `https://<site>/admin` redirects to the login page when signed out.
 - Sign in with the admin credentials (the bootstrap dump carries the local
   admin user; rotate the password after going live by re-seeding with a new
@@ -92,7 +89,7 @@ under Workers & Pages -> stezora-publisher -> Settings -> Domains & Routes).
 - Old Blogger-era URLs under `/publications/<slug>/...` redirect to
   `/poetry-collections/...` (public/_redirects).
 
-## 7. Every deploy after that
+## 6. Every deploy after that
 
 ```sh
 EXPORT_CONTENT_URL=https://<site>/api/content pnpm deploy
@@ -101,7 +98,7 @@ EXPORT_CONTENT_URL=https://<site>/api/content pnpm deploy
 This builds the public site from the LIVE database (never local state) and
 deploys. Set `EXPORT_CONTENT_URL` in your shell profile or CI.
 
-## 8. Post-launch
+## 7. Post-launch
 
 - Activate backups: create the private backup repo and add the workflow
   secrets from `.github/workflows/backup.yml`; run the workflow once manually
@@ -109,3 +106,19 @@ deploys. Set `EXPORT_CONTENT_URL` in your shell profile or CI.
 - Add Cloudflare Web Analytics to the site settings when ready (GOAL.md §13).
 - Future schema changes: `pnpm db:generate`, commit the migration, then
   `pnpm db:migrate:remote` before deploying code that needs it.
+
+## Enabling media storage (R2) later
+
+When an R2 bucket becomes an option (requires a payment card on the account,
+free tier is generous):
+
+1. `npx wrangler r2 bucket create stezora-publisher-media`
+2. In `wrangler.jsonc`: restore the `r2_buckets` binding
+   (`{"binding": "MEDIA", "bucket_name": "stezora-publisher-media"}`) and set
+   `ENABLE_MEDIA_STORAGE` to `"true"`.
+3. Push the bytes: `pnpm deploy:media` uploads every local R2 object (also
+   recoverable from `media-backup/`) to the remote bucket under the same keys
+   the database rows already reference.
+4. Deploy. Media rows carry both `r2_key` and `source_url`, so URLs flip to
+   `/media/<key>` with no data changes, and flipping the flag back reverts to
+   Blogger URLs.

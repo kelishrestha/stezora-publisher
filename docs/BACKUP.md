@@ -7,7 +7,7 @@ truth; everything else exists so that no single failure can lose it.
 | --- | --- | --- | --- |
 | Content export | Every content table raw (posts incl. drafts and markdown, publications, tags, post_tags, media, blogger_sync), one JSON per post | Private backup repo, `content/` | Nightly (GitHub Actions) |
 | SQL dump | Byte-exact `wrangler d1 export` of the whole database, auth tables included | Private backup repo, `db/` | Weekly (Sundays) |
-| Media mirror | `rclone sync` of the R2 bucket to a non-Cloudflare destination | Backblaze B2 (or any rclone remote) | Weekly (Sundays) |
+| Media files | Every local R2 object written to a folder in this repository, keyed as the database references them | This repo, `media-backup/` | Manual, after uploads or localizations |
 
 Layer zero is D1 Time Travel: `wrangler d1 time-travel info stezora-publisher-db`
 shows the restore window; it covers bad writes, not account loss, and expires.
@@ -16,8 +16,8 @@ shows the restore window; it covers bad writes, not account loss, and expires.
 
 ```sh
 pnpm backup:content [dir]          # local D1 via Miniflare; set BACKUP_EXPORT_URL + BACKUP_TOKEN for a live site
-pnpm backup:db [out.sql] [--local] # SQL dump (remote by default)
-pnpm backup:media [src] [dest]     # rclone mirror; configure remotes with `rclone config`
+pnpm backup:db [out.sql] [--local] # replay-safe SQL dump (remote by default)
+pnpm backup:media [dir]            # local R2 objects into media-backup/ (commit the result)
 ```
 
 The export endpoint is `GET /api/export`, authenticated by an admin session or
@@ -27,9 +27,13 @@ The export endpoint is `GET /api/export`, authenticated by an admin session or
 ## Automation
 
 `.github/workflows/backup.yml` runs the nightly content export and the weekly
-dump and media mirror. Required repository secrets are listed at the top of
-that file. The export job fails loudly when the source returns zero posts, so
-an empty or broken endpoint can never silently overwrite a good backup.
+dump. Required repository secrets are listed at the top of that file. The
+export job fails loudly when the source returns zero posts, so an empty or
+broken endpoint can never silently overwrite a good backup. Media is not
+automated: with media storage disabled (`ENABLE_MEDIA_STORAGE=false`) the live
+site serves images from Blogger, and the authoritative file copies sit in
+`media-backup/` in this repository. Rerun `pnpm backup:media` and commit
+whenever media changes.
 
 ## Restore drill
 
