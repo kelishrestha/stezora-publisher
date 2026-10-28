@@ -49,11 +49,12 @@ export default function BookShelf({ books, hint }: Props) {
 				<BooksShowcase
 					className="h-full min-h-0"
 					books={cfgs}
-					ctaLabel="Read"
+					ctaLabel="Buy Now"
 					onCtaClick={(cfg) => {
 						const book = books.find((candidate) => candidate.id === cfg?.id);
 						if (book) window.location.href = book.href;
 					}}
+					showSaveButton={false}
 					showNav={false}
 					showDetailPanel
 					showCarousel={false}

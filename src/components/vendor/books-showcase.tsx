@@ -71,6 +71,8 @@ export interface BooksShowcaseProps {
   /** Label for the detail panel's main action. */
   ctaLabel?: string;
   onCtaClick?: (book: BookCfg | null) => void;
+  /** Show the bookmark/save pill in the detail panel. */
+  showSaveButton?: boolean;
 }
 
 function ChevronLeft() {
@@ -96,6 +98,7 @@ export function BooksShowcase({
   heroTitle = 'Books',
   ctaLabel = 'Read',
   onCtaClick,
+  showSaveButton = true,
   navTitle = 'Bestsellers',
   showNav = true,
   showDetailPanel = true,
@@ -1839,6 +1842,7 @@ export function BooksShowcase({
             >
               {ctaLabel}
             </button>
+            {showSaveButton && (
             <button
               aria-label="Save"
               className="inline-flex h-[54px] w-[54px] items-center justify-center gap-[10px] rounded-full bg-[#242c50] px-0 text-[var(--bs-lav)] transition-[transform,filter] duration-[220ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.04] hover:brightness-105"
@@ -1847,6 +1851,7 @@ export function BooksShowcase({
                 <path d="M7 3h10v18l-5-4-5 4z" />
               </svg>
             </button>
+            )}
           </div>
         </div>
       )}
