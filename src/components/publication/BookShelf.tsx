@@ -1,6 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { BooksShowcase, type BookCfg } from '../vendor/books-showcase';
-import { buttonClass } from '../ui/shared/classes';
 
 export interface ShelfBook {
 	id: string;
@@ -26,13 +25,10 @@ const THEME_COLORS = {
 
 interface Props {
 	books: ShelfBook[];
-	hint: string;
 }
 
 /** Image-covered 3D shelf for published books, sharing the showcase island. */
-export default function BookShelf({ books, hint }: Props) {
-	const [selected, setSelected] = useState<ShelfBook | null>(null);
-
+export default function BookShelf({ books }: Props) {
 	// The showcase rebuilds its 3D scene when `books` changes identity, so
 	// the mapping must stay stable across re-renders (e.g. on selection).
 	const cfgs: BookCfg[] = useMemo(() => books.map((book) => ({
@@ -62,18 +58,7 @@ export default function BookShelf({ books, hint }: Props) {
 					showDetailPanel
 					showCarousel={false}
 					themeColors={THEME_COLORS}
-					onBookSelect={(cfg) => setSelected(books.find((book) => book.id === cfg?.id) ?? null)}
 				/>
-			</div>
-			<div className="mt-6 flex min-h-12 items-center justify-center">
-				{selected ? (
-					<a href={selected.href} className={buttonClass('primary')}>
-						{selected.cta}
-						<span aria-hidden="true">&rarr;</span>
-					</a>
-				) : (
-					<p className="text-sm text-muted-foreground">{hint}</p>
-				)}
 			</div>
 		</div>
 	);

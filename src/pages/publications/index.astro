@@ -40,11 +40,7 @@ const books = [
 			</p>
 		</header>
 		<div class="mt-10">
-			<BookShelf
-				client:load
-				books={books}
-				hint="Pick a book from the shelf to see where its story continues."
-			/>
+			<BookShelf client:load books={books} />
 		</div>
 	</div>
 </BaseLayout>

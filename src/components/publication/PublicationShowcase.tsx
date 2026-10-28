@@ -1,6 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { BooksShowcase, type BookCfg } from '../vendor/books-showcase';
-import { buttonClass } from '../ui/shared/classes';
 import { publicationPath } from '../../lib/publications';
 
 export interface ShowcasePublication {
@@ -36,8 +35,6 @@ const COVERS: Record<string, { spineBg: string; spineInk: string; backBg: string
 };
 
 export default function PublicationShowcase({ publications }: Props) {
-	const [selected, setSelected] = useState<ShowcasePublication | null>(null);
-
 	// The showcase rebuilds its 3D scene when `books` changes identity, so
 	// the mapping must stay stable across re-renders (e.g. on selection).
 	const books: BookCfg[] = useMemo(() => publications.map((publication) => ({
@@ -67,20 +64,7 @@ export default function PublicationShowcase({ publications }: Props) {
 					showDetailPanel
 					showCarousel={false}
 					themeColors={THEME_COLORS}
-					onBookSelect={(book) =>
-						setSelected(publications.find((publication) => publication.slug === book?.id) ?? null)
-					}
 				/>
-			</div>
-			<div className="mt-6 flex min-h-12 items-center justify-center">
-				{selected ? (
-					<a href={publicationPath(selected.slug)} className={buttonClass('primary')}>
-						Read {selected.name}
-						<span aria-hidden="true">&rarr;</span>
-					</a>
-				) : (
-					<p className="text-sm text-muted-foreground">Pick a poem collection from the shelf to open its publication.</p>
-				)}
 			</div>
 		</div>
 	);
