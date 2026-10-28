@@ -1,0 +1,8 @@
+# Poetry collections moved from /publications/<slug> (2026-10-28); /publications
+# itself is now the books page.
+/publications/the-sore-transition/* /poetry-collections/the-sore-transition/:splat 301
+/publications/the-rebellious-flame/* /poetry-collections/the-rebellious-flame/:splat 301
+/publications/my-soulful-incantations/* /poetry-collections/my-soulful-incantations/:splat 301
+/publications/the-sore-transition /poetry-collections/the-sore-transition 301
+/publications/the-rebellious-flame /poetry-collections/the-rebellious-flame 301
+/publications/my-soulful-incantations /poetry-collections/my-soulful-incantations 301

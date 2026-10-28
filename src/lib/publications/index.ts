@@ -3,7 +3,7 @@ import type { Publication } from './types';
 
 export { deriveExcerpt, postExcerpt } from './excerpt';
 
-export const PUBLICATIONS_PATH = '/publications';
+export const PUBLICATIONS_PATH = '/poetry-collections';
 
 /** Posts per page on the public publication listing. */
 export const POSTS_PAGE_SIZE = 6;

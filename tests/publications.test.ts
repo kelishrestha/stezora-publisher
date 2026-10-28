@@ -53,13 +53,13 @@ describe('publication model', () => {
 
 describe('publication path helpers', () => {
 	it('builds the publications hub path', () => {
-		expect(PUBLICATIONS_PATH).toBe('/publications');
-		expect(publicationPath('a')).toBe('/publications/a');
+		expect(PUBLICATIONS_PATH).toBe('/poetry-collections');
+		expect(publicationPath('a')).toBe('/poetry-collections/a');
 	});
 
 	it('builds post and tag paths', () => {
-		expect(postPath('a', 'b')).toBe('/publications/a/posts/b');
-		expect(tagPath('a', 'b')).toBe('/publications/a/tags/b');
+		expect(postPath('a', 'b')).toBe('/poetry-collections/a/posts/b');
+		expect(tagPath('a', 'b')).toBe('/poetry-collections/a/tags/b');
 	});
 });
 

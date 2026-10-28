@@ -17,7 +17,7 @@ const { post, publication } = Astro.props;
 const path = postPath(publication.slug, post.id);
 const breadcrumbs = [
 	{ name: 'Home', href: '/' },
-	{ name: 'Publications', href: PUBLICATIONS_PATH },
+	{ name: 'Poetry Collections', href: PUBLICATIONS_PATH },
 	{ name: publication.name, href: publicationPath(publication.slug) },
 	{ name: post.data.title },
 ];

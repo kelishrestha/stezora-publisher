@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { BooksShowcase, type BookCfg } from '../vendor/books-showcase';
 import { buttonClass } from '../ui/shared/classes';
+import { publicationPath } from '../../lib/publications';
 
 export interface ShowcasePublication {
 	name: string;
@@ -43,8 +44,9 @@ export default function PublicationShowcase({ publications }: Props) {
 
 	return (
 		<div>
-			<div className="h-[70vh] min-h-[480px] w-full overflow-hidden rounded-md">
+			<div className="relative h-[70vh] min-h-[480px] w-full overflow-hidden rounded-md">
 				<BooksShowcase
+					className="h-full min-h-0"
 					books={books}
 					showNav={false}
 					showDetailPanel
@@ -62,7 +64,7 @@ export default function PublicationShowcase({ publications }: Props) {
 			</div>
 			<div className="mt-6 flex min-h-12 items-center justify-center">
 				{selected ? (
-					<a href={`/publications/${selected.slug}`} className={buttonClass('primary')}>
+					<a href={publicationPath(selected.slug)} className={buttonClass('primary')}>
 						Read {selected.name}
 						<span aria-hidden="true">&rarr;</span>
 					</a>

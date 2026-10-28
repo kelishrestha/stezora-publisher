@@ -1,50 +1,48 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import PublicationShowcase from '../../components/publication/PublicationShowcase';
-import { getPostsForPublication } from '../../lib/publications/collections';
-import { PUBLICATIONS_PATH, getPublications, publicationPath } from '../../lib/publications';
+import BookShelf from '../../components/publication/BookShelf';
 
-const publications = await Promise.all(
-	getPublications().map(async (publication) => {
-		const posts = await getPostsForPublication(publication.slug);
-		return {
-			name: publication.name,
-			slug: publication.slug,
-			description: publication.description,
-			accent: publication.accent,
-			postCount: posts.length,
-			postTitles: posts.slice(0, 8).map((post) => post.data.title),
-		};
-	})
-);
+const books = [
+	{
+		id: 'the-warrior-must-rise',
+		title: 'The Warrior Must Rise',
+		author: 'Stezora',
+		year: 'Self-help · 56 pages · $18.99',
+		stars: 5,
+		desc: 'A Short Story of a Warrior. The journey of a warrior from cold ashes to rising phoenix.',
+		cover: '/the-warrior-must-rise-cover.png',
+		href: '/poetry-collections/the-rebellious-flame',
+		cta: 'Explore The Rebellious Flame',
+	},
+	{
+		id: 'the-peach-fall',
+		title: 'The Peach Fall',
+		author: 'Stezora',
+		year: 'Self-help · 56 pages · $14.99',
+		stars: 5,
+		desc: 'A Story of a Girl. The inside journey of a girl who struggles to live by her own. Dedicated to all the people suffering from loneliness and depression.',
+		cover: '/the-peach-fall-cover.jpg',
+		href: '/poetry-collections/the-sore-transition',
+		cta: 'Explore The Sore Transition',
+	},
+];
 ---
 
-<BaseLayout title="Publications" description="All publications on this site." path={PUBLICATIONS_PATH}>
+<BaseLayout title="Books" description="Published books by Stezora." path="/publications">
 	<div class="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 lg:px-8">
 		<header>
-			<p class="text-xs font-medium uppercase tracking-widest text-muted-foreground">All Publications</p>
-			<h1 class="mt-2 font-serif text-3xl font-bold tracking-tight sm:text-4xl">Browse publications</h1>
+			<p class="text-xs font-medium uppercase tracking-widest text-muted-foreground">All Books</p>
+			<h1 class="mt-2 font-serif text-3xl font-bold tracking-tight sm:text-4xl">Published books</h1>
 			<p class="mt-3 max-w-2xl text-muted-foreground">
-				Three distinct voices, one shared home. Pick a poem collection from the shelf to read its latest writing.
+				Stories that left the notebook. Pick a book from the shelf to learn more.
 			</p>
 		</header>
 		<div class="mt-10">
-			<PublicationShowcase client:load publications={publications} />
+			<BookShelf
+				client:load
+				books={books}
+				hint="Pick a book from the shelf to see where its story continues."
+			/>
 		</div>
-		<!-- Crawlable, no-JS fallback: the shelf is a canvas. -->
-		<nav aria-label="Publications" class="mt-10">
-			<ul class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
-				{publications.map((publication) => (
-					<li>
-						<a
-							href={publicationPath(publication.slug)}
-							class="text-muted-foreground transition-colors hover:text-accent-foreground"
-						>
-							{publication.name} ({publication.postCount} poems)
-						</a>
-					</li>
-				))}
-			</ul>
-		</nav>
 	</div>
 </BaseLayout>
