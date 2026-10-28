@@ -1820,7 +1820,7 @@ export function BooksShowcase({
                 <svg
                   key={i}
                   viewBox="0 0 24 24"
-                  className={`h-[25px] w-[25px] fill-[var(--bs-pink)] ${i < (selectedCfg?.stars ?? 0) ? '' : 'opacity-25'}`}
+                  className={`h-[25px] w-[25px] fill-[#eab308] ${i < (selectedCfg?.stars ?? 0) ? '' : 'opacity-25'}`}
                 >
                   <path d="M12 2.6l2.8 6 6.6.6-5 4.4 1.5 6.5L12 16.7 6.1 20.1l1.5-6.5-5-4.4 6.6-.6z" />
                 </svg>
@@ -1845,6 +1845,10 @@ export function BooksShowcase({
               onClick={() => onCtaClick?.(selectedCfg)}
               className="inline-flex h-10 items-center gap-2 rounded-full bg-[var(--bs-peri)] px-4 text-sm font-semibold text-[#10152c] transition-[transform,filter] duration-[220ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.04] hover:brightness-105 @max-[760px]:h-9 @max-[760px]:px-3 @max-[760px]:text-[13px]"
             >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+              </svg>
               {ctaLabel}
             </button>
             {showSaveButton && (
