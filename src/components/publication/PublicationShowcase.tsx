@@ -77,7 +77,7 @@ export default function PublicationShowcase({ publications }: Props) {
 					className="h-full min-h-0"
 					books={books}
 					heroTitle="Poems"
-					ctaLabel="Read"
+					ctaLabel="View collections"
 					onCtaClick={(cfg) => {
 						if (cfg) window.location.href = publicationPath(cfg.id);
 					}}
