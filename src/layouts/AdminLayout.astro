@@ -1,4 +1,5 @@
 ---
+import { Icon } from 'astro-icon/components';
 import BaseLayout from './BaseLayout.astro';
 import Breadcrumbs from '../components/blog/Breadcrumbs.astro';
 import ThemeToggle from '../components/ui/ThemeToggle.astro';
@@ -18,19 +19,19 @@ interface Props {
 const { title, description, path = '/admin', breadcrumbs = [] } = Astro.props;
 
 const navItems = [
-	{ href: '/admin', label: 'Dashboard' },
-	{ href: '/admin/posts', label: 'Posts' },
-	{ href: '/admin/media', label: 'Media' },
-	{ href: '/admin/tags', label: 'Tags' },
+	{ href: '/admin', label: 'Dashboard', icon: 'lucide:layout-dashboard' },
+	{ href: '/admin/posts', label: 'Posts', icon: 'lucide:file-text' },
+	{ href: '/admin/media', label: 'Media', icon: 'lucide:image' },
+	{ href: '/admin/tags', label: 'Tags', icon: 'lucide:tags' },
 ];
 
 function isActive(href: string): boolean {
 	return href === '/admin' ? path === '/admin' : path.startsWith(href);
 }
 
-const activeLink = 'block rounded-lg bg-surface-elevated px-4 py-2 text-sm font-medium text-foreground';
+const activeLink = 'flex items-center gap-2 rounded-lg bg-surface-elevated px-4 py-2 text-sm font-medium text-foreground';
 const inactiveLink =
-	'block rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-surface-elevated hover:text-foreground';
+	'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-surface-elevated hover:text-foreground';
 ---
 
 <BaseLayout title={title} description={description} path={path} noindex chrome={false}>
@@ -56,12 +57,16 @@ const inactiveLink =
 					{navItems.map((item) => (
 						<li>
 							<a href={item.href} class={isActive(item.href) ? activeLink : inactiveLink}>
+								<Icon name={item.icon} class="size-4 shrink-0" aria-hidden="true" />
 								{item.label}
 							</a>
 						</li>
 					))}
 					<li>
-						<a href="/" class={inactiveLink}>View site</a>
+						<a href="/" class={inactiveLink}>
+							<Icon name="lucide:external-link" class="size-4 shrink-0" aria-hidden="true" />
+							View site
+						</a>
 					</li>
 				</ul>
 			</div>
@@ -69,14 +74,17 @@ const inactiveLink =
 				<button
 					type="button"
 					id="admin-sign-out"
-					class="w-full rounded-lg px-4 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-surface-elevated hover:text-foreground"
+					class="flex w-full items-center gap-2 rounded-lg px-4 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-surface-elevated hover:text-foreground"
 				>
+					<Icon name="lucide:log-out" class="size-4 shrink-0" aria-hidden="true" />
 					Sign out
 				</button>
 			</div>
 		</aside>
 
 		<main class="min-w-0 flex-1 px-4 py-8 sm:px-6 lg:px-8">
+			<!-- Content takes 75% of the pane on large screens; full width below. -->
+			<div class="mx-auto w-full lg:w-3/4">
 			<!-- Small screens get the same navigation as a scrollable strip. -->
 			<nav aria-label="Admin" class="mb-6 flex gap-1 overflow-x-auto border-b border-border pb-3 text-sm sm:hidden">
 				{navItems.map((item) => (
@@ -108,6 +116,7 @@ const inactiveLink =
 				</div>
 			)}
 			<slot />
+			</div>
 		</main>
 	</div>
 </BaseLayout>

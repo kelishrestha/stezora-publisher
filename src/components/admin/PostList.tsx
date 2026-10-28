@@ -115,7 +115,7 @@ export default function PostList() {
 			) : (
 				<ul className="divide-y divide-border">
 					{visible.map((post) => (
-						<li key={post.id} className="flex items-center justify-between gap-4 px-3 py-2 whitespace-nowrap hover:bg-surface-elevated">
+						<li key={post.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-3 py-2 hover:bg-surface-elevated">
 							<a href={`/admin/posts/${post.id}/view`} className="min-w-0 flex-1">
 								<p className="truncate font-medium text-foreground">{post.title}</p>
 								<p className="text-xs text-muted-foreground">

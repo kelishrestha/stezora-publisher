@@ -118,42 +118,42 @@ export default function PostView() {
 			<div className="rounded-md border border-border bg-surface shadow-sm">
 				<h3 className="border-b border-border px-5 py-4 text-sm font-semibold uppercase tracking-wide text-foreground">Details</h3>
 				<ul className="divide-y divide-border text-sm">
-					<li className="flex gap-4 px-3 py-2">
+					<li className="flex flex-wrap gap-x-4 gap-y-1 px-3 py-2">
 						<span className="w-40 shrink-0 text-muted-foreground">Publication</span>
-						<span className="text-foreground">{post.publication}</span>
+						<span className="min-w-0 break-words text-foreground">{post.publication}</span>
 					</li>
-					<li className="flex gap-4 px-3 py-2">
+					<li className="flex flex-wrap gap-x-4 gap-y-1 px-3 py-2">
 						<span className="w-40 shrink-0 text-muted-foreground">Slug</span>
-						<span className="text-foreground">/{post.slug}</span>
+						<span className="min-w-0 break-words text-foreground">/{post.slug}</span>
 					</li>
-					<li className="flex gap-4 px-3 py-2">
+					<li className="flex flex-wrap gap-x-4 gap-y-1 px-3 py-2">
 						<span className="w-40 shrink-0 text-muted-foreground">Tags</span>
-						<span className="text-foreground">
+						<span className="min-w-0 break-words text-foreground">
 							{post.tags.length > 0 ? post.tags.map((tag) => `#${tag}`).join(' ') : '—'}
 						</span>
 					</li>
-					<li className="flex gap-4 px-3 py-2">
+					<li className="flex flex-wrap gap-x-4 gap-y-1 px-3 py-2">
 						<span className="w-40 shrink-0 text-muted-foreground">Published</span>
-						<span className="text-foreground">{formatDate(post.publishedAt)}</span>
+						<span className="min-w-0 break-words text-foreground">{formatDate(post.publishedAt)}</span>
 					</li>
-					<li className="flex gap-4 px-3 py-2">
+					<li className="flex flex-wrap gap-x-4 gap-y-1 px-3 py-2">
 						<span className="w-40 shrink-0 text-muted-foreground">Updated</span>
-						<span className="text-foreground">{formatDate(post.updatedAt)}</span>
+						<span className="min-w-0 break-words text-foreground">{formatDate(post.updatedAt)}</span>
 					</li>
 					{post.seoTitle && (
-						<li className="flex gap-4 px-3 py-2">
+						<li className="flex flex-wrap gap-x-4 gap-y-1 px-3 py-2">
 							<span className="w-40 shrink-0 text-muted-foreground">SEO title</span>
-							<span className="text-foreground">{post.seoTitle}</span>
+							<span className="min-w-0 break-words text-foreground">{post.seoTitle}</span>
 						</li>
 					)}
 					{post.seoDescription && (
-						<li className="flex gap-4 px-3 py-2">
+						<li className="flex flex-wrap gap-x-4 gap-y-1 px-3 py-2">
 							<span className="w-40 shrink-0 text-muted-foreground">SEO description</span>
-							<span className="text-foreground">{post.seoDescription}</span>
+							<span className="min-w-0 break-words text-foreground">{post.seoDescription}</span>
 						</li>
 					)}
 					{post.canonicalUrl && (
-						<li className="flex gap-4 px-3 py-2">
+						<li className="flex flex-wrap gap-x-4 gap-y-1 px-3 py-2">
 							<span className="w-40 shrink-0 text-muted-foreground">Canonical URL</span>
 							<a href={post.canonicalUrl} target="_blank" rel="noopener noreferrer" className="text-accent-foreground hover:underline">
 								{post.canonicalUrl}
