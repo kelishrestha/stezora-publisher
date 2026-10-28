@@ -50,7 +50,13 @@ Sanity check:
 npx wrangler d1 execute stezora-publisher-db --remote --command "SELECT count(*) FROM posts"
 ```
 
-Expect the local post count (83 at the time of writing).
+Expect the local post count (84 at the time of writing).
+
+The local database already carries everything synced from Neobook (titles,
+content, tags, featured images), so the dump brings it along. Run
+`pnpm neobook:sync` only BEFORE this bootstrap: it writes to the local
+database, and once the site is live the remote database is the source of
+truth (re-running the bootstrap later would overwrite live edits).
 
 ## 3. Secrets
 
@@ -79,7 +85,8 @@ under Workers & Pages -> stezora-publisher -> Settings -> Domains & Routes).
 ## 5. Verify
 
 - `https://<site>/` renders; publication pages and post pages load with
-  images served from `blogger.googleusercontent.com`.
+  images served from the external CDNs (`blogger.googleusercontent.com` for
+  the Blogger era posts, `s3.twcstorage.ru` for the Neobook ones).
 - `https://<site>/admin` redirects to the login page when signed out.
 - Sign in with the admin credentials (the bootstrap dump carries the local
   admin user; rotate the password after going live by re-seeding with a new
