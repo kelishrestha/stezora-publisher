@@ -51,11 +51,10 @@ describe('blogger mapper', () => {
 		).toThrow(/drafts are not included/);
 	});
 
-	it('builds an excerpt from plain text and caps its length', () => {
+	it('leaves the excerpt empty for manual authoring in the CMS', () => {
 		const longContent = `<p>${'word '.repeat(200)}</p>`;
 		const { record } = mapPost(dto({ content: longContent }), { publicationSlug: 'a' });
-		expect(record.excerpt.length).toBeLessThanOrEqual(280);
-		expect(record.excerpt).not.toMatch(/</);
+		expect(record.excerpt).toBe('');
 	});
 });
 

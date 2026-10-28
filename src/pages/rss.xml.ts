@@ -3,7 +3,7 @@ import type { APIContext } from 'astro';
 import { SITE } from '../lib/seo/config';
 import { absoluteUrl } from '../lib/seo/seo';
 import { getPublishedPosts } from '../lib/publications/collections';
-import { postPath } from '../lib/publications';
+import { postExcerpt, postPath } from '../lib/publications';
 
 export async function GET(context: APIContext) {
 	const posts = await getPublishedPosts();
@@ -13,7 +13,7 @@ export async function GET(context: APIContext) {
 		site: context.site ?? SITE.url,
 		items: posts.map((post) => ({
 			title: post.data.title,
-			description: post.data.excerpt,
+			description: postExcerpt(post.data),
 			pubDate: post.data.pubDate,
 			link: absoluteUrl(postPath(post.data.publication, post.id)),
 		})),

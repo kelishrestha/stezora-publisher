@@ -27,16 +27,14 @@ export function mapPost(dto: BloggerPostDto, options: MapPostOptions): MappedPos
 	const bloggerUrl = normalizeUrl(dto.url);
 	const baseSlug = slugFromUrl(bloggerUrl) || slugify(dto.title);
 
-	const excerpt = dto.content
-		.replace(/<[^>]+>/g, ' ')
-		.replace(/\s+/g, ' ')
-		.trim()
-		.slice(0, 280);
-
+	// Blogger has no excerpt field, so the excerpt stays empty: it is a
+	// hand-written summary authored in the CMS. Public display derives a
+	// teaser from the content when the excerpt is empty
+	// (src/lib/publications/excerpt.ts).
 	return {
 		record: {
 			title: dto.title,
-			excerpt,
+			excerpt: '',
 			publication: options.publicationSlug,
 			tags,
 			pubDate,

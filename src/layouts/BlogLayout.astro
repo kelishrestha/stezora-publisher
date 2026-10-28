@@ -4,7 +4,7 @@ import Breadcrumbs from '../components/blog/Breadcrumbs.astro';
 import PostMeta from '../components/blog/PostMeta.astro';
 import type { Post } from '../lib/publications/collections';
 import type { Publication } from '../lib/publications/types';
-import { PUBLICATIONS_PATH, publicationPath, postPath } from '../lib/publications';
+import { PUBLICATIONS_PATH, publicationPath, postExcerpt, postPath } from '../lib/publications';
 
 export interface Props {
 	post: Post;
@@ -24,7 +24,7 @@ const breadcrumbs = [
 
 <BaseLayout
 	title={post.data.title}
-	description={post.data.seoDescription ?? post.data.excerpt}
+	description={post.data.seoDescription ?? postExcerpt(post.data)}
 	seoTitle={post.data.seoTitle}
 	path={path}
 	type="article"

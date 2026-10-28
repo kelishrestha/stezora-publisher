@@ -1,6 +1,8 @@
 import { publications } from './data';
 import type { Publication } from './types';
 
+export { deriveExcerpt, postExcerpt } from './excerpt';
+
 export const PUBLICATIONS_PATH = '/publications';
 
 export function getPublications(): Publication[] {
