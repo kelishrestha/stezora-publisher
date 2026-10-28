@@ -1,6 +1,7 @@
 ---
 import type { Post } from '../../lib/publications/collections';
 import { postPath } from '../../lib/publications';
+import { imageVariant } from '../../lib/publications/images';
 import { formatDate } from '../../lib/seo/seo';
 import { badgeClass, buttonClass, cardClass } from '../ui/shared/classes';
 
@@ -24,17 +25,39 @@ function displayDate(date: Date): string {
 
 <!-- HyperUI blog card: image, title, excerpt, published date, tags, CTA. -->
 <article class={`group flex h-full flex-col ${cardClass({ borderless })}`}>
-	{post.data.featuredImage && (
+	{post.data.featuredImage ? (
 		<a href={href} class="block" tabindex="-1" aria-hidden="true">
 			<span class={`img-shell ${wide ? 'h-64' : 'h-56'} w-full`}>
 				<span class="img-shell-dots" aria-hidden="true"><span></span><span></span><span></span></span>
 				<img
-					src={post.data.featuredImage}
+					src={imageVariant(post.data.featuredImage, 640)}
 					alt=""
 					loading="lazy"
 					onload="this.classList.add('loaded')"
 					class="h-full w-full object-cover"
 				/>
+			</span>
+		</a>
+	) : (
+		<a href={href} class="block" tabindex="-1" aria-hidden="true">
+			<span
+				class={`flex ${wide ? 'h-64' : 'h-56'} w-full items-center justify-center bg-accent-soft text-accent-foreground`}
+			>
+				<svg
+					aria-hidden="true"
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.5"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					class="size-10 opacity-60"
+				>
+					<path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z" />
+					<line x1="16" x2="2" y1="8" y2="22" />
+					<line x1="17.5" x2="9" y1="15" y2="15" />
+				</svg>
 			</span>
 		</a>
 	)}
