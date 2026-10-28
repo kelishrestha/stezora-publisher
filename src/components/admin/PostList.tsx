@@ -249,7 +249,7 @@ export default function PostList() {
 								<a href={`/admin/posts/${post.id}/view`} className="min-w-0 flex-1">
 									<p className="truncate font-medium text-foreground">{post.title}</p>
 									<p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-										<span className="rounded-full bg-secondary px-2.5 py-0.5 whitespace-nowrap text-on-secondary">
+										<span className="rounded-full bg-accent-soft px-2.5 py-0.5 whitespace-nowrap text-accent-foreground">
 											{publicationNames[post.publication] ?? post.publication}
 										</span>
 										{post.updatedAt && <span>Updated on {formatDate(post.updatedAt)}</span>}
