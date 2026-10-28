@@ -135,3 +135,9 @@ html[data-accent='bright-amber'] body::after {
 	opacity: 0.18;
 	pointer-events: none;
 }
+
+/* Accented pages: the footer stays transparent so the fixed watermark
+   (z-index -1) is not hidden behind its background. */
+html[data-accent] .site-footer {
+	background: transparent;
+}
