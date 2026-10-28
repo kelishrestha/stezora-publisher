@@ -1,7 +1,9 @@
 /* eslint-disable */
 // Vendored from VengeanceUI books-showcase
 // (https://www.vengenceui.com/components/books-showcase), adapted: local cn
-// helper instead of the shadcn @/lib/utils alias.
+// helper instead of the shadcn @/lib/utils alias, and the detail panel's
+// Buy Now / Buy Audiobook buttons replaced by a single configurable CTA
+// (ctaLabel / onCtaClick).
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
@@ -66,6 +68,9 @@ export interface BooksShowcaseProps {
   };
   className?: string;
   onBookSelect?: (book: BookCfg | null) => void;
+  /** Label for the detail panel's main action. */
+  ctaLabel?: string;
+  onCtaClick?: (book: BookCfg | null) => void;
 }
 
 function ChevronLeft() {
@@ -89,6 +94,8 @@ const OPEN_BTN_ON = ['opacity-100', 'scale-100'];
 export function BooksShowcase({
   books = [],
   heroTitle = 'Books',
+  ctaLabel = 'Read',
+  onCtaClick,
   navTitle = 'Bestsellers',
   showNav = true,
   showDetailPanel = true,
@@ -1826,11 +1833,11 @@ export function BooksShowcase({
               </svg>
               <span>English</span>
             </button>
-            <button className="inline-flex h-[54px] items-center gap-[10px] rounded-full bg-[var(--bs-peri)] px-[26px] text-[16.5px] font-semibold text-[#10152c] transition-[transform,filter] duration-[220ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.04] hover:brightness-105 @max-[760px]:h-12 @max-[760px]:px-5 @max-[760px]:text-[15px]">
-              Buy Now
-            </button>
-            <button className="inline-flex h-[54px] items-center gap-[10px] rounded-full bg-[var(--bs-peri)] px-[26px] text-[16.5px] font-semibold text-[#10152c] transition-[transform,filter] duration-[220ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.04] hover:brightness-105 @max-[760px]:h-12 @max-[760px]:px-5 @max-[760px]:text-[15px]">
-              Buy Audiobook
+            <button
+              onClick={() => onCtaClick?.(selectedCfg)}
+              className="inline-flex h-[54px] items-center gap-[10px] rounded-full bg-[var(--bs-peri)] px-[26px] text-[16.5px] font-semibold text-[#10152c] transition-[transform,filter] duration-[220ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.04] hover:brightness-105 @max-[760px]:h-12 @max-[760px]:px-5 @max-[760px]:text-[15px]"
+            >
+              {ctaLabel}
             </button>
             <button
               aria-label="Save"

@@ -57,6 +57,11 @@ export default function PublicationShowcase({ publications }: Props) {
 				<BooksShowcase
 					className="h-full min-h-0"
 					books={books}
+					heroTitle="Poems"
+					ctaLabel="Read"
+					onCtaClick={(cfg) => {
+						if (cfg) window.location.href = publicationPath(cfg.id);
+					}}
 					showNav={false}
 					showDetailPanel
 					showCarousel={false}
