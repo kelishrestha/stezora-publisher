@@ -16,6 +16,18 @@ const tagPayload = z.object({
 
 type TagPayload = z.infer<typeof tagPayload>;
 
+/**
+ * New and renamed tags must be space-free (hashtag-style). Imported Blogger
+ * labels keep their spaces; this only guards CMS writes.
+ */
+function normalizeName(raw: string): string {
+	const name = raw.trim();
+	if (/\s/.test(name)) {
+		throw new ApiError(400, 'VALIDATION_ERROR', 'Tag names cannot contain spaces. Use dashes or camelCase instead.');
+	}
+	return name;
+}
+
 function normalizeSlug(raw: string | undefined, name: string): string {
 	const value = raw?.trim() ? raw : slugify(name);
 	const slug = value.toLowerCase().trim();
@@ -44,14 +56,15 @@ export const listTags: AuthenticatedHandler = async ({ env, request }) => {
 export const createTag: AuthenticatedHandler = async ({ env, request }) => {
 	const raw = await readJsonBody(request);
 	const body = tagPayload.parse(raw) as TagPayload;
-	const slug = normalizeSlug(body.slug, body.name);
+	const name = normalizeName(body.name);
+	const slug = normalizeSlug(body.slug, name);
 
 	const repository = new TagRepository(env.DB);
 	if (await repository.existsBySlug(body.publicationId, slug)) {
 		throw new ApiError(409, 'SLUG_CONFLICT', `A tag with the slug '${slug}' already exists in this publication.`);
 	}
 
-	const tag = await repository.create({ publicationId: body.publicationId, name: body.name, slug });
+	const tag = await repository.create({ publicationId: body.publicationId, name, slug });
 	return ok({ tag }, 201);
 };
 
@@ -71,7 +84,7 @@ export const updateTag: AuthenticatedHandler = async ({ env, request, params }) 
 		.object({ name: z.string().min(1).max(120).optional(), slug: z.string().max(160).optional() })
 		.parse(raw) as { name?: string; slug?: string };
 
-	const name = parsed.name ?? existing.name;
+	const name = parsed.name !== undefined ? normalizeName(parsed.name) : existing.name;
 	const slug = parsed.slug ? normalizeSlug(parsed.slug, name) : existing.slug;
 	if (await repository.existsBySlug(existing.publication_id, slug, existing.id)) {
 		throw new ApiError(409, 'SLUG_CONFLICT', `A tag with the slug '${slug}' already exists in this publication.`);

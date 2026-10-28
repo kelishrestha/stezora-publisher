@@ -284,11 +284,9 @@ export default function TagManager() {
 	const pageItems = visible.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
 	const publicationName = (id: string) => publications.find((p) => p.id === id)?.name ?? id;
-	const postNamesFor = (tag: TagRecord) =>
-		posts
-			.filter((post) => post.publicationId === tag.publication_id && post.tags.includes(tag.name))
-			.map((post) => post.title)
-			.join(', ');
+	const postsFor = (tag: TagRecord) =>
+		posts.filter((post) => post.publicationId === tag.publication_id && post.tags.includes(tag.name));
+	const postNamesFor = (tag: TagRecord) => postsFor(tag).map((post) => post.title).join(', ');
 
 	const tabs = [{ id: 'all', name: 'All' }, ...publications];
 
@@ -502,7 +500,12 @@ export default function TagManager() {
 						{pageItems.map((tag) => (
 							<li key={tag.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3">
 								<div className="min-w-0">
-									<p className="truncate font-semibold text-foreground">{tag.name}</p>
+									<p className="flex items-center gap-2 font-semibold text-foreground">
+										<span className="truncate">{tag.name}</span>
+										<span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent-foreground">
+											{postsFor(tag).length}
+										</span>
+									</p>
 									<p className="mt-1 truncate text-xs text-muted-foreground" title={postNamesFor(tag) || undefined}>
 										{publicationName(tag.publication_id)}
 										{postNamesFor(tag) ? ` · ${postNamesFor(tag)}` : ''}

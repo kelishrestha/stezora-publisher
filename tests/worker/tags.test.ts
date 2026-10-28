@@ -124,6 +124,34 @@ describe('admin tags API', () => {
 		expect(((await duplicate.json()) as Envelope).error?.code).toBe('SLUG_CONFLICT');
 	});
 
+	it('rejects spaces in new and renamed tag names', async () => {
+		const headers = { cookie, 'content-type': 'application/json' };
+
+		const spaced = await fetchWorker('/api/admin/tags', {
+			method: 'POST',
+			headers,
+			body: JSON.stringify({ publicationId: 'pub-a', name: 'life poetry' }),
+		});
+		expect(spaced.status).toBe(400);
+		expect(((await spaced.json()) as Envelope).error?.code).toBe('VALIDATION_ERROR');
+
+		const created = await fetchWorker('/api/admin/tags', {
+			method: 'POST',
+			headers,
+			body: JSON.stringify({ publicationId: 'pub-a', name: 'life-poetry' }),
+		});
+		expect(created.status).toBe(201);
+		const tag = (((await created.json()) as Envelope).data?.tag ?? {}) as { id: string };
+
+		const renamed = await fetchWorker(`/api/admin/tags/${tag.id}`, {
+			method: 'PUT',
+			headers,
+			body: JSON.stringify({ name: 'life poems' }),
+		});
+		expect(renamed.status).toBe(400);
+		expect(((await renamed.json()) as Envelope).error?.code).toBe('VALIDATION_ERROR');
+	});
+
 	it('updates and deletes an unreferenced tag', async () => {
 		const headers = { cookie, 'content-type': 'application/json' };
 		const created = await fetchWorker('/api/admin/tags', {
@@ -137,10 +165,10 @@ describe('admin tags API', () => {
 		const updated = await fetchWorker(`/api/admin/tags/${id}`, {
 			method: 'PUT',
 			headers,
-			body: JSON.stringify({ name: 'Long Essays' }),
+			body: JSON.stringify({ name: 'LongEssays' }),
 		});
 		expect(updated.status).toBe(200);
-		expect(((await updated.json()) as Envelope).data?.tag).toMatchObject({ name: 'Long Essays' });
+		expect(((await updated.json()) as Envelope).data?.tag).toMatchObject({ name: 'LongEssays' });
 
 		const deleted = await fetchWorker(`/api/admin/tags/${id}`, { method: 'DELETE', headers: { cookie } });
 		expect(deleted.status).toBe(200);
@@ -216,18 +244,18 @@ describe('admin tags API', () => {
 		await fetchWorker('/api/admin/tags', {
 			method: 'POST',
 			headers,
-			body: JSON.stringify({ publicationId: 'pub-a', name: 'Scoped A' }),
+			body: JSON.stringify({ publicationId: 'pub-a', name: 'ScopedA' }),
 		});
 		await fetchWorker('/api/admin/tags', {
 			method: 'POST',
 			headers,
-			body: JSON.stringify({ publicationId: 'pub-b', name: 'Scoped B' }),
+			body: JSON.stringify({ publicationId: 'pub-b', name: 'ScopedB' }),
 		});
 
 		const listA = await fetchWorker('/api/admin/tags?publicationId=pub-a', { headers: { cookie } });
 		const bodyA = (await listA.json()) as Envelope;
 		const tagsA = bodyA.data?.tags as Array<{ name: string }>;
-		expect(tagsA.find((t) => t.name === 'Scoped A')).toBeTruthy();
-		expect(tagsA.find((t) => t.name === 'Scoped B')).toBeFalsy();
+		expect(tagsA.find((t) => t.name === 'ScopedA')).toBeTruthy();
+		expect(tagsA.find((t) => t.name === 'ScopedB')).toBeFalsy();
 	});
 });
