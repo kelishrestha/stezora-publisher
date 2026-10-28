@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import EmptyState from './EmptyState';
 import LoadingImage from './LoadingImage';
+import Pagination from './Pagination';
 
 interface MediaItem {
 	id: string;
@@ -18,6 +19,7 @@ interface PostOption {
 	title: string;
 	slug: string;
 	publicationId: string;
+	tags: string[];
 }
 
 interface PublicationOption {
@@ -73,11 +75,23 @@ export default function MediaManager() {
 	const [uploading, setUploading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [notice, setNotice] = useState<string | null>(null);
+	const [page, setPage] = useState(1);
+	const [pageSize, setPageSize] = useState(10);
 
 	useEffect(() => {
 		let cancelled = false;
+		async function loadAllMedia(): Promise<{ media: MediaItem[] }> {
+			const all: MediaItem[] = [];
+			const limit = 100;
+			for (let offset = 0; ; offset += limit) {
+				const result = await request<{ media: MediaItem[] }>(`/api/admin/media?limit=${limit}&offset=${offset}`);
+				all.push(...result.media);
+				if (result.media.length < limit) break;
+			}
+			return { media: all };
+		}
 		Promise.all([
-			request<{ media: MediaItem[] }>('/api/admin/media'),
+			loadAllMedia(),
 			request<{ posts: PostOption[] }>('/api/admin/posts?limit=100'),
 			request<{ publications: PublicationOption[] }>('/api/admin/posts/meta'),
 		])
@@ -133,6 +147,10 @@ export default function MediaManager() {
 	if (!items) {
 		return <p className="text-sm text-muted-foreground">Loading…</p>;
 	}
+
+	const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+	const currentPage = Math.min(page, totalPages);
+	const pageItems = items.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
 	const publicationName = (id: string | null) => publications.find((p) => p.id === id)?.name ?? '—';
 	const postTitle = (id: string | null) => posts?.find((p) => p.id === id)?.title ?? '—';
@@ -208,42 +226,79 @@ export default function MediaManager() {
 				</label>
 			</div>
 
-			<div className="rounded-md border border-border bg-surface shadow-sm">
-				<h2 className="border-b border-border px-5 py-4 text-base font-semibold text-foreground">All media</h2>
+			<div>
 				{items.length === 0 ? (
 					<EmptyState icon={<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>} title="No media yet" description="Upload an image above, or attach media from the post editor." />
 				) : (
-					<ul className="grid grid-cols-2 gap-px bg-border sm:grid-cols-3 lg:grid-cols-4">
-						{items.map((item) => (
-							<li key={item.id} className="bg-surface p-3">
-								<a href={item.url} target="_blank" rel="noopener noreferrer" className="block">
-									{isImage(item.mimeType) ? (
-										<LoadingImage
-											src={item.url}
-											alt={item.filename}
-											wrapperClassName="h-40 w-full rounded-md border border-border"
-										/>
-									) : (
-										<div className="flex h-40 w-full items-center justify-center rounded-md border border-border bg-surface-elevated">
-											<span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">PDF</span>
+					<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+						{pageItems.map((item) => {
+							const post = posts?.find((candidate) => candidate.id === item.postId);
+							return (
+								<li key={item.id}>
+									{/* Blog card: media image, post title, tags, View post action. */}
+									<article className="flex h-full flex-col overflow-hidden rounded-md border border-border bg-surface shadow-sm">
+										<a href={item.url} target="_blank" rel="noopener noreferrer" className="block" title={item.filename}>
+											{isImage(item.mimeType) ? (
+												<LoadingImage src={item.url} alt={item.filename} wrapperClassName="h-40 w-full" />
+											) : (
+												<div className="flex h-40 w-full items-center justify-center bg-surface-elevated">
+													<span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">PDF</span>
+												</div>
+											)}
+										</a>
+										<div className="flex flex-1 flex-col p-4">
+											<h3 className="font-serif text-base font-semibold text-pretty text-foreground">
+												{post?.title ?? postTitle(item.postId)}
+											</h3>
+											<p className="mt-1 truncate text-xs text-muted-foreground" title={item.filename}>
+												{item.filename} · {formatSize(item.size)} · {formatDate(item.createdAt)}
+											</p>
+											<div className="mt-3 flex flex-1 flex-wrap content-start gap-1.5">
+												<span className="rounded-full border border-border px-2.5 py-0.5 text-xs whitespace-nowrap text-muted-foreground">
+													{publicationName(item.publicationId)}
+												</span>
+												{post && post.tags.length > 0 ? (
+													post.tags.map((tag) => (
+														<span
+															key={tag}
+															className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs whitespace-nowrap text-accent-foreground"
+														>
+															{tag}
+														</span>
+													))
+												) : (
+													<span className="text-xs text-muted-foreground">No tags</span>
+												)}
+											</div>
+											{item.postId && (
+												<a
+													href={`/admin/posts/${item.postId}/view`}
+													className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent-foreground transition-colors hover:opacity-80"
+												>
+													View post
+													<span aria-hidden="true">&rarr;</span>
+												</a>
+											)}
 										</div>
-									)}
-								</a>
-								<div className="mt-2 min-w-0">
-									<p className="truncate text-sm font-medium text-foreground" title={item.filename}>
-										{item.filename}
-									</p>
-									<p className="text-xs text-muted-foreground">
-										{formatSize(item.size)} · {formatDate(item.createdAt)}
-									</p>
-									<p className="truncate text-xs text-muted-foreground" title={`${publicationName(item.publicationId)} / ${postTitle(item.postId)}`}>
-										{publicationName(item.publicationId)} / {postTitle(item.postId)}
-									</p>
-								</div>
-							</li>
-						))}
+									</article>
+								</li>
+							);
+						})}
 					</ul>
 				)}
+				<div className="mt-4">
+					<Pagination
+						totalItems={items.length}
+						page={currentPage}
+						pageSize={pageSize}
+						onPageChange={setPage}
+						onPageSizeChange={(size) => {
+							setPageSize(size);
+							setPage(1);
+						}}
+						itemsLabel="media items"
+					/>
+				</div>
 			</div>
 		</div>
 	);
