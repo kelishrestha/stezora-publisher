@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { BooksShowcase, type BookCfg } from '../vendor/books-showcase';
 import { buttonClass } from '../ui/shared/classes';
 import { publicationPath } from '../../lib/publications';
@@ -11,6 +11,13 @@ export interface ShowcasePublication {
 	postCount: number;
 	postTitles: string[];
 }
+
+const THEME_COLORS = {
+	bgLight: '#ffffff',
+	bgDark: '#1d1d1d',
+	foregroundLight: '#171717',
+	foregroundDark: '#fafafa',
+};
 
 interface Props {
 	publications: ShowcasePublication[];
@@ -31,7 +38,9 @@ const COVERS: Record<string, { spineBg: string; spineInk: string; backBg: string
 export default function PublicationShowcase({ publications }: Props) {
 	const [selected, setSelected] = useState<ShowcasePublication | null>(null);
 
-	const books: BookCfg[] = publications.map((publication) => ({
+	// The showcase rebuilds its 3D scene when `books` changes identity, so
+	// the mapping must stay stable across re-renders (e.g. on selection).
+	const books: BookCfg[] = useMemo(() => publications.map((publication) => ({
 		id: publication.slug,
 		title: publication.name,
 		author: 'Stezora',
@@ -40,7 +49,7 @@ export default function PublicationShowcase({ publications }: Props) {
 		desc: publication.description,
 		chapters: publication.postTitles,
 		...(COVERS[publication.accent] ?? COVERS['space-indigo']),
-	}));
+	})), [publications]);
 
 	return (
 		<div>
@@ -51,12 +60,7 @@ export default function PublicationShowcase({ publications }: Props) {
 					showNav={false}
 					showDetailPanel
 					showCarousel={false}
-					themeColors={{
-						bgLight: '#ffffff',
-						bgDark: '#1d1d1d',
-						foregroundLight: '#171717',
-						foregroundDark: '#fafafa',
-					}}
+					themeColors={THEME_COLORS}
 					onBookSelect={(book) =>
 						setSelected(publications.find((publication) => publication.slug === book?.id) ?? null)
 					}

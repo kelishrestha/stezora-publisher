@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { BooksShowcase, type BookCfg } from '../vendor/books-showcase';
 import { buttonClass } from '../ui/shared/classes';
 
@@ -15,6 +15,13 @@ export interface ShelfBook {
 	cta: string;
 }
 
+const THEME_COLORS = {
+	bgLight: '#ffffff',
+	bgDark: '#1d1d1d',
+	foregroundLight: '#171717',
+	foregroundDark: '#fafafa',
+};
+
 interface Props {
 	books: ShelfBook[];
 	hint: string;
@@ -24,7 +31,9 @@ interface Props {
 export default function BookShelf({ books, hint }: Props) {
 	const [selected, setSelected] = useState<ShelfBook | null>(null);
 
-	const cfgs: BookCfg[] = books.map((book) => ({
+	// The showcase rebuilds its 3D scene when `books` changes identity, so
+	// the mapping must stay stable across re-renders (e.g. on selection).
+	const cfgs: BookCfg[] = useMemo(() => books.map((book) => ({
 		id: book.id,
 		title: book.title,
 		author: book.author,
@@ -32,7 +41,7 @@ export default function BookShelf({ books, hint }: Props) {
 		stars: book.stars,
 		desc: book.desc,
 		images: { front: book.cover },
-	}));
+	})), [books]);
 
 	return (
 		<div>
@@ -43,12 +52,7 @@ export default function BookShelf({ books, hint }: Props) {
 					showNav={false}
 					showDetailPanel
 					showCarousel={false}
-					themeColors={{
-						bgLight: '#ffffff',
-						bgDark: '#1d1d1d',
-						foregroundLight: '#171717',
-						foregroundDark: '#fafafa',
-					}}
+					themeColors={THEME_COLORS}
 					onBookSelect={(cfg) => setSelected(books.find((book) => book.id === cfg?.id) ?? null)}
 				/>
 			</div>
