@@ -5,6 +5,7 @@ import type { Publication } from '../lib/publications/types';
 import type { BreadcrumbItem } from '../lib/seo/structured-data';
 import { absoluteUrl } from '../lib/seo/seo';
 import { PUBLICATIONS_PATH, publicationPath, publicationRssPath } from '../lib/publications';
+import { getPostsForPublication } from '../lib/publications/collections';
 
 export interface Props {
 	publication: Publication;
@@ -15,6 +16,8 @@ export interface Props {
 }
 
 const { publication, title, description, path, breadcrumbs = [] } = Astro.props;
+
+const postCount = (await getPostsForPublication(publication.slug)).length;
 
 const pageTitle = title ?? `${publication.name} — ${publication.description}`;
 const trail = breadcrumbs.length > 0
@@ -40,7 +43,7 @@ const trail = breadcrumbs.length > 0
 		title={`${publication.name} RSS Feed`}
 		href={absoluteUrl(publicationRssPath(publication.slug))}
 	/>
-	<PublicationHeader publication={publication} />
+	<PublicationHeader publication={publication} postCount={postCount} />
 	<div class="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6 lg:px-8">
 		<slot />
 	</div>
