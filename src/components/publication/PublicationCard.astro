@@ -1,7 +1,7 @@
 ---
 import type { Publication } from '../../lib/publications/types';
 import { publicationPath } from '../../lib/publications';
-import { badgeClass, buttonClass, cardClass } from '../ui/shared/classes';
+import { badgeClass, buttonClass } from '../ui/shared/classes';
 import { getPostsForPublication } from '../../lib/publications/collections';
 
 interface Props {
@@ -11,10 +11,20 @@ interface Props {
 const { publication } = Astro.props;
 
 const postCount = (await getPostsForPublication(publication.slug)).length;
+
+// Each card wears its publication's palette: light ramp tint in light mode,
+// deep ramp shade in dark mode.
+const accentCard: Record<string, string> = {
+	'space-indigo': 'bg-space-indigo-50 border-space-indigo-200 dark:bg-space-indigo-900 dark:border-space-indigo-700',
+	'ocean-deep': 'bg-ocean-deep-50 border-ocean-deep-200 dark:bg-ocean-deep-900 dark:border-ocean-deep-700',
+	'dark-amaranth': 'bg-dark-amaranth-50 border-dark-amaranth-200 dark:bg-dark-amaranth-900 dark:border-dark-amaranth-700',
+	'bright-amber': 'bg-bright-amber-50 border-bright-amber-200 dark:bg-bright-amber-900 dark:border-bright-amber-700',
+	'soft-periwinkle': 'bg-soft-periwinkle-50 border-soft-periwinkle-200 dark:bg-soft-periwinkle-900 dark:border-soft-periwinkle-700',
+};
 ---
 
 <!-- HyperUI card pattern on theme tokens. -->
-<article class={`flex flex-col p-4 transition-shadow hover:shadow-md sm:p-6 ${cardClass()}`}>
+<article class={`flex flex-col overflow-hidden rounded-md border p-4 shadow-sm transition-shadow hover:shadow-md sm:p-6 ${accentCard[publication.accent]}`}>
 	<h2 class="font-serif text-xl font-semibold text-pretty sm:text-2xl">
 		<a href={publicationPath(publication.slug)} class="transition-colors hover:text-accent-foreground">
 			{publication.name}
