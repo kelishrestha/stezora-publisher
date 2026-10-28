@@ -298,7 +298,12 @@ export default function TagManager() {
 	const publicationName = (id: string) => publications.find((p) => p.id === id)?.name ?? id;
 	const postsFor = (tag: TagRecord) =>
 		posts.filter((post) => post.publicationId === tag.publication_id && post.tags.includes(tag.name));
-	const postNamesFor = (tag: TagRecord) => postsFor(tag).map((post) => post.title).join(', ');
+	const allPostNamesFor = (tag: TagRecord) => postsFor(tag).map((post) => post.title).join(', ');
+	// Rows list at most 3 post names; the tooltip carries the full list.
+	const postNamesFor = (tag: TagRecord) => {
+		const titles = postsFor(tag).map((post) => post.title);
+		return titles.length > 3 ? `${titles.slice(0, 3).join(', ')}, …` : titles.join(', ');
+	};
 
 	const tabs = [{ id: 'all', name: 'All' }, ...publications];
 
@@ -523,7 +528,7 @@ export default function TagManager() {
 											{postsFor(tag).length}
 										</span>
 									</p>
-									<p className="mt-1 truncate text-xs text-muted-foreground" title={postNamesFor(tag) || undefined}>
+									<p className="mt-1 truncate text-xs text-muted-foreground" title={allPostNamesFor(tag) || undefined}>
 										{publicationName(tag.publication_id)}
 										{postNamesFor(tag) ? ` · ${postNamesFor(tag)}` : ''}
 										{formatDate(tag.created_at) ? ` · Created on ${formatDate(tag.created_at)}` : ''}
