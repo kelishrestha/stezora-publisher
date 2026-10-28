@@ -31,20 +31,5 @@ const publications = await Promise.all(
 		<div class="mt-10">
 			<PublicationShowcase client:load publications={publications} />
 		</div>
-		<!-- Crawlable, no-JS fallback: the shelf is a canvas. -->
-		<nav aria-label="Poetry collections" class="mt-10">
-			<ul class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
-				{publications.map((publication) => (
-					<li>
-						<a
-							href={publicationPath(publication.slug)}
-							class="text-muted-foreground transition-colors hover:text-accent-foreground"
-						>
-							{publication.name} ({publication.postCount} poems)
-						</a>
-					</li>
-				))}
-			</ul>
-		</nav>
 	</div>
 </BaseLayout>
