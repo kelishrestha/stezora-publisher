@@ -69,7 +69,18 @@ openssl rand -hex 32 | npx wrangler secret put BACKUP_TOKEN
 
 Record the backup token wherever the GitHub backup secrets live (see
 `docs/BACKUP.md`). Auth needs no URL configuration: the Worker derives its
-origin from each request. Blogger mirror secrets come later with Phase 6C.
+origin from each request.
+
+The Blogger import button (Settings -> Integrations) is optional and stays
+disabled until these three OAuth secrets are set. Blog ids are not
+configured here: the import reads them from the posts already linked to each
+publication, so at least one Blogger post must exist for that publication.
+
+```sh
+npx wrangler secret put BLOGGER_CLIENT_ID
+npx wrangler secret put BLOGGER_CLIENT_SECRET
+npx wrangler secret put BLOGGER_REFRESH_TOKEN
+```
 
 ## 4. First deploy (bootstrap)
 
