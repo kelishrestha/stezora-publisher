@@ -11,6 +11,7 @@ import type { PostRecord } from '../src/lib/blogger/types';
 
 const root = path.resolve(import.meta.dirname, '..');
 const postsDir = path.join(root, 'src', 'content', 'posts');
+const testimonialsDir = path.join(root, 'src', 'content', 'testimonials');
 
 export interface ContentPost {
 	slug: string;
@@ -34,10 +35,20 @@ export interface ContentPost {
 	neobookComments?: number;
 }
 
+export interface ContentTestimonial {
+	id: string;
+	name: string;
+	location: string | null;
+	work: string | null;
+	story: string;
+	sortOrder: number;
+}
+
 export interface ContentResponse {
 	publications: unknown[];
 	posts: ContentPost[];
 	tags: unknown[];
+	testimonials?: ContentTestimonial[];
 }
 
 function stripJsonc(source: string): string {
@@ -360,6 +371,24 @@ export async function writeExport(dir: string, data: ContentResponse, options: W
 	}
 }
 
+/** Writes visible testimonials as one JSON file each (glob content collection). */
+export async function writeTestimonials(dir: string, items: ContentTestimonial[]): Promise<void> {
+	await fs.mkdir(dir, { recursive: true });
+	const existing = await fs.readdir(dir).catch(() => [] as string[]);
+	const expected = new Set<string>();
+	for (const item of items) {
+		const file = `${item.id}.json`;
+		expected.add(file);
+		const record = { name: item.name, location: item.location ?? '', work: item.work ?? '', story: item.story, sortOrder: item.sortOrder };
+		await fs.writeFile(path.join(dir, file), `${JSON.stringify(record, null, 2)}\n`, 'utf-8');
+	}
+	for (const file of existing) {
+		if (file.endsWith('.json') && !expected.has(file)) {
+			await fs.unlink(path.join(dir, file));
+		}
+	}
+}
+
 async function main(): Promise<void> {
 	const args = process.argv.slice(2);
 	let mode: 'local' | 'remote' = 'local';
@@ -395,6 +424,7 @@ async function main(): Promise<void> {
 		// Production has no R2, so ship images as static build assets.
 		localizeImages: process.env.EXPORT_SKIP_IMAGE_LOCALIZE !== '1',
 	});
+	await writeTestimonials(testimonialsDir, data.testimonials ?? []);
 	console.error(`export:content: wrote ${data.posts.length} post(s) to src/content/posts`);
 }
 

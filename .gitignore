@@ -39,4 +39,5 @@ personal_publishing_platform_agentic_coding_recommendation.md
 .env.*
 !.env.example
 src/content/posts/
+src/content/testimonials/
 backups/

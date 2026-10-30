@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, lte } from 'drizzle-orm';
 import { createDb } from '../db/client';
-import { media, posts, postTags, publications, tags } from '../db/schema';
+import { media, posts, postTags, publications, tags, testimonials } from '../db/schema';
 import { isMediaStorageEnabled, mediaUrl } from '../db/media';
 import type { RouteHandler } from '../router';
 
@@ -41,10 +41,20 @@ export interface ContentPost {
 	neobookComments?: number;
 }
 
+interface ContentTestimonial {
+	id: string;
+	name: string;
+	location: string | null;
+	work: string | null;
+	story: string;
+	sortOrder: number;
+}
+
 interface ContentResponse {
 	publications: ContentPublication[];
 	posts: ContentPost[];
 	tags: ContentTag[];
+	testimonials: ContentTestimonial[];
 }
 
 export const content: RouteHandler = async ({ env }) => {
@@ -176,10 +186,17 @@ export const content: RouteHandler = async ({ env }) => {
 		return post;
 	});
 
+	const testimonialRows = await db
+		.select({ id: testimonials.id, name: testimonials.name, location: testimonials.location, work: testimonials.work, story: testimonials.story, sortOrder: testimonials.sort_order })
+		.from(testimonials)
+		.where(eq(testimonials.visible, 1))
+		.orderBy(asc(testimonials.sort_order), asc(testimonials.created_at));
+
 	const response: ContentResponse = {
 		publications: publicationsResult,
 		posts: contentPosts,
 		tags: tagsResult,
+		testimonials: testimonialRows,
 	};
 
 	return new Response(JSON.stringify(response), {

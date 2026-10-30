@@ -198,6 +198,24 @@ export const books = sqliteTable(
 );
 
 /**
+ * Reader testimonials shown in the homepage carousel. Admin-authored only
+ * (stories arrive by email via the contact form, then an admin "raises" them
+ * here), so there is no public submission path and no pending state, just a
+ * visibility flag and a manual sort order.
+ */
+export const testimonials = sqliteTable('testimonials', {
+	id: text('id').primaryKey(),
+	name: text('name').notNull(),
+	location: text('location'),
+	work: text('work'),
+	story: text('story').notNull(),
+	// 1 = shown in the carousel, 0 = hidden. Sort ascending by sort_order.
+	visible: integer('visible').notNull().default(1),
+	sort_order: integer('sort_order').notNull().default(0),
+	created_at: text('created_at').notNull(),
+});
+
+/**
  * Blogger pageview totals per publication. Blogger's API exposes only
  * blog-level aggregates (all time, 30 days, 7 days), not per-post counts, so
  * one row per publication holds the latest snapshot.
@@ -233,3 +251,4 @@ export type Media = typeof media.$inferSelect;
 export type PageView = typeof pageViews.$inferSelect;
 export type Book = typeof books.$inferSelect;
 export type BloggerStats = typeof bloggerStats.$inferSelect;
+export type Testimonial = typeof testimonials.$inferSelect;
