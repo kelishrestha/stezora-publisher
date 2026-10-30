@@ -5,6 +5,7 @@ import Toast, { ToastStack } from './Toast';
 import ConfirmDialog from './ConfirmDialog';
 import { buttonClass, formControlClass } from '../ui/shared/classes';
 import { modalOverlayClass, modalPanelClass } from '../ui/shared/classes';
+import { imageVariant } from '../../lib/publications/images';
 
 interface PublicationOption {
 	id: string;
@@ -461,7 +462,29 @@ export default function PostEditor({ postId }: PostEditorProps) {
 					</div>
 					<article className="relative z-10 mx-auto w-full max-w-3xl px-4 py-10 sm:px-6">
 						<h1 className="font-serif text-3xl font-bold tracking-tight sm:text-4xl">{preview.title}</h1>
-						<div className="prose mt-10 max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: preview.html }} />
+						<div className="prose mt-10 max-w-none dark:prose-invert">
+							{(() => {
+								const featured = postMedia.find((item) => item.id === featuredImageId);
+								if (!featured) return null;
+								return (
+									<span className="img-shell mb-8 block w-full rounded-lg border border-border shadow-lg lg:float-right lg:mb-6 lg:ml-10 lg:w-80 lg:rotate-2 lg:transition-transform lg:hover:rotate-0">
+										<span className="img-shell-dots" aria-hidden="true">
+											<span></span>
+											<span></span>
+											<span></span>
+										</span>
+										<img
+											src={imageVariant(featured.url, 1024)}
+											alt=""
+											className="m-0 block w-full"
+											loading="eager"
+											onLoad={(event) => event.currentTarget.classList.add('loaded')}
+										/>
+									</span>
+								);
+							})()}
+							<div dangerouslySetInnerHTML={{ __html: preview.html }} />
+						</div>
 					</article>
 				</div>
 			)}
