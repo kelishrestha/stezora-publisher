@@ -1,0 +1,53 @@
+---
+import { buttonClass } from './shared/classes';
+---
+
+<div
+	id="cookie-consent"
+	hidden
+	role="dialog"
+	aria-live="polite"
+	aria-label="Cookie consent"
+	class="fixed inset-x-0 bottom-0 z-50 px-4 pb-4"
+>
+	<div class="mx-auto flex max-w-3xl flex-col gap-3 rounded-lg border border-border bg-surface p-4 shadow-lg sm:flex-row sm:items-center sm:justify-between">
+		<p class="text-sm text-muted-foreground">
+			We use a cookie to measure how the site is used. You can opt out below.
+		</p>
+		<div class="flex shrink-0 gap-2">
+			<button type="button" id="cookie-decline" class={buttonClass('outline', 'sm')}>Opt out</button>
+			<button type="button" id="cookie-accept" class={buttonClass('primary', 'sm')}>Accept</button>
+		</div>
+	</div>
+</div>
+
+<script>
+	import { CONSENT_KEY } from '../../lib/analytics/track';
+
+	const box = document.getElementById('cookie-consent');
+
+	function stored(): string | null {
+		try {
+			return window.localStorage.getItem(CONSENT_KEY);
+		} catch {
+			return 'denied';
+		}
+	}
+
+	// Show only on public pages and only before a choice has been made.
+	if (box && !window.location.pathname.startsWith('/admin') && !stored()) {
+		box.hidden = false;
+	}
+
+	function decide(value: 'granted' | 'denied') {
+		try {
+			window.localStorage.setItem(CONSENT_KEY, value);
+		} catch {
+			/* storage unavailable: the banner just closes for this page */
+		}
+		box?.setAttribute('hidden', '');
+	}
+
+	document.getElementById('cookie-accept')?.addEventListener('click', () => decide('granted'));
+	document.getElementById('cookie-decline')?.addEventListener('click', () => decide('denied'));
+</script>

@@ -92,6 +92,13 @@
       "when": 1793188151089,
       "tag": "0012_tags_created_at",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1793350578594,
+      "tag": "0013_page_views",
+      "breakpoints": true
     }
   ]
 }

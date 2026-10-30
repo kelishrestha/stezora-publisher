@@ -14,6 +14,12 @@ export interface Props {
 
 const { post, publication } = Astro.props;
 
+// The content id is publication-prefixed; the view API keys posts by the bare
+// slug (matching posts.slug in D1), so strip the prefix for the badge lookup.
+const postSlug = post.id.startsWith(`${publication.slug}-`)
+	? post.id.slice(publication.slug.length + 1)
+	: post.id;
+
 const path = postPath(publication.slug, post.id);
 const breadcrumbs = [
 	{ name: 'Home', href: '/' },
@@ -41,6 +47,14 @@ const breadcrumbs = [
 			<div class="mt-4">
 				<PostMeta pubDate={post.data.pubDate} updatedDate={post.data.updatedDate} />
 			</div>
+			<p class="mt-2 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4" aria-hidden="true">
+					<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+					<circle cx="12" cy="12" r="3" />
+				</svg>
+				<span data-view-count data-publication={publication.slug} data-post={postSlug}>&hellip;</span>
+				<span>views</span>
+			</p>
 		</header>
 		<div class="prose mt-10 max-w-none dark:prose-invert">
 			<slot />
@@ -61,3 +75,18 @@ const breadcrumbs = [
 		)}
 	</article>
 </BaseLayout>
+
+<script>
+	// First-party view count for the on-page badge (reads our own /api/views).
+	const el = document.querySelector('[data-view-count]');
+	if (el instanceof HTMLElement && el.dataset.publication && el.dataset.post) {
+		fetch(`/api/views/${encodeURIComponent(el.dataset.publication)}/${encodeURIComponent(el.dataset.post)}`)
+			.then((response) => (response.ok ? (response.json() as Promise<{ views?: number }>) : null))
+			.then((data) => {
+				if (data && typeof data.views === 'number') {
+					el.textContent = new Intl.NumberFormat().format(data.views);
+				}
+			})
+			.catch(() => undefined);
+	}
+</script>

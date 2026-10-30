@@ -121,7 +121,38 @@ export const bloggerSync = sqliteTable(
 	(table) => [uniqueIndex('blogger_sync_post_unique').on(table.post_id)]
 );
 
+export const pageViews = sqliteTable(
+	'page_views',
+	{
+		id: text('id').primaryKey(),
+		path: text('path').notNull(),
+		// Owning post/publication when the path resolves to a post page; null for
+		// non-post pages (homepage, collection indexes).
+		publication_slug: text('publication_slug'),
+		post_slug: text('post_slug'),
+		// Only the referrer hostname is stored (never the full URL with its query).
+		referrer_host: text('referrer_host'),
+		country: text('country'),
+		region: text('region'),
+		city: text('city'),
+		continent: text('continent'),
+		device: text('device'),
+		// Daily-rotated salted hash of IP + user agent: cookieless per-day uniques.
+		visitor_hash: text('visitor_hash').notNull(),
+		// Stable first-party cookie id: accurate all-time uniques; null until the
+		// visitor carries the cookie.
+		visitor_id: text('visitor_id'),
+		created_at: text('created_at').notNull(),
+	},
+	(table) => [
+		index('idx_page_views_created_at').on(table.created_at),
+		index('idx_page_views_post').on(table.publication_slug, table.post_slug),
+		index('idx_page_views_country').on(table.country),
+	]
+);
+
 export type Publication = typeof publications.$inferSelect;
 export type Post = typeof posts.$inferSelect;
 export type Tag = typeof tags.$inferSelect;
 export type Media = typeof media.$inferSelect;
+export type PageView = typeof pageViews.$inferSelect;

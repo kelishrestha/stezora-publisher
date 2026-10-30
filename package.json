@@ -50,6 +50,7 @@
     "@iconify-json/lucide": "^1.2.126",
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.3",
+    "analytics": "^0.8.19",
     "astro": "^7.2.0",
     "astro-icon": "^1.2.0",
     "better-auth": "^1.6.27",

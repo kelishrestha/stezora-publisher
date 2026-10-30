@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import EmptyState from './EmptyState';
 import LoadingImage from './LoadingImage';
-import { EyeIcon, ImagePlaceholderIcon, PencilIcon } from './icons';
+import { ChartIcon, EyeIcon, ImagePlaceholderIcon, PencilIcon } from './icons';
 import { badgeClass, buttonClass, cardClass } from '../ui/shared/classes';
 
 interface PublicationStats {
@@ -237,6 +237,14 @@ export default function Dashboard() {
 									</div>
 								</a>
 								<div className="flex shrink-0 items-center gap-2">
+									<a
+										href={`/admin/audience?publication=${encodeURIComponent(post.publication)}&post=${encodeURIComponent(post.slug)}`}
+										aria-label={`Stats for ${post.title}`}
+										title="Stats"
+										className={buttonClass('accentOutline', 'icon')}
+									>
+										<ChartIcon />
+									</a>
 									<a
 										href={`/admin/posts/${post.id}/view`}
 										aria-label={`View ${post.title}`}

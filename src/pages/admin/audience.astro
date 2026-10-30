@@ -1,0 +1,22 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import Audience from '../../components/admin/Audience';
+
+const title = 'Audience';
+const description = 'Who is reading: visitors, geography, referrers, and per-post views.';
+---
+
+<AdminLayout
+	title={title}
+	description={description}
+	path="/admin/audience"
+	breadcrumbs={[{ name: 'Dashboard', href: '/admin' }, { name: 'Audience' }]}
+>
+	<h1 class="text-2xl font-semibold tracking-tight text-foreground">Audience</h1>
+	<p class="mt-1 text-sm text-muted-foreground">
+		Visitors, geography, referrers, and per-post views, collected first-party from your own site.
+	</p>
+	<div class="mt-6">
+		<Audience client:load />
+	</div>
+</AdminLayout>

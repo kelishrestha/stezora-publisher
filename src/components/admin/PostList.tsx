@@ -4,7 +4,7 @@ import { ListSkeleton, SkeletonBlock } from './Skeleton';
 import LoadingImage from './LoadingImage';
 import Pagination from './Pagination';
 import { MONTHS, filterSelectClass, matchesMonthYear, yearsOf } from './filters';
-import { EyeIcon, ImagePlaceholderIcon, PencilIcon } from './icons';
+import { ChartIcon, EyeIcon, ImagePlaceholderIcon, PencilIcon } from './icons';
 import { badgeClass, buttonClass, statusBadgeClass } from '../ui/shared/classes';
 import { cardClass, countBadgeClass } from '../ui/shared/classes';
 
@@ -437,6 +437,16 @@ export default function PostList() {
 									>
 										{STATUS_LABELS[post.status] ?? post.status}
 									</span>
+									{post.status === 'published' && (
+										<a
+											href={`/admin/audience?publication=${encodeURIComponent(post.publication)}&post=${encodeURIComponent(post.slug)}`}
+											aria-label={`Stats for ${post.title}`}
+											title="Stats"
+											className={buttonClass('accentOutline', 'icon')}
+										>
+											<ChartIcon />
+										</a>
+									)}
 									<a
 										href={`/admin/posts/${post.id}/view`}
 										aria-label={`View ${post.title}`}

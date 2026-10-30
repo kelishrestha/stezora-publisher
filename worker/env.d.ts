@@ -14,4 +14,9 @@ interface Env {
 	BETTER_AUTH_URL?: string;
 	/** Bearer token for the CI backup export; unset disables token auth. */
 	BACKUP_TOKEN?: string;
+	/**
+	 * Salt for the daily-rotated pageview visitor hash. Optional: falls back to
+	 * BETTER_AUTH_SECRET so analytics works without extra configuration.
+	 */
+	ANALYTICS_SALT?: string;
 }

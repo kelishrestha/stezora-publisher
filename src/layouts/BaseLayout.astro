@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import SiteHeader from '../components/navigation/SiteHeader.astro';
 import SiteFooter from '../components/navigation/SiteFooter.astro';
+import CookieConsent from '../components/ui/CookieConsent.astro';
 import { SITE } from '../lib/seo/config';
 import { absoluteUrl, canonicalUrl, formatDate } from '../lib/seo/seo';
 import {
@@ -120,5 +121,10 @@ const jsonLd = breadcrumbs.length > 0 ? renderJsonLd(websiteJsonLd(), pageJsonLd
 		) : (
 			<slot />
 		)}
+		<CookieConsent />
+		<script>
+			import { initPageTracking } from '../lib/analytics/track';
+			initPageTracking();
+		</script>
 	</body>
 </html>

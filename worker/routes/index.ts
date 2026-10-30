@@ -1,10 +1,13 @@
 import { Router } from '../router';
 import { content } from './content';
+import { collect } from './collect';
 import { exportAll } from './export';
 import { media } from './media';
+import { postViews } from './views';
 import { requireAdmin, withBodyLimit } from '../lib/middleware';
 import { adminStats } from './admin/stats';
 import { analytics } from './admin/analytics';
+import { audience } from './admin/audience';
 import { createPost, deletePost, editorMeta, getPost, listPosts, previewPost, publishPost, updatePost } from './admin/posts';
 import { createTag, deleteTag, listTags, updateTag } from './admin/tags';
 import { deleteAdminMedia, listAdminMedia, localizeMedia, uploadMedia } from './admin/media';
@@ -13,10 +16,15 @@ export const routes = new Router();
 
 routes.get('/api/content', content);
 routes.get('/api/export', exportAll);
+// Public pageview collection (first-party analytics beacon) and the per-post
+// view count used by the on-page badge.
+routes.post('/api/collect', collect);
+routes.get('/api/views/:publication/:post', postViews);
 // Rest parameter: localized objects live under nested keys (localized/<id>.<ext>).
 routes.get('/media/:key*', media);
 routes.get('/api/admin/stats', requireAdmin(adminStats));
 routes.get('/api/admin/analytics', requireAdmin(analytics));
+routes.get('/api/admin/audience', requireAdmin(audience));
 
 // Editor routes. `/api/admin/posts/meta` must be registered before
 // `/api/admin/posts/:id` so the router resolves `meta` as a literal path.
