@@ -5,6 +5,13 @@ interface Env {
 	/** "false" serves media from external source URLs instead of R2. */
 	ENABLE_MEDIA_STORAGE?: string;
 	BETTER_AUTH_SECRET: string;
+	/**
+	 * Canonical site origin (for example https://stezora.example). When set, the
+	 * auth session's baseURL and trusted origin are pinned to it instead of the
+	 * request's host. Unset in local dev and tests, where the request origin is
+	 * used.
+	 */
+	BETTER_AUTH_URL?: string;
 	/** Bearer token for the CI backup export; unset disables token auth. */
 	BACKUP_TOKEN?: string;
 }

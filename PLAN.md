@@ -679,6 +679,48 @@ Rollback: `wrangler rollback` to the previous release; document in `docs/cloudfl
 [ ] Security gate runs in CI before deploy (pull request / main)
 ```
 
+### M8.0: Hardening shipped from the security audit (2026-10-30)
+
+Parked here for traceability. A focused hardening pass landed on `feature-cms_and_cf_workers` (uncommitted at time of writing):
+
+1. **Sign-in rate limit tightened** (`worker/lib/auth.ts`): the `/sign-in/*` rule went from `window 60 / max 30` to `window 60 / max 10` per IP. Caps brute force at 10/min/IP while staying well above what a human needs.
+2. **Content-Security-Policy + HSTS**: enabled Astro's per-page CSP (`astro.config.mjs` `security.csp`), so `script-src`/`style-src` are locked to `'self'` plus per-page SHA-256 hashes with no `unsafe-inline`; added `default-src 'self'`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, scoped `img-src`/`connect-src`/`font-src`, and `Strict-Transport-Security` (2 years, `includeSubDomains`, no `preload`) in `public/_headers`. The 8 cosmetic inline `style="animation-delay…"` attributes on the homepage were moved to Tailwind classes so the output has zero inline style attributes.
+3. **Constant-time backup-token compare** (`worker/routes/export.ts`): `/api/export` now compares the bearer token via SHA-256 digests in constant time instead of `===`.
+4. **Auth origin pinning** (`worker/lib/auth.ts`, `worker/env.d.ts`): `baseURL` and `trustedOrigins` pin to `BETTER_AUTH_URL` when set, so auth trusts only the canonical domain (not the `*.workers.dev` host). Requires setting `BETTER_AUTH_URL` as a Worker var in production.
+
+### M8.1: Two-factor authentication (TOTP), planned
+
+**Goal:** add a second authentication factor to the single admin account, the standout weak link from the audit (the whole CMS sits behind one password). The tightened rate limit (M8.0) mitigates brute force; 2FA is the actual fix.
+
+**Decision:** use **TOTP (authenticator app) with backup recovery codes**, not email/SMS OTP.
+- **Rationale:** there is no email or SMS sender wired in the app (better-auth runs with `email_verified` disabled, no Resend/MailChannels/Cloudflare Email integration). TOTP needs no delivery infrastructure: a shared secret is established once via QR at enrollment and verified in the Worker against D1. It is also stronger than email OTP (no inbox-compromise path) and SMS OTP (no SIM-swap or phishing path).
+- **Device-loss tradeoff:** solved by backup codes. better-auth 1.6.27's `twoFactor` plugin ships `totp`, `otp`, and `backup-codes` submodules, so recovery codes are generated at enrollment and stored offline. No dependency changes needed.
+
+**Files (anticipated):**
+- `worker/lib/auth.ts`: register the `twoFactor` plugin (TOTP + backup codes) on the better-auth instance.
+- `migrations/00XX_two_factor.sql`: the plugin's `twoFactor` table (secret + backup codes), generated via `pnpm better-auth:generate` then `pnpm db:generate`.
+- `src/pages/admin/security.astro` (or a panel in the dashboard): TOTP enrollment, showing the QR + secret, verifying a first code to activate, then revealing one-time backup codes.
+- `src/pages/admin/login.astro`: add the second step so that after the password succeeds with 2FA enabled, the user is prompted for the TOTP (or a backup) code.
+- `src/components/admin/*`: enrollment and verification UI (React island), using `better-auth/client` `twoFactorClient`.
+- `tests/worker/auth.test.ts` (or a new `two-factor.test.ts`): enroll, verify, and assert sign-in is blocked without the second factor once enabled, and that backup-code consumption is single-use.
+
+**Steps:**
+1. Add the `twoFactor` server plugin (TOTP + backup codes) and regenerate the auth schema + migration; apply locally then remote.
+2. Build the enrollment flow in the admin area (QR via the plugin's TOTP URI, verify-to-activate, display and acknowledge backup codes once).
+3. Extend the login flow with the second-factor step (TOTP code or backup code), keeping the existing error-message parity so the step leaks nothing.
+4. Keep 2FA opt-in per user so enabling the plugin cannot lock the owner out before enrollment; document the recovery path (backup codes) in `docs/security.md`.
+5. Verify end to end in a browser on a branch before merging (enrollment, login, one backup-code sign-in), then run the full `pnpm lint && pnpm typecheck && pnpm test && pnpm build` gate.
+
+**Acceptance criteria:**
+```text
+[ ] twoFactor (TOTP + backup codes) enabled on the better-auth instance; migration applied local + remote
+[ ] Admin can enroll an authenticator via QR and must verify a code to activate
+[ ] One-time backup codes are generated at enrollment, shown once, and each is single-use
+[ ] With 2FA enabled, sign-in requires the second factor; password alone is rejected
+[ ] Enrolling cannot lock the owner out (opt-in per user; recovery path documented)
+[ ] Enrollment + login + backup-code sign-in smoke-tested in a browser before merge
+```
+
 ---
 
 ## Definition of done (Phase 4 + Phase 5)

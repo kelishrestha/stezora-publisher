@@ -36,16 +36,39 @@ export function createAuth(db: AdapterDatabase, options: AuthOptions) {
 			max: 30,
 			storage: 'database',
 			customRules: {
-				// BetterAuth ships a default sign-in rule (window 10 / max 3) that
-				// would lock a legitimate owner out after three attempts. Raise the
-				// ceiling while keeping a tight per-IP bucket (DEVELOPER.md §45).
-				'/sign-in/*': { window: 60, max: 30 },
+				// Sign-in is the single most attacked endpoint (one admin account,
+				// password-only), so it gets a tight per-IP bucket: 10 attempts per
+				// minute. That is far more than a human needs (a correct sign-in
+				// takes one or two tries) yet caps brute force at 10/min/IP. Note
+				// this is per-IP and has no hard lockout, so a strong admin password
+				// and 2FA remain the primary defenses (DEVELOPER.md §45).
+				'/sign-in/*': { window: 60, max: 10 },
 			},
 		},
 	});
 }
 
 export type Auth = ReturnType<typeof createAuth>;
+
+/**
+ * Resolves the canonical origin for auth. When `BETTER_AUTH_URL` is set (it is
+ * in production), the session's `baseURL` and the single trusted origin are
+ * pinned to it, so the auth surface trusts only the real domain and never
+ * whatever host a request happens to arrive on (for example the deployment's
+ * `*.workers.dev` subdomain). Falls back to the request origin for local
+ * `wrangler dev` and tests, where no canonical URL is configured.
+ */
+function resolveOrigin(request: Request, env: Env): string {
+	const configured = env.BETTER_AUTH_URL?.trim();
+	if (configured) {
+		try {
+			return new URL(configured).origin;
+		} catch {
+			// Fall through to the request origin on a malformed configured value.
+		}
+	}
+	return new URL(request.url).origin;
+}
 
 /**
  * Resolves the BetterAuth instance for a request origin, caching one instance
@@ -55,7 +78,7 @@ export type Auth = ReturnType<typeof createAuth>;
 const authCache = new Map<string, Auth>();
 
 export function getAuth(request: Request, env: Env): Auth {
-	const origin = new URL(request.url).origin;
+	const origin = resolveOrigin(request, env);
 	const cached = authCache.get(origin);
 	if (cached) {
 		return cached;

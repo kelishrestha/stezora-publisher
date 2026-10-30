@@ -6,6 +6,27 @@ import { authenticateSession } from '../lib/middleware';
 import type { RouteHandler } from '../router';
 
 /**
+ * Compares two strings in constant time so the backup token check cannot be
+ * narrowed by a timing side-channel. Both sides are hashed to a fixed-length
+ * digest first, so neither the comparison time nor the digest length reveals
+ * anything about the secret's length.
+ */
+async function timingSafeEqual(a: string, b: string): Promise<boolean> {
+	const encoder = new TextEncoder();
+	const [digestA, digestB] = await Promise.all([
+		crypto.subtle.digest('SHA-256', encoder.encode(a)),
+		crypto.subtle.digest('SHA-256', encoder.encode(b)),
+	]);
+	const viewA = new Uint8Array(digestA);
+	const viewB = new Uint8Array(digestB);
+	let mismatch = 0;
+	for (let i = 0; i < viewA.length; i += 1) {
+		mismatch |= viewA[i] ^ viewB[i];
+	}
+	return mismatch === 0;
+}
+
+/**
  * GET /api/export
  * Full-fidelity backup payload: every content table raw, drafts and all, with
  * nothing sanitized away. Auth accepts either an admin session (manual use)
@@ -15,7 +36,7 @@ import type { RouteHandler } from '../router';
 export const exportAll: RouteHandler = async ({ request, env }) => {
 	const bearer = request.headers.get('authorization');
 	const token = env.BACKUP_TOKEN;
-	const bearerOk = Boolean(token && bearer === `Bearer ${token}`);
+	const bearerOk = Boolean(token && bearer && (await timingSafeEqual(bearer, `Bearer ${token}`)));
 	if (!bearerOk) {
 		const user = await authenticateSession(request, env);
 		if (!user) {

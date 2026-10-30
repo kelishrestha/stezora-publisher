@@ -28,6 +28,10 @@ export default defineConfig(async () => {
 									ENABLE_MEDIA_STORAGE: 'true',
 									// Test-only value; never a real secret.
 									BETTER_AUTH_SECRET: 'vitest-better-auth-secret',
+									// Pin the auth origin to the one the tests request against so
+									// the trusted-origin check is self-consistent and does not
+									// depend on .dev.vars bleeding into the test env.
+									BETTER_AUTH_URL: 'http://localhost',
 								},
 							},
 						}),
