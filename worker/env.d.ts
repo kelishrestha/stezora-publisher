@@ -19,4 +19,12 @@ interface Env {
 	 * BETTER_AUTH_SECRET so analytics works without extra configuration.
 	 */
 	ANALYTICS_SALT?: string;
+	/**
+	 * Blogger OAuth credentials for the admin import. All three are required for
+	 * the import to run; unset, the import endpoint returns a clear error. Blog
+	 * ids are not configured here, they are read from the already-linked posts.
+	 */
+	BLOGGER_CLIENT_ID?: string;
+	BLOGGER_CLIENT_SECRET?: string;
+	BLOGGER_REFRESH_TOKEN?: string;
 }

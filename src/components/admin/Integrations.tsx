@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Section } from './Section';
 import Toast, { ToastStack } from './Toast';
 import { useConfirm } from './useConfirm';
-import { badgeClass, buttonClass, cardClass } from '../ui/shared/classes';
+import { badgeClass, buttonClass, cardClass, modalOverlayClass, modalPanelClass } from '../ui/shared/classes';
 
 interface BloggerPublication {
 	slug: string;
@@ -25,10 +25,19 @@ interface NeobookSyncResult {
 	unmatched: string[];
 }
 
+interface BloggerImportResult {
+	includeDrafts: boolean;
+	imported: number;
+	skipped: number;
+	publications: Array<{ slug: string; name: string; linked: boolean; imported: number; skipped: number }>;
+}
+
 export default function Integrations() {
 	const [data, setData] = useState<IntegrationsData | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [syncing, setSyncing] = useState(false);
+	const [importing, setImporting] = useState(false);
+	const [importOpen, setImportOpen] = useState(false);
 	const [toast, setToast] = useState<{ tone: 'error' | 'success'; message: string } | null>(null);
 	const { confirm, confirmDialog } = useConfirm();
 
@@ -90,6 +99,45 @@ export default function Integrations() {
 		}
 	}
 
+	async function runImport(includeDrafts: boolean) {
+		setImportOpen(false);
+		const confirmed = await confirm({
+			title: 'Import from Blogger?',
+			message: includeDrafts
+				? 'This imports published posts and drafts from the linked blogs. Posts already in the CMS are left untouched; only new posts are added.'
+				: 'This imports published posts from the linked blogs. Posts already in the CMS are left untouched; only new posts are added.',
+			confirmLabel: 'Import now',
+			tone: 'primary',
+		});
+		if (!confirmed) return;
+
+		setImporting(true);
+		try {
+			const response = await fetch('/api/admin/blogger/import', {
+				method: 'POST',
+				credentials: 'same-origin',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ includeDrafts }),
+			});
+			if (response.status === 401) {
+				window.location.href = '/admin/login';
+				return;
+			}
+			const body = (await response.json()) as { success: boolean; data?: BloggerImportResult; error?: { message?: string } };
+			if (!response.ok || !body.data) {
+				throw new Error(body.error?.message ?? `Import failed (HTTP ${response.status}).`);
+			}
+			const result = body.data;
+			const skipped = result.skipped > 0 ? ` (${result.skipped} already present)` : '';
+			setToast({ tone: 'success', message: `Imported ${result.imported} new post${result.imported === 1 ? '' : 's'}.${skipped}` });
+			loadData();
+		} catch (reason: unknown) {
+			setToast({ tone: 'error', message: reason instanceof Error ? reason.message : 'Could not import from Blogger.' });
+		} finally {
+			setImporting(false);
+		}
+	}
+
 	if (error) {
 		return <p className="rounded-lg bg-accent-soft px-4 py-3 text-sm text-accent-foreground">{error}</p>;
 	}
@@ -142,6 +190,12 @@ export default function Integrations() {
 							</table>
 						</div>
 					)}
+
+					<div className="flex items-center justify-end border-t border-border px-5 py-4">
+						<button type="button" onClick={() => setImportOpen(true)} disabled={importing || !data} className={buttonClass('accentOutline', 'sm')}>
+							{importing ? 'Importing…' : 'Import'}
+						</button>
+					</div>
 				</div>
 			</Section>
 
@@ -167,8 +221,60 @@ export default function Integrations() {
 				</div>
 			</Section>
 
+			{importOpen && <ImportModal onClose={() => setImportOpen(false)} onContinue={(includeDrafts) => void runImport(includeDrafts)} />}
 			{confirmDialog}
 			<ToastStack>{toast && <Toast tone={toast.tone} message={toast.message} onDismiss={() => setToast(null)} />}</ToastStack>
+		</div>
+	);
+}
+
+function ImportModal({ onClose, onContinue }: { onClose: () => void; onContinue: (includeDrafts: boolean) => void }) {
+	const [includeDrafts, setIncludeDrafts] = useState(false);
+
+	useEffect(() => {
+		function onKey(event: KeyboardEvent) {
+			if (event.key === 'Escape') onClose();
+		}
+		document.addEventListener('keydown', onKey);
+		return () => document.removeEventListener('keydown', onKey);
+	}, [onClose]);
+
+	return (
+		<div
+			className={modalOverlayClass}
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="blogger-import-title"
+			onMouseDown={(event) => {
+				if (event.target === event.currentTarget) onClose();
+			}}
+		>
+			<div className={modalPanelClass('w-full max-w-md p-5')}>
+				<div className="mb-4 flex items-center justify-between">
+					<h3 id="blogger-import-title" className="text-base font-semibold text-foreground">
+						Import from Blogger
+					</h3>
+					<button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-accent">
+						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+							<path d="M18 6 6 18" />
+							<path d="m6 6 12 12" />
+						</svg>
+					</button>
+				</div>
+				<p className="text-sm text-muted-foreground">New posts from the linked blogs are added to the CMS. Posts already imported are left untouched.</p>
+				<label className="mt-4 flex items-center gap-2 text-sm text-foreground">
+					<input type="checkbox" checked={includeDrafts} onChange={(event) => setIncludeDrafts(event.target.checked)} className="rounded border-border text-accent focus:ring-accent" />
+					Include drafts
+				</label>
+				<div className="mt-5 flex items-center justify-end gap-2 border-t border-border pt-4">
+					<button type="button" onClick={onClose} className={buttonClass('outline')}>
+						Cancel
+					</button>
+					<button type="button" onClick={() => onContinue(includeDrafts)} className={buttonClass('primary')}>
+						Continue
+					</button>
+				</div>
+			</div>
 		</div>
 	);
 }

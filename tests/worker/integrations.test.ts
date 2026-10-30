@@ -68,3 +68,32 @@ describe('GET /api/admin/integrations', () => {
 		expect(data.neobook.profileUrl).toContain('neobook.org');
 	});
 });
+
+describe('POST /api/admin/blogger/import', () => {
+	it('requires auth', async () => {
+		const response = await fetchWorker('/api/admin/blogger/import', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ includeDrafts: false }),
+		});
+		expect(response.status).toBe(401);
+	});
+
+	it('fails clearly when Blogger credentials are not configured', async () => {
+		const cookie = await signInAndCookies();
+		const response = await fetchWorker('/api/admin/blogger/import', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json', cookie },
+			body: JSON.stringify({ includeDrafts: false }),
+		});
+		expect(response.status).toBe(400);
+		const body = (await response.json()) as { error: { code: string } };
+		expect(body.error.code).toBe('blogger_not_configured');
+	});
+});
+
+describe('POST /api/admin/neobook/sync', () => {
+	it('requires auth', async () => {
+		expect((await fetchWorker('/api/admin/neobook/sync', { method: 'POST' })).status).toBe(401);
+	});
+});
