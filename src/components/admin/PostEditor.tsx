@@ -186,7 +186,9 @@ export default function PostEditor({ postId }: PostEditorProps) {
 			setContentMarkdown(post.contentMarkdown);
 			setTags(post.tags.join(', '));
 			setStatus(post.status);
-			setPublishedAt(toDateTimeLocal(post.publishedAt));
+			// Drafts (including imported ones) have no real publish date, so show the
+			// created date rather than an imported published_at.
+			setPublishedAt(toDateTimeLocal(post.status === 'draft' ? post.createdAt : post.publishedAt));
 			setSeoTitle(post.seoTitle ?? '');
 			setSeoDescription(post.seoDescription ?? '');
 			setFeaturedImageId(post.featuredImageId);
