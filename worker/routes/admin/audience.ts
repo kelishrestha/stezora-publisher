@@ -108,7 +108,7 @@ export const audience: AuthenticatedHandler = async ({ env, request }) => {
 			.innerJoin(publications, eq(publications.id, bloggerStats.publication_id))
 			.orderBy(desc(bloggerStats.views_all)),
 		db
-			.select({ title: posts.title, publication: publications.slug, views: posts.neobook_views, likes: posts.neobook_likes, comments: posts.neobook_comments })
+			.select({ title: posts.title, publication: publications.slug, slug: posts.slug, views: posts.neobook_views, likes: posts.neobook_likes, comments: posts.neobook_comments })
 			.from(posts)
 			.innerJoin(publications, eq(publications.id, posts.publication_id))
 			.where(isNotNull(posts.neobook_url))

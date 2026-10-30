@@ -67,7 +67,7 @@ interface AudienceData {
 	} | null;
 	sourceHistory: SourceHistoryPoint[];
 	bloggerPublications: Array<{ slug: string; name: string; viewsAll: number | null; views30d: number | null; views7d: number | null }>;
-	neobookPosts: Array<{ title: string; publication: string; views: number | null; likes: number | null; comments: number | null }>;
+	neobookPosts: Array<{ title: string; publication: string; slug: string; views: number | null; likes: number | null; comments: number | null }>;
 	neobookBooks: Array<{ title: string; views: number | null; likes: number | null; comments: number | null; linkUrl: string | null }>;
 	viewsByDay: DayPoint[];
 	viewsByHour: HourPoint[];
@@ -662,7 +662,11 @@ function NeobookSourceDetail({ posts, books }: { posts: AudienceData['neobookPos
 				</div>
 			) : (
 				<div className="grid gap-6 lg:grid-cols-2">
-					<BarListCard title={`Poems by ${lower}`} rows={posts.map((row) => ({ label: row.title, views: row[metric] ?? 0 }))} emptyLabel="No poems synced yet." />
+					<BarListCard
+						title={`Poems by ${lower}`}
+						rows={posts.map((row) => ({ label: row.title, views: row[metric] ?? 0, href: audienceHref(row.publication, row.slug) }))}
+						emptyLabel="No poems synced yet."
+					/>
 					<BarListCard
 						title={`Books by ${lower}`}
 						rows={books.map((row) => ({ label: row.title, views: row[metric] ?? 0, href: row.linkUrl ?? undefined, external: true }))}
