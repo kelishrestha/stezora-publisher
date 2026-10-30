@@ -1,5 +1,6 @@
 import { slugify } from '../../src/lib/publications';
 import { sanitizeContentHtml } from '../../src/lib/blogger/sanitize';
+import { captureSourceSnapshot } from './source-stats';
 
 /**
  * Neobook sync core, usable from both the Worker (admin button) and the CLI.
@@ -359,6 +360,8 @@ export async function syncNeobook(db: D1Database, bucket?: R2Bucket): Promise<Ne
 		await db.prepare('UPDATE posts SET featured_image_id = ? WHERE id = ?').bind(mediaId, post.id).run();
 		imagesAttached += 1;
 	}
+
+	await captureSourceSnapshot(db);
 
 	return { items: items.length, postsCreated, contentUpdates, imagesAttached, tagsCreated, booksCreated, booksUpdated, unmatched };
 }

@@ -4,6 +4,7 @@ import { sanitizeContentHtml } from '../../src/lib/blogger/sanitize';
 import { stripImages, unwrapBloggerImages } from '../../src/lib/blogger/html';
 import { publications } from '../../src/lib/publications/data';
 import { slugify } from '../../src/lib/publications';
+import { captureSourceSnapshot } from './source-stats';
 
 /**
  * Blogger import into D1, usable from the admin "Import" button. Blog IDs are
@@ -173,6 +174,7 @@ export async function refreshBloggerStats(db: D1Database, credentials: BloggerIm
 		results.push({ slug: publication.slug, name: publication.name, linked: true, viewsAll: totals.views_all, views30d: totals.views_30d, views7d: totals.views_7d });
 	}
 
+	await captureSourceSnapshot(db);
 	return { statsUpdated, publications: results };
 }
 
@@ -305,5 +307,6 @@ export async function importBlogger(
 		totalSkipped += skipped;
 	}
 
+	await captureSourceSnapshot(db);
 	return { includeDrafts: options.includeDrafts, imported: totalImported, skipped: totalSkipped, statsUpdated, publications: perPublication };
 }
