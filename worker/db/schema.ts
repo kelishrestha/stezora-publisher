@@ -37,6 +37,16 @@ export const posts = sqliteTable(
 		canonical_url: text('canonical_url'),
 		blogger_blog_id: text('blogger_blog_id'),
 		blogger_post_id: text('blogger_post_id'),
+		// Public Neobook URL for the matching poem (set by the Neobook sync).
+		neobook_url: text('neobook_url'),
+		// Where the post originated: 'app' (authored here), 'blogger', or
+		// 'neobook'. Imports stamp their origin so created vs imported is known.
+		source: text('source').notNull().default('app'),
+		// Neobook engagement snapshot (updated on each sync); null for posts with
+		// no Neobook match.
+		neobook_views: integer('neobook_views'),
+		neobook_likes: integer('neobook_likes'),
+		neobook_comments: integer('neobook_comments'),
 		// AnySQLiteColumn breaks the posts ↔ media type cycle (media.post_id
 		// references posts; this column references media).
 		featured_image_id: text('featured_image_id').references((): AnySQLiteColumn => media.id),
@@ -156,8 +166,57 @@ export const appSettings = sqliteTable('app_settings', {
 	value: text('value').notNull(),
 });
 
+/**
+ * Standalone works imported from Neobook (not poems under a publication). The
+ * cover stays as the external Neobook CDN URL; engagement counters are a
+ * snapshot refreshed on each sync.
+ */
+export const books = sqliteTable(
+	'books',
+	{
+		id: text('id').primaryKey(),
+		source: text('source').notNull().default('neobook'),
+		neobook_token: text('neobook_token'),
+		title: text('title').notNull(),
+		blurb: text('blurb'),
+		category: text('category'),
+		language: text('language'),
+		price: text('price'),
+		cover_url: text('cover_url'),
+		link_url: text('link_url'),
+		chapters: integer('chapters'),
+		read_time: integer('read_time'),
+		views: integer('views'),
+		likes: integer('likes'),
+		comments: integer('comments'),
+		bookmarks: integer('bookmarks'),
+		published_at: text('published_at'),
+		updated_at: text('updated_at'),
+		created_at: text('created_at').notNull(),
+	},
+	(table) => [uniqueIndex('books_source_token_unique').on(table.source, table.neobook_token)]
+);
+
+/**
+ * Blogger pageview totals per publication. Blogger's API exposes only
+ * blog-level aggregates (all time, 30 days, 7 days), not per-post counts, so
+ * one row per publication holds the latest snapshot.
+ */
+export const bloggerStats = sqliteTable('blogger_stats', {
+	publication_id: text('publication_id')
+		.primaryKey()
+		.references(() => publications.id),
+	blog_id: text('blog_id').notNull(),
+	views_all: integer('views_all'),
+	views_30d: integer('views_30d'),
+	views_7d: integer('views_7d'),
+	fetched_at: text('fetched_at').notNull(),
+});
+
 export type Publication = typeof publications.$inferSelect;
 export type Post = typeof posts.$inferSelect;
 export type Tag = typeof tags.$inferSelect;
 export type Media = typeof media.$inferSelect;
 export type PageView = typeof pageViews.$inferSelect;
+export type Book = typeof books.$inferSelect;
+export type BloggerStats = typeof bloggerStats.$inferSelect;
