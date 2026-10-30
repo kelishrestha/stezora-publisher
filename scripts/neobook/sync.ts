@@ -38,7 +38,8 @@ async function main(): Promise<void> {
 		console.error(`neobook:sync: ${summary.items} item(s) on the profile`);
 		console.error(
 			`neobook:sync: ${summary.postsCreated} post(s) created, ${summary.contentUpdates} content update(s), ` +
-				`${summary.imagesAttached} featured image(s) attached, ${summary.tagsCreated} tag(s) created`
+				`${summary.imagesAttached} featured image(s) attached, ${summary.tagsCreated} tag(s) created, ` +
+				`${summary.booksCreated} book(s) created, ${summary.booksUpdated} book(s) updated`
 		);
 		if (summary.unmatched.length > 0) {
 			console.error(`neobook:sync: ${summary.unmatched.length} item(s) with no matching post:`);

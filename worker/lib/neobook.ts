@@ -30,19 +30,50 @@ export interface NeobookSyncResult {
 	contentUpdates: number;
 	imagesAttached: number;
 	tagsCreated: number;
+	booksCreated: number;
+	booksUpdated: number;
 	unmatched: string[];
 }
 
 interface NeobookItem {
 	id: string;
+	token?: string;
 	type: string;
 	title: string;
 	text: string;
+	text_fix?: string;
 	date_edit: string;
 	date_publish: string;
 	link_path: string;
 	tags?: string[];
+	views?: string;
+	likes?: string;
+	comments?: string;
+	bookmarks?: string;
+	chapters?: unknown;
+	timereadS?: string;
+	category_title?: string;
+	language_title?: string;
+	price?: { formatted?: string };
 	attachment: { has: string; id: string; image?: { l?: string; m?: string } };
+}
+
+const NEOBOOK_SITE = 'https://neobook.org';
+
+/** Public Neobook URL for an item from its link_path (for example /poem/ab12/). */
+function neobookUrl(linkPath: string): string {
+	return `${NEOBOOK_SITE}${linkPath}`;
+}
+
+/** Parses Neobook's string counters to an integer; arrays become their length. */
+function toInt(value: unknown): number | null {
+	if (typeof value === 'number') return Number.isFinite(value) ? Math.trunc(value) : null;
+	if (typeof value === 'string') {
+		const parsed = Number.parseInt(value, 10);
+		return Number.isFinite(parsed) ? parsed : null;
+	}
+	if (Array.isArray(value)) return value.length;
+	return null;
 }
 
 interface PostRow {
@@ -164,12 +195,75 @@ async function createPost(db: D1Database, publicationSlug: string, item: Neobook
 	const updatedAt = neobookDateToIso(item.date_edit) ?? publishedAt;
 	await db
 		.prepare(
-			'INSERT INTO posts (id, publication_id, title, slug, excerpt, content, status, published_at, updated_at, created_at) ' +
-				"VALUES (?, ?, ?, ?, '', ?, 'published', ?, ?, ?)"
+			'INSERT INTO posts (id, publication_id, title, slug, excerpt, content, status, published_at, updated_at, created_at, source, neobook_url, neobook_views, neobook_likes, neobook_comments) ' +
+				"VALUES (?, ?, ?, ?, '', ?, 'published', ?, ?, ?, 'neobook', ?, ?, ?, ?)"
 		)
-		.bind(id, publication.id, item.title, slug, content, publishedAt, updatedAt, new Date().toISOString())
+		.bind(
+			id,
+			publication.id,
+			item.title,
+			slug,
+			content,
+			publishedAt,
+			updatedAt,
+			new Date().toISOString(),
+			neobookUrl(item.link_path),
+			toInt(item.views),
+			toInt(item.likes),
+			toInt(item.comments)
+		)
 		.run();
 	return { id, title: item.title, featured_image_id: null, content, publication_id: publication.id, publication_slug: publicationSlug, slug };
+}
+
+/** Creates or refreshes a Neobook book row. Returns whether it was new. */
+async function upsertBook(db: D1Database, item: NeobookItem): Promise<'created' | 'updated'> {
+	const token = item.token ?? item.id;
+	const id = `b-neobook-${token}`;
+	const blurb = (item.text_fix ?? item.text ?? '').trim();
+	const price = item.price?.formatted ?? null;
+	const cover = item.attachment?.has === '1' ? item.attachment.image?.l ?? null : null;
+	const link = neobookUrl(item.link_path);
+	const publishedAt = neobookDateToIso(item.date_publish);
+	const updatedAt = neobookDateToIso(item.date_edit);
+	const values = [
+		item.title,
+		blurb,
+		item.category_title ?? null,
+		item.language_title ?? null,
+		price,
+		cover,
+		link,
+		toInt(item.chapters),
+		toInt(item.timereadS),
+		toInt(item.views),
+		toInt(item.likes),
+		toInt(item.comments),
+		toInt(item.bookmarks),
+		publishedAt,
+		updatedAt,
+	];
+
+	const existing = await db.prepare('SELECT id FROM books WHERE source = ? AND neobook_token = ?').bind('neobook', token).first<{ id: string }>();
+	if (existing) {
+		await db
+			.prepare(
+				'UPDATE books SET title = ?, blurb = ?, category = ?, language = ?, price = ?, cover_url = ?, link_url = ?, ' +
+					'chapters = ?, read_time = ?, views = ?, likes = ?, comments = ?, bookmarks = ?, published_at = ?, updated_at = ? WHERE id = ?'
+			)
+			.bind(...values, id)
+			.run();
+		return 'updated';
+	}
+	await db
+		.prepare(
+			'INSERT INTO books (id, source, neobook_token, title, blurb, category, language, price, cover_url, link_url, ' +
+				'chapters, read_time, views, likes, comments, bookmarks, published_at, updated_at, created_at) ' +
+				"VALUES (?, 'neobook', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+		)
+		.bind(id, token, ...values, new Date().toISOString())
+		.run();
+	return 'created';
 }
 
 export async function syncNeobook(db: D1Database, bucket?: R2Bucket): Promise<NeobookSyncResult> {
@@ -190,10 +284,19 @@ export async function syncNeobook(db: D1Database, bucket?: R2Bucket): Promise<Ne
 	let imagesAttached = 0;
 	let postsCreated = 0;
 	let tagsCreated = 0;
+	let booksCreated = 0;
+	let booksUpdated = 0;
 	const unmatched: string[] = [];
 
 	for (const item of items) {
-		if (item.type === 'book') continue;
+		if (item.type === 'book') {
+			if ((await upsertBook(db, item)) === 'created') {
+				booksCreated += 1;
+			} else {
+				booksUpdated += 1;
+			}
+			continue;
+		}
 		const normalized = normalizeTitle(item.title);
 		let post = byTitle.get(normalized) ?? byTitle.get(TITLE_ALIASES[normalized] ?? '');
 		if (!post && NEW_POSTS[normalized]) {
@@ -207,6 +310,20 @@ export async function syncNeobook(db: D1Database, bucket?: R2Bucket): Promise<Ne
 		}
 
 		tagsCreated += await syncTags(db, post, item.tags ?? [], tagIds);
+
+		// Posts the sync owns (created from a Neobook item with no Blogger origin)
+		// are Neobook-sourced. Self-heal the label for ones created before the
+		// source column existed.
+		if (NEW_POSTS[normalized]) {
+			await db.prepare("UPDATE posts SET source = 'neobook' WHERE id = ? AND source <> 'neobook'").bind(post.id).run();
+		}
+
+		// Always refresh the Neobook link and engagement snapshot, even when the
+		// text is unchanged, so counts stay current between content edits.
+		await db
+			.prepare('UPDATE posts SET neobook_url = ?, neobook_views = ?, neobook_likes = ?, neobook_comments = ? WHERE id = ?')
+			.bind(neobookUrl(item.link_path), toInt(item.views), toInt(item.likes), toInt(item.comments), post.id)
+			.run();
 
 		const title = item.title.replace(/\u00a0/g, ' ').trim();
 		const titleChanged = title !== post.title;
@@ -243,5 +360,5 @@ export async function syncNeobook(db: D1Database, bucket?: R2Bucket): Promise<Ne
 		imagesAttached += 1;
 	}
 
-	return { items: items.length, postsCreated, contentUpdates, imagesAttached, tagsCreated, unmatched };
+	return { items: items.length, postsCreated, contentUpdates, imagesAttached, tagsCreated, booksCreated, booksUpdated, unmatched };
 }
