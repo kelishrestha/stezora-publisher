@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import ConfirmDialog from './ConfirmDialog';
+import { useConfirm } from './useConfirm';
 import EmptyState from './EmptyState';
 import { ListSkeleton, SkeletonBlock } from './Skeleton';
 import Pagination from './Pagination';
@@ -139,6 +140,7 @@ export default function TagManager() {
 	const [editing, setEditing] = useState<TagRecord | null>(null);
 	const [formPublicationId, setFormPublicationId] = useState('');
 	const [name, setName] = useState('');
+	const { confirm, confirmDialog } = useConfirm();
 
 	// Filters, tabs (publication tabs double as the publication filter).
 	const [nameFilter, setNameFilter] = useState('');
@@ -223,6 +225,13 @@ export default function TagManager() {
 			setError('Enter a tag name.');
 			return;
 		}
+		const confirmed = await confirm({
+			title: editing ? 'Update tag?' : 'Create tag?',
+			message: editing ? `Save changes to the tag "${editing.name}"?` : `Create the tag "${name.trim()}"?`,
+			confirmLabel: editing ? 'Update' : 'Create',
+			tone: 'primary',
+		});
+		if (!confirmed) return;
 		setBusy(true);
 		setError(null);
 		setNotice(null);
@@ -316,6 +325,7 @@ export default function TagManager() {
 
 	return (
 		<div className="space-y-4">
+			{confirmDialog}
 			{tagToDelete && (
 				<ConfirmDialog
 					title="Delete tag?"

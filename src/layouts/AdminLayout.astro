@@ -141,6 +141,7 @@ const inactiveLink =
 	const authClient = createAuthClient();
 
 	async function signOut() {
+		if (!window.confirm('Sign out of the CMS?')) return;
 		await authClient.signOut();
 		window.location.href = '/admin/login';
 	}

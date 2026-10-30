@@ -6,16 +6,19 @@ interface ConfirmDialogProps {
 	title: string;
 	message: string;
 	confirmLabel?: string;
+	/** 'danger' (red, default) for destructive actions; 'primary' for ordinary ones. */
+	tone?: 'danger' | 'primary';
 	busy?: boolean;
 	onConfirm: () => void;
 	onCancel: () => void;
 }
 
-/** Danger confirmation modal used by every destructive action. */
+/** Confirmation modal used before mutating actions. */
 export default function ConfirmDialog({
 	title,
 	message,
 	confirmLabel = 'Delete',
+	tone = 'danger',
 	busy = false,
 	onConfirm,
 	onCancel,
@@ -54,7 +57,7 @@ export default function ConfirmDialog({
 						type="button"
 						onClick={onConfirm}
 						disabled={busy}
-						className={buttonClass('danger')}
+						className={buttonClass(tone === 'primary' ? 'primary' : 'danger')}
 					>
 						{busy ? 'Working…' : confirmLabel}
 					</button>

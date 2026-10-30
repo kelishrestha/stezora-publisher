@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { createAuthClient } from 'better-auth/client';
 import { buttonClass, cardClass, formControlClass, modalOverlayClass, modalPanelClass } from '../ui/shared/classes';
 import { filterSelectClass } from './filters';
+import { useConfirm } from './useConfirm';
 
 /**
  * Admin settings, grouped into labelled sections (Account, Analytics & privacy,
@@ -256,6 +257,7 @@ function AnalyticsPrivacy() {
 	const [saving, setSaving] = useState(false);
 	const [deleteScope, setDeleteScope] = useState<'old' | 'all' | null>(null);
 	const [status, setStatus] = useState<Status>(null);
+	const { confirm, confirmDialog } = useConfirm();
 
 	useEffect(() => {
 		let cancelled = false;
@@ -276,6 +278,7 @@ function AnalyticsPrivacy() {
 
 	async function save() {
 		if (!settings) return;
+		if (!(await confirm({ title: 'Save settings?', message: 'Apply these analytics and privacy settings?', confirmLabel: 'Save', tone: 'primary' }))) return;
 		setStatus(null);
 		setSaving(true);
 		const response = await fetch('/api/admin/settings', {
@@ -308,6 +311,7 @@ function AnalyticsPrivacy() {
 
 	return (
 		<>
+			{confirmDialog}
 			<Section title="Analytics & privacy">
 				<div className={cardClass()}>
 					{!settings ? (
