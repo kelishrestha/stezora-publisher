@@ -52,13 +52,22 @@ EXPORT_CONTENT_URL=<url> pnpm build  # from a live /api/content endpoint
 ## Blogger
 
 ```sh
-pnpm blogger:oauth                   # one-time OAuth; stores the refresh token in .secrets/
-pnpm blogger:import --blog <slug>    # import one publication
-pnpm blogger:import --all            # import all publications
+pnpm blogger:oauth                            # one-time OAuth; stores the refresh token in .secrets/
+pnpm blogger:import --blog <slug>             # import one publication (live posts)
+pnpm blogger:import --all                     # import all publications
+pnpm blogger:import --all --include-drafts    # also fetch drafts (live + draft)
+pnpm blogger:import --blog <slug> --dry-run   # report what would import, write nothing
 ```
 
-Imports are idempotent and keyed by Blogger post ID. Image inventories are
-written to `migration-reports/`.
+`--include-drafts` fetches draft posts alongside live ones. The Blogger API
+`status` parameter is a repeated enum, so it is sent as `status=LIVE&status=DRAFT`
+(uppercase), never comma-joined. Imported drafts land in `src/content/posts/`
+with `draft` status; run `pnpm db:backfill` to load them into local D1.
+
+Imports are idempotent and keyed by Blogger post ID; add `--update` to overwrite
+posts that already exist. Image inventories are written to `migration-reports/`.
+If the API returns `invalid_grant`, the refresh token has expired, so re-run
+`pnpm blogger:oauth` to mint a new one.
 
 ## Deployment
 

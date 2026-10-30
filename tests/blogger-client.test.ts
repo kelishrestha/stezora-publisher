@@ -35,6 +35,33 @@ describe('blogger client', () => {
 		expect(fetchImpl).toHaveBeenCalledTimes(2);
 	});
 
+	it('sends each status as a repeated uppercase query param, never comma-joined', async () => {
+		const tokenResponse = new Response(JSON.stringify({ access_token: 'token-1', expires_in: 3600 }), {
+			status: 200,
+			headers: { 'Content-Type': 'application/json' },
+		});
+		const listResponse = new Response(JSON.stringify({ items: [] }), {
+			status: 200,
+			headers: { 'Content-Type': 'application/json' },
+		});
+		const urls: string[] = [];
+		const fetchImpl = vi.fn(async (input: unknown) => {
+			urls.push(String(input));
+			return listResponse;
+		});
+		fetchImpl.mockResolvedValueOnce(tokenResponse);
+
+		const client = clientWithFetch(fetchImpl as unknown as typeof fetch);
+		await client.listPosts({ statuses: ['LIVE', 'DRAFT'] });
+
+		const listUrl = urls[urls.length - 1];
+		expect(listUrl).toContain('status=LIVE');
+		expect(listUrl).toContain('status=DRAFT');
+		// Must be repeated params, not a single comma-joined value.
+		expect(listUrl).not.toContain('status=LIVE%2CDRAFT');
+		expect(listUrl).not.toContain('status=live');
+	});
+
 	it('retries with backoff on 429 and succeeds', async () => {
 		const tokenResponse = new Response(JSON.stringify({ access_token: 'token-1', expires_in: 3600 }), {
 			status: 200,

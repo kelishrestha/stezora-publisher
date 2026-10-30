@@ -2,7 +2,8 @@ export interface BloggerPostDto {
 	kind: string;
 	id: string;
 	blog: { id: string };
-	published: string;
+	// Drafts can lack a published date; mapping falls back to `updated`.
+	published?: string;
 	updated: string;
 	url: string;
 	selfLink?: string;
@@ -38,7 +39,12 @@ export interface BloggerClientConfig {
 export interface BloggerListOptions {
 	pageToken?: string;
 	maxResults?: number;
-	status?: string;
+	/**
+	 * Post statuses to include. The Blogger API `status` parameter is a repeated
+	 * enum (LIVE, DRAFT, SCHEDULED, SOFT_TRASHED), so each value is sent as its
+	 * own `status=` query parameter. Omit to let the API default to LIVE only.
+	 */
+	statuses?: string[];
 }
 
 export type PostStatus = 'published' | 'draft';

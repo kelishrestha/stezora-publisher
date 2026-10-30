@@ -35,7 +35,7 @@ export async function importPosts(options: ImportOptions): Promise<ImportReport>
 
 	let count = 0;
 
-	for await (const dto of client.fetchAllPosts({ status: includeDrafts ? 'live,draft' : 'live' })) {
+	for await (const dto of client.fetchAllPosts({ statuses: includeDrafts ? ['LIVE', 'DRAFT'] : ['LIVE'] })) {
 		if (limit && count >= limit) {
 			break;
 		}

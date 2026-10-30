@@ -85,8 +85,10 @@ export class BloggerClient {
 		if (options.pageToken) {
 			query.set('pageToken', options.pageToken);
 		}
-		if (options.status) {
-			query.set('status', options.status);
+		// `status` is a repeated enum: append one `status=` per value
+		// (status=LIVE&status=DRAFT), never a comma-joined string.
+		for (const status of options.statuses ?? []) {
+			query.append('status', status);
 		}
 
 		const url = `${DEFAULT_BASE_URL}/blogs/${this.config.blogId}/posts?${query}`;

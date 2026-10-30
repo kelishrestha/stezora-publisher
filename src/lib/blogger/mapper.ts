@@ -14,8 +14,10 @@ export interface MappedPost {
 }
 
 export function mapPost(dto: BloggerPostDto, options: MapPostOptions): MappedPost {
-	const pubDate = new Date(dto.published).toISOString();
+	// Drafts can arrive without a `published` date; fall back to `updated` so
+	// mapping never produces an Invalid Date.
 	const updatedDate = new Date(dto.updated).toISOString();
+	const pubDate = new Date(dto.published ?? dto.updated).toISOString();
 
 	const tags = dto.labels ?? [];
 
