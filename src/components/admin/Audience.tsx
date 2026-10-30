@@ -232,6 +232,7 @@ export default function Audience() {
 				</>
 			) : (
 				<>
+					{data && <SourceTrend history={data.sourceHistory} />}
 					<SourceComparison sources={data?.sources ?? null} active={activeSource} onSelect={setSource} />
 					{activeSource !== 'neobook' && (
 						<div className="flex flex-wrap items-center justify-end gap-3">
@@ -262,7 +263,6 @@ export default function Audience() {
 				)
 			) : (
 				<>
-					<SourceTrend history={data.sourceHistory} />
 					{activeSource === 'blogger' ? (
 						<BloggerSourceDetail publications={data.bloggerPublications} publication={publication} days={days} />
 					) : activeSource === 'neobook' ? (
@@ -466,8 +466,12 @@ function bloggerBucket(days: number): { key: 'views7d' | 'views30d' | 'viewsAll'
 }
 
 function BloggerSourceDetail({ publications, publication, days }: { publications: AudienceData['bloggerPublications']; publication: string; days: number }) {
+	const [showTable, setShowTable] = useState(false);
 	const bucket = bloggerBucket(days);
 	const rows = publication ? publications.filter((row) => row.slug === publication) : publications;
+	const values = rows.map((row) => row[bucket.key] ?? 0);
+	const max = Math.max(1, ...values);
+
 	return (
 		<section className={cardClass()}>
 			<div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
@@ -482,23 +486,52 @@ function BloggerSourceDetail({ publications, publication, days }: { publications
 					{publications.length === 0 ? 'No Blogger statistics yet. Use Refresh stats on the integrations page.' : 'No Blogger statistics for this publication.'}
 				</p>
 			) : (
-				<div className="overflow-x-auto">
-					<table className="min-w-full divide-y divide-border text-left text-sm">
-						<thead>
-							<tr className="text-xs text-muted-foreground">
-								<th className="px-5 py-2 font-medium">Publication</th>
-								<th className="px-5 py-2 text-right font-medium">{bucket.label}</th>
-							</tr>
-						</thead>
-						<tbody className="divide-y divide-border">
-							{rows.map((row) => (
-								<tr key={row.slug}>
-									<td className="px-5 py-2 font-medium text-foreground">{row.name}</td>
-									<td className="px-5 py-2 text-right tabular-nums text-muted-foreground">{row[bucket.key]?.toLocaleString() ?? '–'}</td>
-								</tr>
+				<div className="p-5">
+					<div className="flex items-center justify-between gap-4">
+						<p className="text-xs text-muted-foreground">{bucket.label}</p>
+						<button
+							type="button"
+							onClick={() => setShowTable((value) => !value)}
+							aria-expanded={showTable}
+							className="shrink-0 text-xs font-medium text-accent-foreground underline-offset-2 hover:underline"
+						>
+							{showTable ? 'Show chart' : 'Show data'}
+						</button>
+					</div>
+					{showTable ? (
+						<div className="mt-4 overflow-x-auto">
+							<table className="min-w-full divide-y divide-border text-left text-sm">
+								<thead>
+									<tr className="text-xs text-muted-foreground">
+										<th className="px-2 py-2 font-medium">Publication</th>
+										<th className="px-2 py-2 text-right font-medium">{bucket.label}</th>
+									</tr>
+								</thead>
+								<tbody className="divide-y divide-border">
+									{rows.map((row) => (
+										<tr key={row.slug}>
+											<td className="px-2 py-2 font-medium text-foreground">{row.name}</td>
+											<td className="px-2 py-2 text-right tabular-nums text-muted-foreground">{row[bucket.key]?.toLocaleString() ?? '–'}</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
+					) : (
+						<div className="mt-5 space-y-4">
+							{rows.map((row, index) => (
+								<div key={row.slug}>
+									<div className="mb-1.5 flex items-baseline justify-between gap-3">
+										<span className="truncate text-sm font-medium text-foreground">{row.name}</span>
+										<span className="shrink-0 text-xs tabular-nums text-muted-foreground">{formatNumber(values[index])}</span>
+									</div>
+									<div className="h-2.5 w-full overflow-hidden rounded bg-surface-elevated" role="img" aria-label={`${row.name}: ${values[index]} views`}>
+										<div className="h-full rounded bg-emerald-500" style={{ width: `${(values[index] / max) * 100}%` }} />
+									</div>
+								</div>
 							))}
-						</tbody>
-					</table>
+						</div>
+					)}
 				</div>
 			)}
 			<p className="border-t border-border px-5 py-3 text-xs text-muted-foreground">Geography, referrers, and per-visit detail are available for first-party analytics only.</p>
