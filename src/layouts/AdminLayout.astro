@@ -26,8 +26,14 @@ const navItems = [
 	{ href: '/admin/posts', label: 'Posts', icon: 'lucide:file-text' },
 	{ href: '/admin/media', label: 'Media', icon: 'lucide:image' },
 	{ href: '/admin/tags', label: 'Tags', icon: 'lucide:tags' },
-	{ href: '/admin/settings', label: 'Settings', icon: 'lucide:settings' },
 ];
+
+// Settings is a collapsible group with its integration sub-items.
+const settingsChildren = [
+	{ href: '/admin/settings/integrations#blogger', label: 'Blogger integration' },
+	{ href: '/admin/settings/integrations#neobook', label: 'Neobook integration' },
+];
+const settingsExpanded = path.startsWith('/admin/settings');
 
 function isActive(href: string): boolean {
 	return href === '/admin' ? path === '/admin' : path.startsWith(href);
@@ -66,6 +72,36 @@ const inactiveLink =
 							</a>
 						</li>
 					))}
+					<li>
+						<div class={`${isActive('/admin/settings') ? activeLink : inactiveLink} justify-between pr-2`}>
+							<a href="/admin/settings" class="flex min-w-0 flex-1 items-center gap-2">
+								<Icon name="lucide:settings" class="size-4 shrink-0" aria-hidden="true" />
+								Settings
+							</a>
+							<button
+								type="button"
+								id="settings-toggle"
+								aria-expanded={settingsExpanded}
+								aria-controls="settings-submenu"
+								aria-label="Toggle settings sub-items"
+								class="rounded p-1 text-current transition-colors hover:bg-accent-soft/60"
+							>
+								<Icon id="settings-chevron" name="lucide:chevron-down" class={`size-4 shrink-0 transition-transform ${settingsExpanded ? 'rotate-180' : ''}`} aria-hidden="true" />
+							</button>
+						</div>
+						<ul id="settings-submenu" class="ms-5 mt-1 space-y-1 border-s border-border ps-3" hidden={!settingsExpanded}>
+							{settingsChildren.map((child) => (
+								<li>
+									<a
+										href={child.href}
+										class="block rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent-soft hover:text-accent-foreground"
+									>
+										{child.label}
+									</a>
+								</li>
+							))}
+						</ul>
+					</li>
 					<li>
 						<a href="/" target="_blank" rel="noopener" class={inactiveLink}>
 							<Icon name="lucide:external-link" class="size-4 shrink-0" aria-hidden="true" />
@@ -114,6 +150,16 @@ const inactiveLink =
 						{item.label}
 					</a>
 				))}
+				<a
+					href="/admin/settings"
+					class={`shrink-0 rounded-lg px-3 py-1.5 ${
+						isActive('/admin/settings')
+							? 'bg-accent-soft font-medium text-accent-foreground'
+							: 'text-muted-foreground hover:bg-accent-soft hover:text-accent-foreground'
+					}`}
+				>
+					Settings
+				</a>
 				<a href="/" target="_blank" rel="noopener" class="shrink-0 rounded-lg px-3 py-1.5 text-muted-foreground hover:bg-surface-elevated hover:text-foreground">
 					View site
 				</a>
@@ -153,6 +199,17 @@ const inactiveLink =
 	document.getElementById('admin-sign-out')?.addEventListener('click', openSignout);
 	document.getElementById('admin-sign-out-mobile')?.addEventListener('click', openSignout);
 	signoutModal?.addEventListener('confirm', () => void signOut());
+
+	// Collapsible Settings sub-items.
+	const settingsToggle = document.getElementById('settings-toggle');
+	const settingsSubmenu = document.getElementById('settings-submenu');
+	const settingsChevron = document.getElementById('settings-chevron');
+	settingsToggle?.addEventListener('click', () => {
+		const expanded = settingsToggle.getAttribute('aria-expanded') === 'true';
+		settingsToggle.setAttribute('aria-expanded', String(!expanded));
+		settingsSubmenu?.toggleAttribute('hidden', expanded);
+		settingsChevron?.classList.toggle('rotate-180', !expanded);
+	});
 
 	// Show the signed-in user above the sign-out button.
 	void authClient.getSession().then((result) => {

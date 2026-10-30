@@ -1,0 +1,70 @@
+import { createExecutionContext, env, waitOnExecutionContext } from 'cloudflare:test';
+import { beforeAll, describe, expect, it } from 'vitest';
+import worker from '../../worker/index';
+
+const db = env.DB;
+
+const ADMIN_EMAIL = 'admin@example.com';
+const ADMIN_PASSWORD = 'correct-horse-battery-staple';
+const ADMIN_HASH =
+	'ce018f62e94bb4691067bb9dcd0619af:25c1257d17e89a1312174042b05759811aca8c66a1fcbbb05c87d41b4df1936f8be05b155c4fb30387a417cef6820e3217fd8650d1bbbb592f613cb0e4b0adde';
+
+async function fetchWorker(path: string, init?: RequestInit): Promise<Response> {
+	const ctx = createExecutionContext();
+	const response = await worker.fetch(new Request(`http://localhost${path}`, init), env, ctx);
+	await waitOnExecutionContext(ctx);
+	return response;
+}
+
+async function signInAndCookies(): Promise<string> {
+	const response = await fetchWorker('/api/auth/sign-in/email', {
+		method: 'POST',
+		headers: { 'content-type': 'application/json' },
+		body: JSON.stringify({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD }),
+	});
+	return response.headers.get('set-cookie')?.split(';')[0] ?? '';
+}
+
+interface IntegrationsPayload {
+	success: true;
+	data: {
+		blogger: { connected: boolean; publications: Array<{ slug: string; blogHost: string | null; linkedPosts: number }> };
+		neobook: { profileUrl: string };
+	};
+}
+
+describe('GET /api/admin/integrations', () => {
+	beforeAll(async () => {
+		const now = new Date().toISOString();
+		await db
+			.prepare('INSERT OR IGNORE INTO user (id, name, email, email_verified, image, created_at, updated_at, role) VALUES (?, ?, ?, 0, NULL, ?, ?, ?)')
+			.bind('usr-admin', 'Site Admin', ADMIN_EMAIL, now, now, 'admin')
+			.run();
+		await db
+			.prepare('INSERT OR IGNORE INTO account (id, account_id, provider_id, user_id, password, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
+			.bind('acc-admin', 'usr-admin', 'credential', 'usr-admin', ADMIN_HASH, now, now)
+			.run();
+		await db.prepare("INSERT INTO publications (id, name, slug, description, created_at) VALUES ('pub-x', 'Pub X', 'pub-x', NULL, ?)").bind(now).run();
+		await db
+			.prepare(
+				"INSERT INTO posts (id, publication_id, title, slug, content, status, created_at, blogger_blog_id, blogger_post_id, canonical_url) VALUES (?, 'pub-x', 'T', 't', '<p>x</p>', 'published', ?, '12345', 'post-1', 'https://pubx.blogspot.com/2020/01/x.html')"
+			)
+			.bind('p1', now)
+			.run();
+	});
+
+	it('requires auth', async () => {
+		expect((await fetchWorker('/api/admin/integrations')).status).toBe(401);
+	});
+
+	it('reports Blogger linkage derived from posts, and the Neobook profile', async () => {
+		const cookie = await signInAndCookies();
+		const response = await fetchWorker('/api/admin/integrations', { headers: { cookie } });
+		expect(response.status).toBe(200);
+		const { data } = (await response.json()) as IntegrationsPayload;
+		expect(data.blogger.connected).toBe(true);
+		const pubX = data.blogger.publications.find((p) => p.slug === 'pub-x');
+		expect(pubX).toMatchObject({ blogHost: 'pubx.blogspot.com', linkedPosts: 1 });
+		expect(data.neobook.profileUrl).toContain('neobook.org');
+	});
+});

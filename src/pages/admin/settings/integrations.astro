@@ -1,0 +1,20 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import Integrations from '../../../components/admin/Integrations';
+
+const title = 'Integrations';
+const description = 'Blogger and Neobook integration status for the Stezora CMS.';
+---
+
+<AdminLayout
+	title={title}
+	description={description}
+	path="/admin/settings/integrations"
+	breadcrumbs={[{ name: 'Settings', href: '/admin/settings' }, { name: 'Integrations' }]}
+>
+	<h1 class="text-2xl font-semibold tracking-tight text-foreground">Integrations</h1>
+	<p class="mt-1 text-sm text-muted-foreground">Status and configuration for the app's content integrations.</p>
+	<div class="mt-6">
+		<Integrations client:load />
+	</div>
+</AdminLayout>
