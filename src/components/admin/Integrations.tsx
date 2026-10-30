@@ -207,25 +207,58 @@ export default function Integrations() {
 		<div className="max-w-2xl space-y-8">
 			<Section id="blogger" title="Blogger integration">
 				<div className={cardClass()}>
-					<div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
+					<div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
 						<div>
 							<h3 className="text-sm font-semibold text-foreground">Blogger</h3>
 							<p className="mt-0.5 text-xs text-muted-foreground">Posts are imported from Blogger into the CMS.</p>
 						</div>
 						{data && (
 							<span className={data.blogger.configured ? badgeClass('success') : badgeClass('muted')}>
-								{data.blogger.configured ? 'Connected' : 'Not configured'}
+								{data.blogger.configured ? 'Connected' : data.blogger.canAuthorize ? 'Not authorized' : 'Not configured'}
 							</span>
 						)}
 					</div>
 
-					{data && !data.blogger.configured && (
+					{data && !data.blogger.canAuthorize && (
 						<p className="border-b border-border bg-amber-50 px-5 py-3 text-xs text-amber-700 dark:bg-amber-950 dark:text-amber-300">
-							{data.blogger.canAuthorize
-								? 'Not authorized yet. Click Authorize to connect your Blogger account; import and statistics unlock once it succeeds.'
-								: 'Blogger client id and secret are not configured on the server, so authorization is unavailable. Set the Blogger OAuth secrets to enable it.'}
+							Blogger client id and secret are not configured on the server, so authorization is unavailable. Set the Blogger OAuth secrets to enable it.
 						</p>
 					)}
+
+					{data?.blogger.canAuthorize && (
+						<div className="flex flex-col gap-2 border-b border-border px-5 py-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+							<p className="text-muted-foreground">
+								{data.blogger.configured ? 'Reconnect your Blogger account if authorization stops working.' : 'Connect your Blogger account to enable importing and statistics.'}
+							</p>
+							<a href="/api/admin/blogger/oauth/start" className={`${buttonClass('outline', 'sm')} shrink-0`}>
+								Authorize
+							</a>
+						</div>
+					)}
+
+					<div className="flex flex-col gap-2 border-b border-border px-5 py-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+						<p className="text-muted-foreground">Refresh the blog-level pageview totals shown below.</p>
+						<button
+							type="button"
+							onClick={() => void refreshStats()}
+							disabled={refreshingStats || !data || !data.blogger.configured}
+							className={`${buttonClass('outline', 'sm')} shrink-0`}
+						>
+							{refreshingStats ? 'Refreshing…' : 'Refresh stats'}
+						</button>
+					</div>
+
+					<div className="flex flex-col gap-2 border-b border-border px-5 py-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+						<p className="text-muted-foreground">Import new posts from the linked blogs into the CMS.</p>
+						<button
+							type="button"
+							onClick={() => setImportOpen(true)}
+							disabled={importing || !data || !data.blogger.configured}
+							className={`${buttonClass('accentOutline', 'sm')} shrink-0`}
+						>
+							{importing ? 'Importing…' : 'Import posts'}
+						</button>
+					</div>
 
 					{!data ? (
 						<div className="m-5 h-24 animate-pulse rounded-md bg-surface-elevated" />
@@ -264,24 +297,6 @@ export default function Integrations() {
 						</div>
 					)}
 
-					<div className="flex items-center justify-end gap-2 border-t border-border px-5 py-4">
-						{data?.blogger.canAuthorize && (
-							<a href="/api/admin/blogger/oauth/start" className={buttonClass('outline', 'sm')}>
-								{data.blogger.configured ? 'Re-authorize' : 'Authorize'}
-							</a>
-						)}
-						<button
-							type="button"
-							onClick={() => void refreshStats()}
-							disabled={refreshingStats || !data || !data.blogger.configured}
-							className={buttonClass('outline', 'sm')}
-						>
-							{refreshingStats ? 'Refreshing…' : 'Refresh stats'}
-						</button>
-						<button type="button" onClick={() => setImportOpen(true)} disabled={importing || !data || !data.blogger.configured} className={buttonClass('accentOutline', 'sm')}>
-							{importing ? 'Importing…' : 'Import'}
-						</button>
-					</div>
 				</div>
 			</Section>
 
