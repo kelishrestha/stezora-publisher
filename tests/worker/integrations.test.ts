@@ -155,6 +155,41 @@ describe('POST /api/admin/neobook/sync', () => {
 	});
 });
 
+describe('Blogger OAuth', () => {
+	const ENV_WITH_CLIENT = { ...env, BLOGGER_CLIENT_ID: 'test-client', BLOGGER_CLIENT_SECRET: 'test-secret', BLOGGER_REFRESH_TOKEN: undefined } as typeof env;
+
+	it('start requires auth', async () => {
+		expect((await fetchWorker('/api/admin/blogger/oauth/start')).status).toBe(401);
+	});
+
+	it('start fails when client id/secret are absent', async () => {
+		const cookie = await signInAndCookies();
+		const response = await fetchWorker('/api/admin/blogger/oauth/start', { headers: { cookie } }, ENV_NO_BLOGGER);
+		expect(response.status).toBe(400);
+	});
+
+	it('start redirects to Google consent with a state cookie', async () => {
+		const cookie = await signInAndCookies();
+		const response = await fetchWorker('/api/admin/blogger/oauth/start', { headers: { cookie } }, ENV_WITH_CLIENT);
+		expect(response.status).toBe(302);
+		const location = response.headers.get('location') ?? '';
+		expect(location).toContain('accounts.google.com');
+		expect(location).toContain('scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fblogger');
+		expect(response.headers.get('set-cookie') ?? '').toContain('blogger_oauth_state=');
+	});
+
+	it('callback rejects a mismatched state', async () => {
+		const cookie = await signInAndCookies();
+		const response = await fetchWorker(
+			'/api/admin/blogger/oauth/callback?code=abc&state=aaa',
+			{ headers: { cookie: `${cookie}; blogger_oauth_state=bbb` } },
+			ENV_WITH_CLIENT
+		);
+		expect(response.status).toBe(302);
+		expect(response.headers.get('location') ?? '').toContain('blogger_error=state_mismatch');
+	});
+});
+
 describe('POST /api/admin/blogger/stats', () => {
 	it('requires auth', async () => {
 		expect((await fetchWorker('/api/admin/blogger/stats', { method: 'POST' })).status).toBe(401);

@@ -20,9 +20,17 @@ interface BloggerPublication {
 }
 
 interface IntegrationsData {
-	blogger: { connected: boolean; configured: boolean; publications: BloggerPublication[] };
+	blogger: { connected: boolean; configured: boolean; canAuthorize: boolean; publications: BloggerPublication[] };
 	neobook: { configured: boolean; profileUrl: string; books: number };
 }
+
+const OAUTH_ERROR_MESSAGES: Record<string, string> = {
+	state_mismatch: 'Authorization could not be verified. Please try again.',
+	token_exchange_failed: 'Google rejected the authorization. Check the OAuth client and redirect URI.',
+	no_refresh_token: 'Google did not return a refresh token. Try authorizing again.',
+	not_configured: 'Blogger client id and secret are not configured on the server.',
+	access_denied: 'Authorization was cancelled.',
+};
 
 interface NeobookSyncResult {
 	items: number;
@@ -73,6 +81,24 @@ export default function Integrations() {
 
 	useEffect(() => {
 		loadData();
+	}, []);
+
+	// Surface the result of the OAuth redirect (blogger=authorized / blogger_error=...)
+	// then strip the query so a refresh does not repeat the toast.
+	useEffect(() => {
+		const params = new URLSearchParams(window.location.search);
+		if (params.has('blogger')) {
+			setToast({ tone: 'success', message: 'Blogger authorized. Import and statistics are now available.' });
+		} else if (params.has('blogger_error')) {
+			const code = params.get('blogger_error') ?? '';
+			setToast({ tone: 'error', message: OAUTH_ERROR_MESSAGES[code] ?? `Authorization failed (${code}).` });
+		} else {
+			return;
+		}
+		params.delete('blogger');
+		params.delete('blogger_error');
+		const query = params.toString();
+		window.history.replaceState(null, '', `${window.location.pathname}${query ? `?${query}` : ''}#blogger`);
 	}, []);
 
 	async function syncNeobook() {
@@ -195,7 +221,9 @@ export default function Integrations() {
 
 					{data && !data.blogger.configured && (
 						<p className="border-b border-border bg-amber-50 px-5 py-3 text-xs text-amber-700 dark:bg-amber-950 dark:text-amber-300">
-							Blogger API credentials are not configured on the server, so import and statistics are unavailable. Set the Blogger OAuth secrets to enable them.
+							{data.blogger.canAuthorize
+								? 'Not authorized yet. Click Authorize to connect your Blogger account; import and statistics unlock once it succeeds.'
+								: 'Blogger client id and secret are not configured on the server, so authorization is unavailable. Set the Blogger OAuth secrets to enable it.'}
 						</p>
 					)}
 
@@ -237,6 +265,11 @@ export default function Integrations() {
 					)}
 
 					<div className="flex items-center justify-end gap-2 border-t border-border px-5 py-4">
+						{data?.blogger.canAuthorize && (
+							<a href="/api/admin/blogger/oauth/start" className={buttonClass('outline', 'sm')}>
+								{data.blogger.configured ? 'Re-authorize' : 'Authorize'}
+							</a>
+						)}
 						<button
 							type="button"
 							onClick={() => void refreshStats()}

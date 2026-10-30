@@ -2,6 +2,7 @@ import { asc, eq, sql } from 'drizzle-orm';
 import { createDb } from '../../db/client';
 import { bloggerStats, books, posts, publications } from '../../db/schema';
 import { ok } from '../../lib/http';
+import { readBloggerRefreshToken } from '../../lib/blogger-import';
 import type { AuthenticatedHandler } from '../../lib/middleware';
 
 /**
@@ -54,7 +55,12 @@ export const integrations: AuthenticatedHandler = async ({ env }) => {
 		};
 	});
 
-	const bloggerConfigured = Boolean(env.BLOGGER_CLIENT_ID && env.BLOGGER_CLIENT_SECRET && env.BLOGGER_REFRESH_TOKEN);
+	// Client id/secret are env secrets; the refresh token may come from the
+	// in-UI OAuth flow (stored in D1) or the env secret. "canAuthorize" gates the
+	// Authorize button; "configured" means a Blogger call can actually run.
+	const canAuthorize = Boolean(env.BLOGGER_CLIENT_ID && env.BLOGGER_CLIENT_SECRET);
+	const hasRefreshToken = Boolean((await readBloggerRefreshToken(env.DB)) ?? env.BLOGGER_REFRESH_TOKEN);
+	const bloggerConfigured = canAuthorize && hasRefreshToken;
 
 	const [bookCount] = await db.select({ count: sql<number>`count(*)` }).from(books);
 
@@ -62,6 +68,7 @@ export const integrations: AuthenticatedHandler = async ({ env }) => {
 		blogger: {
 			connected: bloggerPublications.some((publication) => publication.linkedPosts > 0),
 			configured: bloggerConfigured,
+			canAuthorize,
 			publications: bloggerPublications,
 		},
 		neobook: {

@@ -24,6 +24,39 @@ export interface BloggerImportCredentials {
 	refreshToken?: string;
 }
 
+const REFRESH_TOKEN_KEY = 'blogger_refresh_token';
+
+/**
+ * The refresh token from the in-UI OAuth flow lives in app_settings (a worker
+ * cannot write its own secrets). Stored under its own key so it never leaks
+ * through the typed settings API (readAppSettings ignores unknown keys).
+ */
+export async function readBloggerRefreshToken(db: D1Database): Promise<string | null> {
+	const row = await db.prepare('SELECT value FROM app_settings WHERE key = ?').bind(REFRESH_TOKEN_KEY).first<{ value: string }>();
+	return row?.value ?? null;
+}
+
+export async function writeBloggerRefreshToken(db: D1Database, token: string): Promise<void> {
+	await db.prepare('INSERT INTO app_settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value').bind(REFRESH_TOKEN_KEY, token).run();
+}
+
+/**
+ * Resolves Blogger credentials: client id/secret come from env secrets, the
+ * refresh token prefers the stored (UI-authorized) value and falls back to the
+ * env secret.
+ */
+export async function resolveBloggerCredentials(
+	db: D1Database,
+	env: { BLOGGER_CLIENT_ID?: string; BLOGGER_CLIENT_SECRET?: string; BLOGGER_REFRESH_TOKEN?: string }
+): Promise<BloggerImportCredentials> {
+	const stored = await readBloggerRefreshToken(db);
+	return {
+		clientId: env.BLOGGER_CLIENT_ID,
+		clientSecret: env.BLOGGER_CLIENT_SECRET,
+		refreshToken: stored ?? env.BLOGGER_REFRESH_TOKEN,
+	};
+}
+
 export interface BloggerImportPublicationResult {
 	slug: string;
 	name: string;

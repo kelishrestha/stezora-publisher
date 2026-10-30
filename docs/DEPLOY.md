@@ -71,16 +71,30 @@ Record the backup token wherever the GitHub backup secrets live (see
 `docs/BACKUP.md`). Auth needs no URL configuration: the Worker derives its
 origin from each request.
 
-The Blogger import button (Settings -> Integrations) is optional and stays
-disabled until these three OAuth secrets are set. Blog ids are not
-configured here: the import reads them from the posts already linked to each
-publication, so at least one Blogger post must exist for that publication.
+The Blogger import, stats, and authorize buttons (Settings -> Integrations)
+are optional. Blog ids are not configured here: the import reads them from
+the posts already linked to each publication, so at least one Blogger post
+must exist for that publication.
+
+Set the client id and secret as worker secrets:
 
 ```sh
 npx wrangler secret put BLOGGER_CLIENT_ID
 npx wrangler secret put BLOGGER_CLIENT_SECRET
-npx wrangler secret put BLOGGER_REFRESH_TOKEN
 ```
+
+The refresh token can come from either path:
+
+- In-UI (recommended): click Authorize on the integrations page. This runs
+  the OAuth consent flow and stores the refresh token in D1 (app_settings),
+  so no secret is needed. It requires a Google Cloud OAuth client of type
+  "Web application" with these redirect URIs registered:
+  `https://<your-domain>/api/admin/blogger/oauth/callback` and, for local
+  dev, `http://localhost:8787/api/admin/blogger/oauth/callback`. The flow
+  requests the full `blogger` scope, which pageview statistics need.
+- CLI: `pnpm blogger:oauth` writes the token to `.secrets/`; set it as a
+  worker secret with `npx wrangler secret put BLOGGER_REFRESH_TOKEN`. A
+  stored (Authorize) token takes precedence over this secret.
 
 ## 4. First deploy (bootstrap)
 
