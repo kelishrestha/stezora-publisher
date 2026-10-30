@@ -5,6 +5,7 @@ import PostMeta from '../components/blog/PostMeta.astro';
 import type { Post } from '../lib/publications/collections';
 import type { Publication } from '../lib/publications/types';
 import { PUBLICATIONS_PATH, publicationPath, postExcerpt, postPath, slugify, tagPath } from '../lib/publications';
+import { imageVariant } from '../lib/publications/images';
 import { badgeClass } from '../components/ui/shared/classes';
 
 export interface Props {
@@ -48,12 +49,12 @@ const breadcrumbs = [
 	accent={publication.accent}
 >
 	<article class="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-		<Breadcrumbs items={breadcrumbs} />
-		<!-- On large screens the title, dates, and stats stay fixed as one block
-		     while the body scrolls (sticky against the tall article, below the
-		     fixed site header). On mobile it is a normal block in natural flow. -->
-		<header class="mt-6 lg:sticky lg:top-16 lg:z-20 lg:bg-background lg:py-2">
-			<h1 class="font-serif text-3xl font-bold tracking-tight sm:text-4xl">{post.data.title}</h1>
+		<!-- On large screens the breadcrumb, title, dates, and stats stay fixed as
+		     one block while the body scrolls (sticky against the tall article,
+		     below the fixed site header). On mobile it is a normal block. -->
+		<header class="lg:sticky lg:top-16 lg:z-20 lg:bg-background lg:py-2">
+			<Breadcrumbs items={breadcrumbs} />
+			<h1 class="mt-4 font-serif text-3xl font-bold tracking-tight sm:text-4xl">{post.data.title}</h1>
 			<div class="mt-4">
 				<PostMeta pubDate={post.data.pubDate} updatedDate={post.data.updatedDate} />
 			</div>
@@ -77,11 +78,23 @@ const breadcrumbs = [
 				{comments > 0 && <span>{comments.toLocaleString()} comments</span>}
 			</div>
 		</header>
-		<div class="prose mt-10 max-w-none dark:prose-invert">
-			<slot />
+
+		<!-- Body scrolls on the left; the image is isolated in its own sticky
+		     column on the right so it stays put. They start at the same line. -->
+		<div class="mt-8 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-10">
+			{post.data.featuredImage && (
+				<span class="img-shell isolate mb-8 block w-full rounded-lg border border-border shadow-lg lg:order-2 lg:mb-0 lg:sticky lg:top-20 lg:z-30 lg:self-start lg:rotate-2 lg:transition-transform lg:hover:rotate-0">
+					<span class="img-shell-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+					<img src={imageVariant(post.data.featuredImage, 1024)} alt="" loading="lazy" class="m-0 block w-full" />
+				</span>
+			)}
+			<div class="prose max-w-none dark:prose-invert lg:order-1 lg:min-w-0">
+				<slot />
+			</div>
 		</div>
+
 		{post.data.tags.length > 0 && (
-			<footer class="clear-both mt-16">
+			<footer class="mt-16">
 				<div class="flex flex-wrap items-center gap-2">
 					{post.data.tags.map((tag) => (
 						<a href={tagPath(publication.slug, slugify(tag))} class={`${badgeClass('solid')} transition-opacity hover:opacity-80`}>
