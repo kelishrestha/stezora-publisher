@@ -133,6 +133,8 @@ export default function PostEditor({ postId }: PostEditorProps) {
 	const [notice, setNotice] = useState<string | null>(null);
 	const [confirmingSave, setConfirmingSave] = useState(false);
 	const [mediaToDelete, setMediaToDelete] = useState<MediaItem | null>(null);
+	const [preview, setPreview] = useState<{ html: string; title: string } | null>(null);
+	const [previewing, setPreviewing] = useState(false);
 
 	const [title, setTitle] = useState('');
 	// Loaded post title, frozen for the breadcrumb while the user edits `title`.
@@ -216,6 +218,15 @@ export default function PostEditor({ postId }: PostEditorProps) {
 	}, [load]);
 
 	useEffect(() => {
+		if (!preview) return;
+		const onKeyDown = (event: KeyboardEvent) => {
+			if (event.key === 'Escape') setPreview(null);
+		};
+		window.addEventListener('keydown', onKeyDown);
+		return () => window.removeEventListener('keydown', onKeyDown);
+	}, [preview]);
+
+	useEffect(() => {
 		if (!previewImage) return;
 		const onKeyDown = (event: KeyboardEvent) => {
 			if (event.key === 'Escape') setPreviewImage(null);
@@ -273,66 +284,24 @@ export default function PostEditor({ postId }: PostEditorProps) {
 		}
 	}
 
-	/** Standalone preview document with a watermark; no site assets needed. */
-	function escapeHtml(value: string): string {
-		return value.replace(
-			/[&<>"']/g,
-			(char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char] ?? char
-		);
-	}
-
-	function previewDocument(previewTitle: string, html: string): string {
-		// The preview opens in a blank tab with no CSP, so the title (which can
-		// come from external imports) is HTML-escaped; `html` is already sanitized
-		// server-side by the preview endpoint.
-		const safeTitle = escapeHtml(previewTitle);
-		return [
-			'<!doctype html><html><head><meta charset="utf-8" />',
-			'<meta name="robots" content="noindex" />',
-			`<title>Preview: ${safeTitle}</title>`,
-			'<style>',
-			'body { margin: 0; font-family: Georgia, serif; color: #1c1c1c; background: #fcfcfc; }',
-			'.banner { position: sticky; top: 0; z-index: 2; background: #4338ca; color: #fff;',
-			'  font-family: system-ui, sans-serif; font-size: 13px; padding: 8px 16px; text-align: center; }',
-			'.watermark { position: fixed; inset: 0; display: grid; place-content: center; pointer-events: none; z-index: 1; }',
-			'.watermark span { font-family: system-ui, sans-serif; font-size: 16vw; font-weight: 800;',
-			'  color: rgba(67, 56, 202, 0.07); transform: rotate(-28deg); letter-spacing: 0.1em; }',
-			'main { position: relative; z-index: 0; max-width: 42rem; margin: 0 auto; padding: 3rem 1.5rem 6rem; line-height: 1.7; }',
-			'main img { max-width: 100%; height: auto; }',
-			'h1 { font-size: 2rem; }',
-			'</style></head><body>',
-			'<div class="banner">Preview. This is how the post will read; it is not published.</div>',
-			'<div class="watermark" aria-hidden="true"><span>PREVIEW</span></div>',
-			`<main><h1>${safeTitle}</h1>${html}</main>`,
-			'</body></html>',
-		].join('\n');
-	}
-
 	async function runPreview() {
 		if (!editingPostId) {
 			setError('Save the post before previewing.');
 			return;
 		}
 		setError(null);
-		// Open synchronously so the browser treats it as a user gesture.
-		const tab = window.open('about:blank', '_blank');
-		if (!tab) {
-			setError('Allow pop-ups for this site to open the preview.');
-			return;
-		}
-		tab.document.write('<title>Preview</title><p style="font-family: system-ui, sans-serif; padding: 2rem;">Rendering preview...</p>');
+		setPreviewing(true);
 		try {
 			const result = await json<{ html: string; title: string }>(`/api/admin/posts/${editingPostId}/preview`, {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
 				body: JSON.stringify({ contentMarkdown }),
 			});
-			tab.document.open();
-			tab.document.write(previewDocument(result.title || title, result.html));
-			tab.document.close();
+			setPreview({ html: result.html, title: result.title || title });
 		} catch (reason) {
-			tab.close();
 			setError(reason instanceof Error ? reason.message : 'Failed to render preview.');
+		} finally {
+			setPreviewing(false);
 		}
 	}
 
@@ -474,6 +443,28 @@ export default function PostEditor({ postId }: PostEditorProps) {
 				{error && <Toast tone="error" message={error} onDismiss={() => setError(null)} />}
 				{notice && <Toast tone="success" message={notice} onDismiss={() => setNotice(null)} />}
 			</ToastStack>
+
+			{preview && (
+				<div className="fixed inset-0 z-50 overflow-y-auto bg-background" role="dialog" aria-modal="true" aria-label="Post preview">
+					<div className="sticky top-0 z-20 flex items-center justify-between gap-3 bg-accent px-4 py-2 text-sm text-on-accent">
+						<span>Preview. This is how the post will read; it is not published.</span>
+						<button
+							type="button"
+							onClick={() => setPreview(null)}
+							className="rounded px-2 py-1 font-medium underline-offset-2 hover:underline focus:outline-none focus:ring-2 focus:ring-on-accent/60"
+						>
+							Close
+						</button>
+					</div>
+					<div className="pointer-events-none fixed inset-0 z-0 grid place-content-center overflow-hidden" aria-hidden="true">
+						<span className="rotate-[-28deg] text-[16vw] font-extrabold tracking-widest text-accent opacity-[0.06]">PREVIEW</span>
+					</div>
+					<article className="relative z-10 mx-auto w-full max-w-3xl px-4 py-10 sm:px-6">
+						<h1 className="font-serif text-3xl font-bold tracking-tight sm:text-4xl">{preview.title}</h1>
+						<div className="prose mt-10 max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: preview.html }} />
+					</article>
+				</div>
+			)}
 
 			<div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
 				<div className="space-y-4">
@@ -764,10 +755,10 @@ export default function PostEditor({ postId }: PostEditorProps) {
 						<button
 							type="button"
 							onClick={() => void runPreview()}
-							disabled={!editingPostId}
+							disabled={!editingPostId || previewing}
 							className={buttonClass('outline')}
 						>
-							Preview
+							{previewing ? 'Rendering…' : 'Preview'}
 						</button>
 					</div>
 				</div>
