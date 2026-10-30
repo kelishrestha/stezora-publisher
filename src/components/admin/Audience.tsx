@@ -226,7 +226,7 @@ export default function Audience() {
 				<>
 					<SourceComparison sources={data?.sources ?? null} active={activeSource} onSelect={setSource} />
 					{activeSource !== 'neobook' && (
-						<div className="flex flex-wrap items-center gap-3">
+						<div className="flex flex-wrap items-center justify-end gap-3">
 							<label htmlFor="publication" className="block w-56">
 								<span className="sr-only">Publication</span>
 								<select id="publication" value={publication} onChange={(event) => changePublication(event.target.value)} className={filterSelectClass}>
