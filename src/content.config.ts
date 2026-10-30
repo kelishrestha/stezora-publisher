@@ -33,6 +33,7 @@ const testimonials = defineCollection({
 		location: z.string().optional().default(''),
 		work: z.string().optional().default(''),
 		story: z.string(),
+		rating: z.number().optional().default(5),
 		sortOrder: z.number().optional().default(0),
 	}),
 });

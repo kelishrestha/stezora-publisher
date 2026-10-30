@@ -11,6 +11,7 @@ const payload = z.object({
 	location: z.string().trim().max(120).optional().default(''),
 	work: z.string().trim().max(160).optional().default(''),
 	story: z.string().trim().min(1).max(4000),
+	rating: z.number().int().min(1).max(5).optional().default(5),
 	visible: z.boolean().optional().default(true),
 	sortOrder: z.number().int().min(0).max(100000).optional().default(0),
 });
@@ -22,6 +23,7 @@ function toRow(id: string, data: z.infer<typeof payload>, createdAt: string) {
 		location: data.location || null,
 		work: data.work || null,
 		story: data.story,
+		rating: data.rating,
 		visible: data.visible ? 1 : 0,
 		sort_order: data.sortOrder,
 		created_at: createdAt,

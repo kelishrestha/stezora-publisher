@@ -47,6 +47,7 @@ interface ContentTestimonial {
 	location: string | null;
 	work: string | null;
 	story: string;
+	rating: number;
 	sortOrder: number;
 }
 
@@ -187,7 +188,7 @@ export const content: RouteHandler = async ({ env }) => {
 	});
 
 	const testimonialRows = await db
-		.select({ id: testimonials.id, name: testimonials.name, location: testimonials.location, work: testimonials.work, story: testimonials.story, sortOrder: testimonials.sort_order })
+		.select({ id: testimonials.id, name: testimonials.name, location: testimonials.location, work: testimonials.work, story: testimonials.story, rating: testimonials.rating, sortOrder: testimonials.sort_order })
 		.from(testimonials)
 		.where(eq(testimonials.visible, 1))
 		.orderBy(asc(testimonials.sort_order), asc(testimonials.created_at));

@@ -41,6 +41,7 @@ export interface ContentTestimonial {
 	location: string | null;
 	work: string | null;
 	story: string;
+	rating: number;
 	sortOrder: number;
 }
 
@@ -379,7 +380,7 @@ export async function writeTestimonials(dir: string, items: ContentTestimonial[]
 	for (const item of items) {
 		const file = `${item.id}.json`;
 		expected.add(file);
-		const record = { name: item.name, location: item.location ?? '', work: item.work ?? '', story: item.story, sortOrder: item.sortOrder };
+		const record = { name: item.name, location: item.location ?? '', work: item.work ?? '', story: item.story, rating: item.rating, sortOrder: item.sortOrder };
 		await fs.writeFile(path.join(dir, file), `${JSON.stringify(record, null, 2)}\n`, 'utf-8');
 	}
 	for (const file of existing) {

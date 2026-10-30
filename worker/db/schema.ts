@@ -209,6 +209,8 @@ export const testimonials = sqliteTable('testimonials', {
 	location: text('location'),
 	work: text('work'),
 	story: text('story').notNull(),
+	// Star rating shown in the carousel, 1 to 5.
+	rating: integer('rating').notNull().default(5),
 	// 1 = shown in the carousel, 0 = hidden. Sort ascending by sort_order.
 	visible: integer('visible').notNull().default(1),
 	sort_order: integer('sort_order').notNull().default(0),
