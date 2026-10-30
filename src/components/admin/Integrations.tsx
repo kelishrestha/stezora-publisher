@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Section } from './Section';
-import { badgeClass, cardClass } from '../ui/shared/classes';
+import Toast, { ToastStack } from './Toast';
+import { useConfirm } from './useConfirm';
+import { badgeClass, buttonClass, cardClass } from '../ui/shared/classes';
 
 interface BloggerPublication {
 	slug: string;
@@ -14,12 +16,23 @@ interface IntegrationsData {
 	neobook: { profileUrl: string };
 }
 
+interface NeobookSyncResult {
+	items: number;
+	postsCreated: number;
+	contentUpdates: number;
+	imagesAttached: number;
+	tagsCreated: number;
+	unmatched: string[];
+}
+
 export default function Integrations() {
 	const [data, setData] = useState<IntegrationsData | null>(null);
 	const [error, setError] = useState<string | null>(null);
+	const [syncing, setSyncing] = useState(false);
+	const [toast, setToast] = useState<{ tone: 'error' | 'success'; message: string } | null>(null);
+	const { confirm, confirmDialog } = useConfirm();
 
-	useEffect(() => {
-		let cancelled = false;
+	const loadData = () => {
 		fetch('/api/admin/integrations', { credentials: 'same-origin' })
 			.then((response) => {
 				if (response.status === 401) {
@@ -30,15 +43,52 @@ export default function Integrations() {
 				return response.json() as Promise<{ data: IntegrationsData }>;
 			})
 			.then((body) => {
-				if (!cancelled && body) setData(body.data);
+				if (body) setData(body.data);
 			})
 			.catch((reason: unknown) => {
-				if (!cancelled) setError(reason instanceof Error ? reason.message : 'Failed to load integrations.');
+				setError(reason instanceof Error ? reason.message : 'Failed to load integrations.');
 			});
-		return () => {
-			cancelled = true;
-		};
+	};
+
+	useEffect(() => {
+		loadData();
 	}, []);
+
+	async function syncNeobook() {
+		const confirmed = await confirm({
+			title: 'Sync from Neobook?',
+			message:
+				'This pulls the latest revisions and attachments from the Neobook profile into the CMS. Matching posts are updated in place; the public site reflects changes on the next build.',
+			confirmLabel: 'Sync now',
+			tone: 'primary',
+		});
+		if (!confirmed) return;
+
+		setSyncing(true);
+		try {
+			const response = await fetch('/api/admin/neobook/sync', { method: 'POST', credentials: 'same-origin' });
+			if (response.status === 401) {
+				window.location.href = '/admin/login';
+				return;
+			}
+			if (!response.ok) throw new Error(`Sync failed (HTTP ${response.status}).`);
+			const body = (await response.json()) as { data: NeobookSyncResult };
+			const result = body.data;
+			const parts = [
+				`${result.postsCreated} created`,
+				`${result.contentUpdates} updated`,
+				`${result.imagesAttached} image${result.imagesAttached === 1 ? '' : 's'}`,
+				`${result.tagsCreated} tag${result.tagsCreated === 1 ? '' : 's'}`,
+			];
+			const unmatched = result.unmatched.length > 0 ? ` (${result.unmatched.length} unmatched)` : '';
+			setToast({ tone: 'success', message: `Synced ${result.items} item${result.items === 1 ? '' : 's'}: ${parts.join(', ')}.${unmatched}` });
+			loadData();
+		} catch (reason: unknown) {
+			setToast({ tone: 'error', message: reason instanceof Error ? reason.message : 'Could not sync from Neobook.' });
+		} finally {
+			setSyncing(false);
+		}
+	}
 
 	if (error) {
 		return <p className="rounded-lg bg-accent-soft px-4 py-3 text-sm text-accent-foreground">{error}</p>;
@@ -101,7 +151,7 @@ export default function Integrations() {
 						<h3 className="text-sm font-semibold text-foreground">Neobook</h3>
 						<p className="mt-0.5 text-xs text-muted-foreground">One-way sync that pulls the latest poem revisions and attachments from the Neobook profile.</p>
 					</div>
-					<div className="px-5 py-4 text-sm text-muted-foreground">
+					<div className="flex flex-col gap-4 px-5 py-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
 						{data && (
 							<p>
 								Profile:{' '}
@@ -110,9 +160,15 @@ export default function Integrations() {
 								</a>
 							</p>
 						)}
+						<button type="button" onClick={() => void syncNeobook()} disabled={syncing} className={`${buttonClass('accentOutline', 'sm')} shrink-0`}>
+							{syncing ? 'Syncing…' : 'Sync'}
+						</button>
 					</div>
 				</div>
 			</Section>
+
+			{confirmDialog}
+			<ToastStack>{toast && <Toast tone={toast.tone} message={toast.message} onDismiss={() => setToast(null)} />}</ToastStack>
 		</div>
 	);
 }
