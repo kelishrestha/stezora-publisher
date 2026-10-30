@@ -3,37 +3,101 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
 
 
-<BaseLayout title="Sign in" description="Sign in to the Stezora CMS" path="/admin/login" noindex accent="admin">
-	<main class="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 py-16">
-		<div class="rounded-md border border-border bg-surface p-8 shadow-sm">
-			<h1 class="text-xl font-semibold tracking-tight text-foreground">Sign in to Stezora CMS</h1>
-			<p class="mt-1 text-sm text-muted-foreground">Use your admin account to manage content.</p>
+<BaseLayout title="Sign in" description="Sign in to the Stezora CMS" path="/admin/login" noindex accent="admin" chrome={false}>
+	<main class="flex flex-1 flex-col items-center justify-center px-4 py-10 sm:py-16">
+		<div class="relative mb-6 h-24 w-24 sm:mb-8 sm:h-32 sm:w-32">
+			<img src="/stezora-hero-logo-light.png" alt="Stezora" class="absolute inset-0 h-full w-full object-contain dark:hidden" />
+			<img src="/stezora-hero-logo-dark.png" alt="" aria-hidden="true" class="absolute inset-0 hidden h-full w-full object-contain dark:block" />
+		</div>
+		<div class="w-full max-w-sm rounded-md border border-border bg-surface p-6 shadow-sm sm:p-8">
+			<h1 class="text-xl font-semibold tracking-tight text-foreground">Sign in</h1>
 
 			<form id="login-form" class="mt-6 space-y-4">
 				<div>
-					<label for="email" class="block text-sm font-medium text-foreground">Email</label>
-					<input
-						id="email"
-						name="email"
-						type="email"
-						autocomplete="username"
-						required
-						class="mt-0.5 w-full rounded border-border bg-background text-foreground shadow-sm sm:text-sm placeholder:text-muted-foreground focus:border-accent focus:ring-accent"
-						placeholder="you@example.com"
-					/>
+					<label
+						for="email"
+						class="relative block rounded-md border border-border shadow-sm focus-within:border-accent focus-within:ring-1 focus-within:ring-accent"
+					>
+						<input
+							id="email"
+							name="email"
+							type="email"
+							autocomplete="username"
+							required
+							placeholder="Email"
+							class="peer w-full rounded-md border-none bg-transparent px-3 py-3 text-foreground placeholder-transparent focus:border-transparent focus:outline-none focus:ring-0"
+						/>
+						<span
+							class="pointer-events-none absolute start-2.5 top-0 -translate-y-1/2 bg-surface px-1 text-xs text-muted-foreground transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-placeholder-shown:text-muted-foreground peer-focus:top-0 peer-focus:text-xs peer-focus:text-accent"
+						>
+							Email
+						</span>
+					</label>
 				</div>
 
-				<div>
-					<label for="password" class="block text-sm font-medium text-foreground">Password</label>
-					<input
-						id="password"
-						name="password"
-						type="password"
-						autocomplete="current-password"
-						required
-						class="mt-0.5 w-full rounded border-border bg-background text-foreground shadow-sm sm:text-sm placeholder:text-muted-foreground focus:border-accent focus:ring-accent"
-						placeholder="Your password"
-					/>
+				<div class="relative">
+					<label
+						for="password"
+						class="relative block rounded-md border border-border shadow-sm focus-within:border-accent focus-within:ring-1 focus-within:ring-accent"
+					>
+						<input
+							id="password"
+							name="password"
+							type="password"
+							autocomplete="current-password"
+							required
+							placeholder="Password"
+							class="peer w-full rounded-md border-none bg-transparent px-3 py-3 pr-11 text-foreground placeholder-transparent focus:border-transparent focus:outline-none focus:ring-0"
+						/>
+						<span
+							class="pointer-events-none absolute start-2.5 top-0 -translate-y-1/2 bg-surface px-1 text-xs text-muted-foreground transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-placeholder-shown:text-muted-foreground peer-focus:top-0 peer-focus:text-xs peer-focus:text-accent"
+						>
+							Password
+						</span>
+					</label>
+					<button
+						type="button"
+						id="password-toggle"
+						aria-label="Show password"
+						aria-pressed="false"
+						class="absolute inset-y-0 right-0 flex items-center rounded px-3 text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+					>
+						<svg
+							data-eye
+							xmlns="http://www.w3.org/2000/svg"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							aria-hidden="true"
+						>
+							<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+							<circle cx="12" cy="12" r="3" />
+						</svg>
+						<svg
+							data-eye-off
+							class="hidden"
+							xmlns="http://www.w3.org/2000/svg"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							aria-hidden="true"
+						>
+							<path d="M9.88 9.88a3 3 0 0 0 4.24 4.24" />
+							<path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+							<path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+							<line x1="2" x2="22" y1="2" y2="22" />
+						</svg>
+					</button>
 				</div>
 
 				<div id="login-error" class="hidden rounded-md bg-accent-soft px-3 py-2 text-sm text-accent-foreground" role="alert"></div>
@@ -47,6 +111,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 				</button>
 			</form>
 		</div>
+		<p class="mt-6 text-center text-xs text-muted-foreground">&copy; 2026 Stezora. All rights reserved.</p>
 	</main>
 </BaseLayout>
 
@@ -57,6 +122,22 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 	const form = document.getElementById('login-form') as HTMLFormElement | null;
 	const errorBox = document.getElementById('login-error');
 	const submit = document.getElementById('login-submit');
+
+	const passwordInput = document.getElementById('password') as HTMLInputElement | null;
+	const passwordToggle = document.getElementById('password-toggle');
+	const eyeIcon = passwordToggle?.querySelector('[data-eye]');
+	const eyeOffIcon = passwordToggle?.querySelector('[data-eye-off]');
+
+	passwordToggle?.addEventListener('click', () => {
+		if (!passwordInput) return;
+		const reveal = passwordInput.type === 'password';
+		passwordInput.type = reveal ? 'text' : 'password';
+		passwordToggle.setAttribute('aria-pressed', String(reveal));
+		passwordToggle.setAttribute('aria-label', reveal ? 'Hide password' : 'Show password');
+		eyeIcon?.classList.toggle('hidden', reveal);
+		eyeOffIcon?.classList.toggle('hidden', !reveal);
+		passwordInput.focus();
+	});
 
 	function showError(message: string) {
 		if (!errorBox) return;
