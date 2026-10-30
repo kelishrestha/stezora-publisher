@@ -72,12 +72,6 @@ const jsonLd = breadcrumbs.length > 0 ? renderJsonLd(websiteJsonLd(), pageJsonLd
 		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
 		<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
 		<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link
-			 rel="stylesheet"
-			href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&display=swap"
-		/>
 		<link rel="alternate" type="application/rss+xml" title={`${SITE.name} RSS Feed`} href={absoluteUrl('/rss.xml')} />
 		<link rel="sitemap" href={absoluteUrl('/sitemap-index.xml')} />
 		<slot name="head" />
@@ -125,6 +119,19 @@ const jsonLd = breadcrumbs.length > 0 ? renderJsonLd(websiteJsonLd(), pageJsonLd
 		<script>
 			import { initPageTracking } from '../lib/analytics/track';
 			initPageTracking();
+		</script>
+		<script>
+			// Reveal .img-shell images once loaded (CSP-safe replacement for the
+			// inline onload handler). Cached images are already complete.
+			const reveal = (img: HTMLImageElement) => img.classList.add('loaded');
+			document.querySelectorAll<HTMLImageElement>('.img-shell > img').forEach((img) => {
+				if (img.complete && img.naturalWidth > 0) {
+					reveal(img);
+				} else {
+					img.addEventListener('load', () => reveal(img), { once: true });
+					img.addEventListener('error', () => reveal(img), { once: true });
+				}
+			});
 		</script>
 	</body>
 </html>

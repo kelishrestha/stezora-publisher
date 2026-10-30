@@ -176,8 +176,9 @@ html[data-accent] .site-footer {
 }
 
 /*
- * Public image skeleton: wrap an <img onload="this.classList.add('loaded')">
- * in .img-shell to show a pulsing placeholder until the image arrives.
+ * Public image skeleton: wrap an <img> in .img-shell to show a pulsing
+ * placeholder until the image arrives. A bundled script (BaseLayout) adds the
+ * .loaded class on load, so no inline onload handler is needed under the CSP.
  */
 .img-shell {
 	position: relative;

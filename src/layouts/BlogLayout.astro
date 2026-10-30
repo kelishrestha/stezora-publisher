@@ -5,6 +5,7 @@ import PostMeta from '../components/blog/PostMeta.astro';
 import type { Post } from '../lib/publications/collections';
 import type { Publication } from '../lib/publications/types';
 import { PUBLICATIONS_PATH, publicationPath, postExcerpt, postPath, slugify, tagPath } from '../lib/publications';
+import { imageVariant } from '../lib/publications/images';
 import { badgeClass } from '../components/ui/shared/classes';
 
 export interface Props {
@@ -22,14 +23,12 @@ const postSlug = post.id.startsWith(`${publication.slug}-`)
 
 const path = postPath(publication.slug, post.id);
 
-// The app centralizes a post's reach, so views are a single total (first-party
-// plus Neobook, summed client-side) rather than two separate counts. Likes and
-// comments come from Neobook; each stat is shown only when positive.
+// The app centralizes a post's reach: views are a single total (first-party plus
+// Neobook, summed client-side). Likes and comments come from Neobook. Each stat
+// renders only when positive.
 const neobookViews = post.data.neobookViews ?? 0;
-const engagementParts = [
-	post.data.neobookLikes ? `${post.data.neobookLikes.toLocaleString()} likes` : null,
-	post.data.neobookComments ? `${post.data.neobookComments.toLocaleString()} comments` : null,
-].filter((part): part is string => part !== null);
+const likes = post.data.neobookLikes ?? 0;
+const comments = post.data.neobookComments ?? 0;
 const breadcrumbs = [
 	{ name: 'Home', href: '/' },
 	{ name: 'Poetry Collections', href: PUBLICATIONS_PATH },
@@ -50,55 +49,71 @@ const breadcrumbs = [
 	accent={publication.accent}
 >
 	<article class="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-		<header>
-			<Breadcrumbs items={breadcrumbs} />
-			<h1 class="mt-6 font-serif text-3xl font-bold tracking-tight sm:text-4xl">{post.data.title}</h1>
-			<div class="mt-4">
-				<PostMeta pubDate={post.data.pubDate} updatedDate={post.data.updatedDate} />
-			</div>
-			<div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-				<span data-view-badge hidden class="inline-flex items-center gap-1.5">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4" aria-hidden="true">
-						<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-						<circle cx="12" cy="12" r="3" />
-					</svg>
-					<span data-view-count data-publication={publication.slug} data-post={postSlug} data-neobook-views={neobookViews}></span>
-					<span>views</span>
-				</span>
-				{engagementParts.length > 0 && <span>{engagementParts.join(' · ')}</span>}
-				{post.data.neobookUrl && (
-					<a href={post.data.neobookUrl} target="_blank" rel="noopener" class="text-accent-foreground hover:underline">View on Neobook</a>
+		<Breadcrumbs items={breadcrumbs} />
+		<div class="mt-6 grid gap-10 lg:grid-cols-[22rem_minmax(0,1fr)]">
+			<!-- Title and image stay in view (sticky) while the body scrolls. -->
+			<header class="lg:sticky lg:top-24 lg:self-start">
+				<h1 class="font-serif text-3xl font-bold tracking-tight sm:text-4xl">{post.data.title}</h1>
+				<div class="mt-4">
+					<PostMeta pubDate={post.data.pubDate} updatedDate={post.data.updatedDate} />
+				</div>
+				<div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+					<span data-view-badge hidden class="inline-flex items-center gap-1.5">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4" aria-hidden="true">
+							<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+							<circle cx="12" cy="12" r="3" />
+						</svg>
+						<span data-view-count data-publication={publication.slug} data-post={postSlug} data-neobook-views={neobookViews}></span>
+						<span>views</span>
+					</span>
+					{likes > 0 && (
+						<span class="inline-flex items-center gap-1.5">
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4 text-red-500" aria-hidden="true">
+								<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+							</svg>
+							{likes.toLocaleString()} likes
+						</span>
+					)}
+					{comments > 0 && <span>{comments.toLocaleString()} comments</span>}
+					{post.data.neobookUrl && (
+						<a href={post.data.neobookUrl} target="_blank" rel="noopener" class="text-accent-foreground hover:underline">View on Neobook</a>
+					)}
+				</div>
+				{post.data.featuredImage && (
+					<span class="img-shell mt-6 block w-full rounded-lg border border-border shadow-lg">
+						<span class="img-shell-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+						<img src={imageVariant(post.data.featuredImage, 1024)} alt="" loading="lazy" class="m-0 block w-full" />
+					</span>
+				)}
+			</header>
+
+			<!-- Scrolling body; tags follow it in normal flow after it ends. -->
+			<div>
+				<div class="prose max-w-none dark:prose-invert">
+					<slot />
+				</div>
+				{post.data.tags.length > 0 && (
+					<footer class="mt-16">
+						<div class="flex flex-wrap items-center gap-2">
+							{post.data.tags.map((tag) => (
+								<a href={tagPath(publication.slug, slugify(tag))} class={`${badgeClass('solid')} transition-opacity hover:opacity-80`}>
+									#{tag}
+								</a>
+							))}
+						</div>
+					</footer>
 				)}
 			</div>
-		</header>
-		<div class="prose mt-10 max-w-none dark:prose-invert">
-			<slot />
 		</div>
-		{post.data.tags.length > 0 && (
-			<footer class="clear-both mt-16">
-				<div class="flex flex-wrap items-center gap-2">
-					{post.data.tags.map((tag) => (
-						<a
-							href={tagPath(publication.slug, slugify(tag))}
-							class={`${badgeClass('solid')} transition-opacity hover:opacity-80`}
-						>
-							#{tag}
-						</a>
-					))}
-				</div>
-			</footer>
-		)}
 	</article>
 </BaseLayout>
 
 <script>
 	// First-party view count for the on-page badge (reads our own /api/views).
-	// The badge stays hidden unless the post has a positive view count.
+	// The badge stays hidden unless the total (first-party + Neobook) is positive.
 	const el = document.querySelector('[data-view-count]');
 	const badge = document.querySelector('[data-view-badge]');
 	if (el instanceof HTMLElement && el.dataset.publication && el.dataset.post) {
-		// Total views centralize this app's first-party count with the Neobook
-		// count (baked into the page). Shown only when the sum is positive.
 		const neobookViews = Number(el.dataset.neobookViews || '0');
 		const show = (total: number) => {
 			if (total > 0) {
