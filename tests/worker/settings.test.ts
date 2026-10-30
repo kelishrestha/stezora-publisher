@@ -66,12 +66,12 @@ describe('app settings', () => {
 	it('returns defaults and persists updates', async () => {
 		const cookie = await signInAndCookies();
 		const get = (await (await fetchWorker('/api/admin/settings', { headers: { cookie } })).json()) as { data: { settings: Record<string, unknown> } };
-		expect(get.data.settings).toMatchObject({ analyticsEnabled: true, consentMode: 'opt-out', retentionDays: 90, timezone: 'Asia/Kathmandu' });
+		expect(get.data.settings).toMatchObject({ analyticsEnabled: true, consentMode: 'opt-out', retentionDays: 90, timezone: 'Asia/Kathmandu', mediaStorageEnabled: true });
 
-		const put = (await (await putSettings(cookie, { analyticsEnabled: true, consentMode: 'opt-in', retentionDays: 30 })).json()) as {
+		const put = (await (await putSettings(cookie, { analyticsEnabled: true, consentMode: 'opt-in', retentionDays: 30, mediaStorageEnabled: false })).json()) as {
 			data: { settings: Record<string, unknown> };
 		};
-		expect(put.data.settings).toMatchObject({ consentMode: 'opt-in', retentionDays: 30 });
+		expect(put.data.settings).toMatchObject({ consentMode: 'opt-in', retentionDays: 30, mediaStorageEnabled: false });
 	});
 
 	it('persists a valid timezone and rejects an invalid one', async () => {

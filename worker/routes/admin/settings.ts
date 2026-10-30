@@ -27,6 +27,7 @@ const settingsPatch = z.object({
 	consentMode: z.enum(['opt-out', 'opt-in']).optional(),
 	retentionDays: z.number().int().min(1).max(3650).optional(),
 	timezone: z.string().refine(isValidTimeZone, 'Invalid timezone.').optional(),
+	mediaStorageEnabled: z.boolean().optional(),
 });
 
 /** PUT /api/admin/settings */

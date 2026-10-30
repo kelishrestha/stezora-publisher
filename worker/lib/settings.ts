@@ -12,6 +12,12 @@ export interface AppSettings {
 	retentionDays: number;
 	/** IANA timezone the admin UI displays dates and times in. */
 	timezone: string;
+	/**
+	 * Serve media bytes from R2 (/media/<key>). When off, media falls back to its
+	 * external source URL. Also requires the MEDIA binding and the
+	 * ENABLE_MEDIA_STORAGE env gate; this setting can only turn serving off.
+	 */
+	mediaStorageEnabled: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -20,6 +26,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	retentionDays: 90,
 	// Nepal time (UTC+5:45) by default.
 	timezone: 'Asia/Kathmandu',
+	mediaStorageEnabled: true,
 };
 
 const KEYS = {
@@ -27,6 +34,7 @@ const KEYS = {
 	consentMode: 'consent_mode',
 	retentionDays: 'retention_days',
 	timezone: 'timezone',
+	mediaStorageEnabled: 'media_storage_enabled',
 } as const;
 
 /** True when `value` is an IANA timezone the runtime understands. */
@@ -52,6 +60,7 @@ export async function readAppSettings(db: Db): Promise<AppSettings> {
 		consentMode: map.get(KEYS.consentMode) === 'opt-in' ? 'opt-in' : DEFAULT_SETTINGS.consentMode,
 		retentionDays: map.has(KEYS.retentionDays) ? clampDays(Number(map.get(KEYS.retentionDays))) : DEFAULT_SETTINGS.retentionDays,
 		timezone: map.get(KEYS.timezone) && isValidTimeZone(map.get(KEYS.timezone) as string) ? (map.get(KEYS.timezone) as string) : DEFAULT_SETTINGS.timezone,
+		mediaStorageEnabled: map.has(KEYS.mediaStorageEnabled) ? map.get(KEYS.mediaStorageEnabled) === 'true' : DEFAULT_SETTINGS.mediaStorageEnabled,
 	};
 }
 
@@ -61,6 +70,7 @@ export async function writeAppSettings(db: Db, patch: Partial<AppSettings>): Pro
 	if (patch.consentMode !== undefined) entries.push({ key: KEYS.consentMode, value: patch.consentMode });
 	if (patch.retentionDays !== undefined) entries.push({ key: KEYS.retentionDays, value: String(clampDays(patch.retentionDays)) });
 	if (patch.timezone !== undefined && isValidTimeZone(patch.timezone)) entries.push({ key: KEYS.timezone, value: patch.timezone });
+	if (patch.mediaStorageEnabled !== undefined) entries.push({ key: KEYS.mediaStorageEnabled, value: String(patch.mediaStorageEnabled) });
 	for (const entry of entries) {
 		await db.insert(appSettings).values(entry).onConflictDoUpdate({ target: appSettings.key, set: { value: entry.value } });
 	}

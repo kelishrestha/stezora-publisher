@@ -209,6 +209,37 @@ function ChangePasswordModal({ onClose, pushToast }: { onClose: () => void; push
 
 function DataExport({ pushToast }: { pushToast: PushToast }) {
 	const [downloading, setDownloading] = useState(false);
+	const [mediaStorage, setMediaStorage] = useState<boolean | null>(null);
+
+	useEffect(() => {
+		let cancelled = false;
+		fetch('/api/admin/settings', { credentials: 'same-origin' })
+			.then((response) => (response.ok ? (response.json() as Promise<{ data: { settings: AppSettings } }>) : null))
+			.then((body) => {
+				if (!cancelled && body) setMediaStorage(body.data.settings.mediaStorageEnabled);
+			})
+			.catch(() => undefined);
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
+	async function toggleMediaStorage(value: boolean) {
+		const previous = mediaStorage;
+		setMediaStorage(value);
+		const response = await fetch('/api/admin/settings', {
+			method: 'PUT',
+			credentials: 'same-origin',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ mediaStorageEnabled: value }),
+		});
+		if (!response.ok) {
+			setMediaStorage(previous);
+			pushToast('error', 'Could not update media storage.');
+			return;
+		}
+		pushToast('success', value ? 'Serving media from storage.' : 'Serving media from source URLs.');
+	}
 
 	async function download() {
 		setDownloading(true);
@@ -239,15 +270,29 @@ function DataExport({ pushToast }: { pushToast: PushToast }) {
 	return (
 		<Section title="Data">
 			<div className={cardClass()}>
-				<SettingRow
-					title="Download all data"
-					description="Export all content (publications, posts, tags, and media references) as a JSON file. Account credentials are not included."
-					control={
-						<button type="button" onClick={download} disabled={downloading} className={buttonClass('outline')}>
-							{downloading ? 'Preparing…' : 'Download'}
-						</button>
-					}
-				/>
+				<div className="divide-y divide-border">
+					<SettingRow
+						title="Download all data"
+						description="Export all content (publications, posts, tags, and media references) as a JSON file. Account credentials are not included."
+						control={
+							<button type="button" onClick={download} disabled={downloading} className={buttonClass('outline')}>
+								{downloading ? 'Preparing…' : 'Download'}
+							</button>
+						}
+					/>
+					<SettingRow
+						labelId="row-media-storage"
+						title="Serve media from storage"
+						description="Serve images from object storage (R2). When off, or when storage is not configured, images fall back to their original source URL."
+						control={
+							mediaStorage === null ? (
+								<span className="text-xs text-muted-foreground">…</span>
+							) : (
+								<Switch checked={mediaStorage} onChange={(value) => void toggleMediaStorage(value)} labelledBy="row-media-storage" />
+							)
+						}
+					/>
+				</div>
 			</div>
 		</Section>
 	);
@@ -258,6 +303,7 @@ interface AppSettings {
 	consentMode: 'opt-out' | 'opt-in';
 	retentionDays: number;
 	timezone: string;
+	mediaStorageEnabled: boolean;
 }
 
 function timezoneList(): string[] {
