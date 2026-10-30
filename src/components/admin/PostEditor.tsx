@@ -272,11 +272,22 @@ export default function PostEditor({ postId }: PostEditorProps) {
 	}
 
 	/** Standalone preview document with a watermark; no site assets needed. */
+	function escapeHtml(value: string): string {
+		return value.replace(
+			/[&<>"']/g,
+			(char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char] ?? char
+		);
+	}
+
 	function previewDocument(previewTitle: string, html: string): string {
+		// The preview opens in a blank tab with no CSP, so the title (which can
+		// come from external imports) is HTML-escaped; `html` is already sanitized
+		// server-side by the preview endpoint.
+		const safeTitle = escapeHtml(previewTitle);
 		return [
 			'<!doctype html><html><head><meta charset="utf-8" />',
 			'<meta name="robots" content="noindex" />',
-			`<title>Preview: ${previewTitle}</title>`,
+			`<title>Preview: ${safeTitle}</title>`,
 			'<style>',
 			'body { margin: 0; font-family: Georgia, serif; color: #1c1c1c; background: #fcfcfc; }',
 			'.banner { position: sticky; top: 0; z-index: 2; background: #4338ca; color: #fff;',
@@ -290,7 +301,7 @@ export default function PostEditor({ postId }: PostEditorProps) {
 			'</style></head><body>',
 			'<div class="banner">Preview. This is how the post will read; it is not published.</div>',
 			'<div class="watermark" aria-hidden="true"><span>PREVIEW</span></div>',
-			`<main><h1>${previewTitle}</h1>${html}</main>`,
+			`<main><h1>${safeTitle}</h1>${html}</main>`,
 			'</body></html>',
 		].join('\n');
 	}

@@ -7,6 +7,7 @@ import { PostRepository, isPostStatus, type PostStatus } from '../../db/posts';
 import { ApiError } from '../../lib/errors';
 import { ok } from '../../lib/http';
 import { renderMarkdownToSanitizedHtml } from '../../lib/markdown';
+import { sanitizeContentHtml } from '../../../src/lib/blogger/sanitize';
 import type { AuthenticatedHandler } from '../../lib/middleware';
 import { validatePagination } from '../../lib/middleware';
 import { readJsonBody } from '../../lib/validate';
@@ -141,7 +142,9 @@ export const getPost: AuthenticatedHandler = async ({ env, params }) => {
 	if (!post) {
 		throw new ApiError(404, 'POST_NOT_FOUND', 'Post was not found.');
 	}
-	return ok({ post });
+	// Defense-in-depth: the admin PostView renders `content` as raw HTML, so
+	// re-sanitize on read in case any write path ever stored unsanitized HTML.
+	return ok({ post: { ...post, content: sanitizeContentHtml(post.content) } });
 };
 
 /**

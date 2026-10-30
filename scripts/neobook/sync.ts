@@ -3,6 +3,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { Miniflare } from 'miniflare';
 import { slugify } from '../../src/lib/publications';
+import { sanitizeContentHtml } from '../../src/lib/blogger/sanitize';
 
 /**
  * One-way sync from the Neobook profile (https://neobook.org/stezora/) into
@@ -178,7 +179,7 @@ async function createPost(db: LocalD1, publicationSlug: string, item: NeobookIte
 	}
 	const slug = normalizeTitle(item.title).replace(/ /g, '-');
 	const id = `p-${publicationSlug}-${slug}`;
-	const content = neobookTextToHtml(item.text);
+	const content = sanitizeContentHtml(neobookTextToHtml(item.text));
 	const publishedAt = neobookDateToIso(item.date_publish) ?? new Date().toISOString();
 	const updatedAt = neobookDateToIso(item.date_edit) ?? publishedAt;
 	await db
@@ -268,7 +269,7 @@ async function main(): Promise<void> {
 			const contentChanged = htmlToComparableText(item.text) !== htmlToComparableText(post.content);
 			if (titleChanged || contentChanged) {
 				const updatedAt = neobookDateToIso(item.date_edit) ?? new Date().toISOString();
-				const content = contentChanged ? neobookTextToHtml(item.text) : post.content;
+				const content = contentChanged ? sanitizeContentHtml(neobookTextToHtml(item.text)) : post.content;
 				await db
 					.prepare('UPDATE posts SET title = ?, content = ?, updated_at = ? WHERE id = ?')
 					.bind(title, content, updatedAt, post.id)

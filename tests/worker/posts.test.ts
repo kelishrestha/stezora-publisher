@@ -250,6 +250,23 @@ describe('admin posts editor API', () => {
 		expect(listBody.data?.posts?.map((p) => p.id)).toContain(id);
 	});
 
+	it('re-sanitizes stored content on read (defense-in-depth)', async () => {
+		const now = new Date().toISOString();
+		await db
+			.prepare(
+				"INSERT INTO posts (id, publication_id, title, slug, excerpt, content, status, created_at) VALUES (?, 'pub-a', 'Tainted', 'tainted', '', ?, 'draft', ?)"
+			)
+			.bind('p-tainted', '<p>ok</p><script>alert(1)</script><img src=x onerror="alert(2)">', now)
+			.run();
+
+		const response = await fetchWorker('/api/admin/posts/p-tainted', { headers: { cookie } });
+		expect(response.status).toBe(200);
+		const body = (await response.json()) as { data: { post: { content: string } } };
+		expect(body.data.post.content).not.toContain('<script');
+		expect(body.data.post.content).not.toContain('onerror');
+		expect(body.data.post.content).toContain('<p>ok</p>');
+	});
+
 	it('publishes a post idempotently', async () => {
 		const created = await fetchWorker('/api/admin/posts', {
 			method: 'POST',
