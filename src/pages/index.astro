@@ -2,14 +2,11 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Container from '../components/ui/Container.astro';
 import { Icon } from 'astro-icon/components';
-const testimonials = [
-	{ name: "Sarah Chen", location: "San Francisco, CA", text: "Stezora's words don't just tell a story—they become part of your soul. 'The Rebellious Flame' changed how I see the world around me. Every page felt like a conversation with an old friend who understands the deepest parts of your heart.", work: "The Rebellious Flame", date: "October 2024" },
-	{ name: "Marcus Rivera", location: "Brooklyn, NY", text: "I've never been one for poetry, but 'The Peach Fall' found me during my darkest hour. These poems were like gentle hands guiding me back to myself. Stezora writes with the wisdom of someone who has walked through shadows and emerged with light.", work: "The Peach Fall", date: "September 2024" },
-	{ name: "Elena Moreau", location: "Montreal, QC", text: "'The Soulful Incantations' is a masterpiece of emotional cartography. Stezora maps the terrain of love and loss with such precision and tenderness. I found myself in these pages, and I found hope I didn't know I was looking for.", work: "The Soulful Incantations", date: "August 2024" },
-	{ name: "James Whitmore", location: "London, UK", text: "Reading 'The Rebellious Flame' was like discovering a secret language I'd been trying to speak my whole life. These poems give voice to the ineffable—the spaces between words where real meaning lives. Simply extraordinary.", work: "The Rebellious Flame", date: "July 2024" },
-	{ name: "Priya Sharma", location: "Mumbai, India", text: "'The Peach Fall' reads like a collection of secrets whispered between kindred spirits. Each story resonates with profound truth. Stezora has the rare gift of making you feel less alone in the universe.", work: "The Peach Fall", date: "June 2024" },
-	{ name: "David Kim", location: "Seoul, South Korea", text: "The depth of emotion in 'The Peach Fall' is breathtaking. These poems arrived at exactly the moment I needed them, as if Stezora had written them specifically for my journey. Art that heals—this is what literature should be.", work: "The Peach Fall", date: "May 2024" },
-];
+import { getCollection } from 'astro:content';
+
+// Reader testimonials are admin-authored (raised from contact-form emails) and
+// baked in at build; the section is omitted entirely when there are none.
+const testimonials = (await getCollection('testimonials')).map((entry) => entry.data).sort((a, b) => a.sortOrder - b.sortOrder);
 const books = [
 	{
 		title: 'The Warrior Must Rise',
@@ -224,6 +221,8 @@ const cardDelays = ['[animation-delay:0ms]', '[animation-delay:400ms]', '[animat
 				<h2 class="font-serif text-4xl md:text-5xl">Reader Voices</h2>
 				<p class="mt-5 text-muted-foreground">Stories shared by souls who have journeyed through these pages and found pieces of themselves within.</p>
 			</div>
+			{testimonials.length > 0 && (
+			<Fragment>
 			<div class="relative mt-10">
 				<div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-secondary/30 to-accent-soft/20 p-8 md:p-12">
 					<div class="absolute left-4 top-4 text-secondary/40" aria-hidden="true"><Icon name="lucide:quote" class="h-16 w-16" /></div>
@@ -235,11 +234,11 @@ const cardDelays = ['[animation-delay:0ms]', '[animation-delay:400ms]', '[animat
 						{testimonials.map((voice, index) => (
 							<div data-voice-slide class={index === 0 ? '' : 'hidden'}>
 								<div class="mb-6 flex justify-center text-yellow-500" aria-label="5 out of 5 stars">{[1, 2, 3, 4, 5].map(() => <svg viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6" aria-hidden="true"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></svg>)}</div>
-								<blockquote class="mb-8 text-center font-serif text-xl leading-relaxed md:text-2xl">“{voice.text}”</blockquote>
+								<blockquote class="mb-8 text-center font-serif text-xl leading-relaxed md:text-2xl">“{voice.story}”</blockquote>
 								<div class="space-y-2 text-center">
 									<div class="text-lg">{voice.name}</div>
-									<div class="font-light text-muted-foreground">{voice.location}</div>
-									<div class="flex items-center justify-center gap-2 text-sm text-muted-foreground"><span class="rounded-full bg-secondary px-3 py-1">{voice.work}</span><span>•</span><span>{voice.date}</span></div>
+									{voice.location && <div class="font-light text-muted-foreground">{voice.location}</div>}
+									{voice.work && <div class="flex items-center justify-center gap-2 text-sm text-muted-foreground"><span class="rounded-full bg-secondary px-3 py-1">{voice.work}</span></div>}
 								</div>
 							</div>
 						))}
@@ -255,11 +254,13 @@ const cardDelays = ['[animation-delay:0ms]', '[animation-delay:400ms]', '[animat
 				{testimonials.slice(0, 3).map((voice, index) => (
 					<button type="button" data-voice-jump={index} class="cursor-pointer rounded-lg border border-border bg-surface p-6 text-left transition-all duration-300 hover:scale-105 hover:shadow-lg">
 						<div class="mb-3 flex text-yellow-500" aria-label="5 out of 5 stars">{[1, 2, 3, 4, 5].map(() => <svg viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4" aria-hidden="true"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></svg>)}</div>
-						<p class="mb-4 leading-relaxed text-foreground/80">“{voice.text.substring(0, 120)}...”</p>
+						<p class="mb-4 leading-relaxed text-foreground/80">“{voice.story.substring(0, 120)}...”</p>
 						<div class="text-sm"><div>{voice.name}</div><div class="font-light text-muted-foreground">{voice.location}</div></div>
 					</button>
 				))}
 			</div>
+			</Fragment>
+			)}
 			<div class="mt-16 text-center">
 				<div class="inline-block rounded-lg bg-gradient-to-r from-secondary/20 to-accent-soft/20 p-6">
 					<svg viewBox="0 0 24 24" fill="currentColor" class="mx-auto mb-4 h-8 w-8 animate-pulse text-red-500" role="img" aria-label="With love"><path d="m11.645 20.91-.007-.003-.022-.012a15.247 15.247 0 0 1-.383-.218 25.18 25.18 0 0 1-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0 1 12 5.052 5.5 5.5 0 0 1 16.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 0 1-4.244 3.17 15.247 15.247 0 0 1-.383.219l-.022.012-.007.004-.003.001a.752.752 0 0 1-.704 0l-.003-.001Z" /></svg>
