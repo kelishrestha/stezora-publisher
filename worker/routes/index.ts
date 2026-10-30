@@ -12,7 +12,7 @@ import { clearAnalytics, exportAnalytics, getSettings, updateSettings } from './
 import { integrations } from './admin/integrations';
 import { neobookSync } from './admin/neobook';
 import { bloggerImport, bloggerOauthCallback, bloggerOauthStart, bloggerStats } from './admin/blogger';
-import { listBooks } from './admin/books';
+import { listBooks, remoteImage } from './admin/books';
 import { createPost, deletePost, editorMeta, getPost, listPosts, previewPost, publishPost, updatePost } from './admin/posts';
 import { createTag, deleteTag, listTags, updateTag } from './admin/tags';
 import { deleteAdminMedia, listAdminMedia, localizeMedia, uploadMedia } from './admin/media';
@@ -33,6 +33,7 @@ routes.get('/api/admin/audience', requireAdmin(audience));
 routes.get('/api/admin/settings', requireAdmin(getSettings));
 routes.get('/api/admin/integrations', requireAdmin(integrations));
 routes.get('/api/admin/books', requireAdmin(listBooks));
+routes.get('/api/admin/remote-image', requireAdmin(remoteImage));
 routes.post('/api/admin/neobook/sync', requireAdmin(neobookSync));
 routes.post('/api/admin/blogger/import', requireAdmin(withBodyLimit(bloggerImport)));
 routes.post('/api/admin/blogger/stats', requireAdmin(bloggerStats));

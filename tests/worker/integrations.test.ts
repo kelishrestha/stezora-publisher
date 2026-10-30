@@ -108,6 +108,13 @@ describe('GET /api/admin/books', () => {
 		expect((await fetchWorker('/api/admin/books')).status).toBe(401);
 	});
 
+	it('proxies only allowlisted image hosts', async () => {
+		expect((await fetchWorker('/api/admin/remote-image?src=https://s3.twcstorage.ru/x.jpg')).status).toBe(401);
+		const cookie = await signInAndCookies();
+		expect((await fetchWorker('/api/admin/remote-image?src=https://evil.example/x.jpg', { headers: { cookie } })).status).toBe(403);
+		expect((await fetchWorker('/api/admin/remote-image?src=not-a-url', { headers: { cookie } })).status).toBe(400);
+	});
+
 	it('lists imported books', async () => {
 		const now = new Date().toISOString();
 		await db

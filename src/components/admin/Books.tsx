@@ -76,7 +76,7 @@ export default function Books() {
 				<div key={book.id} className={`${cardClass()} flex flex-col gap-4 p-4 sm:flex-row`}>
 					{book.cover_url ? (
 						<img
-							src={book.cover_url}
+							src={`/api/admin/remote-image?src=${encodeURIComponent(book.cover_url)}`}
 							alt={`Cover of ${book.title}`}
 							loading="lazy"
 							className="h-48 w-32 shrink-0 self-center rounded-md border border-border object-cover sm:self-start"
