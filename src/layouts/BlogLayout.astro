@@ -79,14 +79,19 @@ const breadcrumbs = [
 			</div>
 		</header>
 
-		<!-- Body scrolls on the left; the image is isolated in its own sticky
-		     column on the right so it stays put. They start at the same line. -->
-		<div class="mt-8 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-10">
+		<!-- Body scrolls on the left; the image lives in its own full-height
+		     column on the right whose inner wrapper is sticky, so the image stays
+		     pinned while the body scrolls. They start on the same line. -->
+		<div class="mt-8 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10">
 			{post.data.featuredImage && (
-				<span class="img-shell isolate mb-8 block w-full rounded-lg border border-border shadow-lg lg:order-2 lg:mb-0 lg:sticky lg:top-20 lg:z-30 lg:self-start lg:rotate-2 lg:transition-transform lg:hover:rotate-0">
-					<span class="img-shell-dots" aria-hidden="true"><span></span><span></span><span></span></span>
-					<img src={imageVariant(post.data.featuredImage, 1024)} alt="" loading="lazy" class="m-0 block w-full" />
-				</span>
+				<div class="order-first mb-8 lg:order-2 lg:mb-0">
+					<div class="isolate lg:sticky lg:top-20 lg:z-30">
+						<span class="img-shell block w-full rounded-lg border border-border shadow-lg lg:rotate-2 lg:transition-transform lg:hover:rotate-0">
+							<span class="img-shell-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+							<img src={imageVariant(post.data.featuredImage, 1024)} alt="" loading="lazy" class="m-0 block w-full" />
+						</span>
+					</div>
+				</div>
 			)}
 			<div class="prose max-w-none dark:prose-invert lg:order-1 lg:min-w-0">
 				<slot />
