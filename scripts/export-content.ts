@@ -6,6 +6,7 @@ import { build } from 'esbuild';
 import { Miniflare } from 'miniflare';
 import { sanitizeContentHtml } from '../src/lib/blogger/sanitize';
 import { postFilename, writePost } from '../src/lib/blogger/storage';
+import { imageVariant } from '../src/lib/publications/images';
 import type { PostRecord } from '../src/lib/blogger/types';
 
 const root = path.resolve(import.meta.dirname, '..');
@@ -261,12 +262,20 @@ const EXT_BY_TYPE: Record<string, string> = {
 	'image/avif': 'avif',
 };
 
+// Two sizes per image: a card variant and the full post variant. imageVariant()
+// maps a `/localized/<hash>-<FULL>.<ext>` path down to the card variant for
+// small requests. Sizes come from the CDN (no image library is bundled).
+const LOCALIZE_CARD = 640;
+const LOCALIZE_FULL = 1024;
+
 /**
- * Downloads one external image into `imageDir` (deduped by URL hash) and returns
- * its `/localized/<name>` path. On any failure the original URL is returned so a
- * missing image never breaks the export.
+ * Localizes one external image into `imageDir` as a card and a full variant and
+ * returns the `/localized/...` full path. Existing files (committed or from a
+ * previous build) are reused instead of re-downloaded, so builds do not depend
+ * on the source CDN once an image is in the repo. Any failure falls back to the
+ * original URL so a missing image never breaks the export.
  */
-async function localizeImage(url: string, imageDir: string, cache: Map<string, string>): Promise<string> {
+async function localizeImage(url: string, imageDir: string, cache: Map<string, string>, existing: Set<string>): Promise<string> {
 	if (!/^https?:\/\//i.test(url)) {
 		return url;
 	}
@@ -274,23 +283,34 @@ async function localizeImage(url: string, imageDir: string, cache: Map<string, s
 	if (cached) {
 		return cached;
 	}
+	const hash = createHash('sha256').update(url).digest('hex').slice(0, 16);
+	let ext: string | null = null;
 	try {
-		const response = await fetch(url);
-		if (!response.ok) {
-			return url;
+		for (const width of [LOCALIZE_CARD, LOCALIZE_FULL]) {
+			const already = [...existing].find((file) => file.startsWith(`${hash}-${width}.`));
+			if (already) {
+				ext = already.split('.').pop() ?? ext;
+				continue;
+			}
+			const response = await fetch(imageVariant(url, width));
+			if (!response.ok) {
+				return url;
+			}
+			ext = ext ?? EXT_BY_TYPE[(response.headers.get('content-type') ?? '').split(';')[0].trim()] ?? 'jpg';
+			await fs.mkdir(imageDir, { recursive: true });
+			const name = `${hash}-${width}.${ext}`;
+			await fs.writeFile(path.join(imageDir, name), new Uint8Array(await response.arrayBuffer()));
+			existing.add(name);
 		}
-		const ext = EXT_BY_TYPE[(response.headers.get('content-type') ?? '').split(';')[0].trim()] ?? 'jpg';
-		const name = `${createHash('sha256').update(url).digest('hex').slice(0, 16)}.${ext}`;
-		await fs.mkdir(imageDir, { recursive: true });
-		const file = path.join(imageDir, name);
-		const localPath = `/localized/${name}`;
-		const bytes = new Uint8Array(await response.arrayBuffer());
-		await fs.writeFile(file, bytes);
-		cache.set(url, localPath);
-		return localPath;
 	} catch {
 		return url;
 	}
+	if (!ext) {
+		return url;
+	}
+	const localPath = `/localized/${hash}-${LOCALIZE_FULL}.${ext}`;
+	cache.set(url, localPath);
+	return localPath;
 }
 
 export async function writeExport(dir: string, data: ContentResponse, options: WriteExportOptions = {}): Promise<void> {
@@ -319,6 +339,8 @@ export async function writeExport(dir: string, data: ContentResponse, options: W
 
 	const imageDir = options.imageDir ?? path.join(root, 'public', 'localized');
 	const imageCache = new Map<string, string>();
+	// Existing localized files are reused rather than re-downloaded.
+	const existingImages = new Set(await fs.readdir(imageDir).catch(() => [] as string[]));
 
 	const expectedFiles = new Set<string>();
 	for (const post of data.posts) {
@@ -326,7 +348,7 @@ export async function writeExport(dir: string, data: ContentResponse, options: W
 		expectedFiles.add(filename);
 		const record = toPostRecord(post);
 		if (options.localizeImages && record.featuredImage) {
-			record.featuredImage = await localizeImage(record.featuredImage, imageDir, imageCache);
+			record.featuredImage = await localizeImage(record.featuredImage, imageDir, imageCache, existingImages);
 		}
 		await writePost(dir, post.publication, post.slug, record);
 	}

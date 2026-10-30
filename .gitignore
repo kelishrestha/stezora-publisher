@@ -1,7 +1,5 @@
 # build output
 dist/
-# localized post images (downloaded by export:content at build time)
-public/localized/
 # generated types
 .astro/
 
