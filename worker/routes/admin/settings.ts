@@ -13,6 +13,15 @@ export const getSettings: AuthenticatedHandler = async ({ env }) => {
 	return ok({ settings });
 };
 
+/**
+ * GET /api/admin/analytics/export
+ * Full dump of the page_views table, offered as a backup before clearing data.
+ */
+export const exportAnalytics: AuthenticatedHandler = async ({ env }) => {
+	const rows = await createDb(env.DB).select().from(pageViews);
+	return ok({ exportedAt: new Date().toISOString(), schema: 'stezora-analytics/1', count: rows.length, pageViews: rows });
+};
+
 const settingsPatch = z.object({
 	analyticsEnabled: z.boolean().optional(),
 	consentMode: z.enum(['opt-out', 'opt-in']).optional(),

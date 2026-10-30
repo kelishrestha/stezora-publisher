@@ -94,6 +94,22 @@ describe('app settings', () => {
 		expect((await collect('granted')).headers.get('set-cookie')).toContain('sv_id=');
 	});
 
+	it('exports analytics data as a backup', async () => {
+		const cookie = await signInAndCookies();
+		await putSettings(cookie, { analyticsEnabled: true });
+		await collect('granted');
+		const response = await fetchWorker('/api/admin/analytics/export', { headers: { cookie } });
+		expect(response.status).toBe(200);
+		const body = (await response.json()) as { data: { schema: string; count: number; pageViews: unknown[] } };
+		expect(body.data.schema).toBe('stezora-analytics/1');
+		expect(body.data.count).toBeGreaterThanOrEqual(1);
+		expect(Array.isArray(body.data.pageViews)).toBe(true);
+	});
+
+	it('requires auth for the analytics export', async () => {
+		expect((await fetchWorker('/api/admin/analytics/export')).status).toBe(401);
+	});
+
 	it('clears all analytics data', async () => {
 		const cookie = await signInAndCookies();
 		await putSettings(cookie, { analyticsEnabled: true });

@@ -1,18 +1,72 @@
 import { useEffect, useState } from 'react';
 import { createAuthClient } from 'better-auth/client';
-import { buttonClass, cardClass, formControlClass } from '../ui/shared/classes';
+import { buttonClass, cardClass, formControlClass, modalOverlayClass, modalPanelClass } from '../ui/shared/classes';
 import { filterSelectClass } from './filters';
 
 /**
- * Admin settings. Security (change password) and Analytics & privacy (tracking
- * toggle, consent mode, retention, and clearing data). Two-factor is a planned
- * follow-up (PLAN.md M8.1).
+ * Admin settings, grouped into labelled sections (Account, Analytics & privacy,
+ * Danger zone). Simple settings use a row pattern (label + description on the
+ * left, control on the right); destructive actions live in the danger zone.
+ * Two-factor is a planned follow-up (PLAN.md M8.1).
  */
 
 const authClient = createAuthClient();
 const MIN_LENGTH = 8;
 
 type Status = { type: 'error' | 'success'; message: string } | null;
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+	return (
+		<section className="space-y-3">
+			<div className="flex items-center gap-4">
+				<h2 className="shrink-0 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</h2>
+				<span className="h-px flex-1 bg-border" aria-hidden="true"></span>
+			</div>
+			{children}
+		</section>
+	);
+}
+
+function SettingRow({
+	labelId,
+	title,
+	description,
+	control,
+}: {
+	labelId?: string;
+	title: string;
+	description?: string;
+	control: React.ReactNode;
+}) {
+	return (
+		<div className="flex flex-col gap-2 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+			<div className="min-w-0 sm:flex-1">
+				<p id={labelId} className="text-sm font-medium text-foreground">
+					{title}
+				</p>
+				{description && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
+			</div>
+			<div className="shrink-0">{control}</div>
+		</div>
+	);
+}
+
+/** HyperUI-style toggle: a peer checkbox with a sliding knob, on theme tokens. */
+function Switch({ checked, onChange, labelledBy }: { checked: boolean; onChange: (value: boolean) => void; labelledBy?: string }) {
+	return (
+		<label className="relative inline-block h-6 w-11 shrink-0 cursor-pointer">
+			<input
+				type="checkbox"
+				className="peer sr-only"
+				checked={checked}
+				aria-labelledby={labelledBy}
+				onChange={(event) => onChange(event.target.checked)}
+			/>
+			<span className="absolute inset-0 rounded-full bg-muted transition-colors peer-checked:bg-accent peer-focus-visible:ring-2 peer-focus-visible:ring-accent peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface"></span>
+			<span className="absolute inset-y-0 start-0 m-0.5 size-5 rounded-full bg-surface shadow transition-all peer-checked:start-5"></span>
+		</label>
+	);
+}
 
 function StatusNote({ status }: { status: Status }) {
 	if (!status) return null;
@@ -79,13 +133,39 @@ function PasswordField({
 	);
 }
 
-function ChangePasswordCard() {
+function ChangePassword() {
+	const [open, setOpen] = useState(false);
+	return (
+		<div className={cardClass()}>
+			<SettingRow
+				title="Password"
+				description="Change your admin account password."
+				control={
+					<button type="button" onClick={() => setOpen(true)} className={buttonClass('outline')}>
+						Change password
+					</button>
+				}
+			/>
+			{open && <ChangePasswordModal onClose={() => setOpen(false)} />}
+		</div>
+	);
+}
+
+function ChangePasswordModal({ onClose }: { onClose: () => void }) {
 	const [current, setCurrent] = useState('');
 	const [next, setNext] = useState('');
 	const [confirm, setConfirm] = useState('');
 	const [revokeOthers, setRevokeOthers] = useState(true);
 	const [submitting, setSubmitting] = useState(false);
 	const [status, setStatus] = useState<Status>(null);
+
+	useEffect(() => {
+		function onKey(event: KeyboardEvent) {
+			if (event.key === 'Escape') onClose();
+		}
+		document.addEventListener('keydown', onKey);
+		return () => document.removeEventListener('keydown', onKey);
+	}, [onClose]);
 
 	async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
 		event.preventDefault();
@@ -116,36 +196,52 @@ function ChangePasswordCard() {
 	}
 
 	return (
-		<section className={cardClass()}>
-			<div className="border-b border-border px-5 py-4">
-				<h2 className="text-base font-semibold text-foreground">Change password</h2>
-				<p className="mt-0.5 text-xs text-muted-foreground">Update your admin account password.</p>
-			</div>
-			<form onSubmit={handleSubmit} className="space-y-4 p-5">
-				<PasswordField id="current-password" label="Current password" autoComplete="current-password" value={current} onChange={setCurrent} />
-				<PasswordField
-					id="new-password"
-					label="New password"
-					autoComplete="new-password"
-					value={next}
-					onChange={setNext}
-					hint={`At least ${MIN_LENGTH} characters.`}
-				/>
-				<PasswordField id="confirm-password" label="Confirm new password" autoComplete="new-password" value={confirm} onChange={setConfirm} />
-
-				<StatusNote status={status} />
-
-				<div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+		<div
+			className={modalOverlayClass}
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="change-pw-title"
+			onMouseDown={(event) => {
+				if (event.target === event.currentTarget) onClose();
+			}}
+		>
+			<div className={modalPanelClass('w-full max-w-md max-h-[90vh] overflow-y-auto p-5')}>
+				<div className="mb-4 flex items-center justify-between">
+					<h3 id="change-pw-title" className="text-base font-semibold text-foreground">
+						Change password
+					</h3>
+					<button
+						type="button"
+						onClick={onClose}
+						aria-label="Close"
+						className="rounded p-1 text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+							<path d="M18 6 6 18" />
+							<path d="m6 6 12 12" />
+						</svg>
+					</button>
+				</div>
+				<form onSubmit={handleSubmit} className="space-y-4">
+					<PasswordField id="current-password" label="Current password" autoComplete="current-password" value={current} onChange={setCurrent} />
+					<PasswordField id="new-password" label="New password" autoComplete="new-password" value={next} onChange={setNext} hint={`At least ${MIN_LENGTH} characters.`} />
+					<PasswordField id="confirm-password" label="Confirm new password" autoComplete="new-password" value={confirm} onChange={setConfirm} />
 					<label className="flex items-center gap-2 text-sm text-muted-foreground">
 						<input type="checkbox" checked={revokeOthers} onChange={(event) => setRevokeOthers(event.target.checked)} className="rounded border-border text-accent focus:ring-accent" />
 						Sign out other devices
 					</label>
-					<button type="submit" disabled={submitting} className={buttonClass('primary')}>
-						{submitting ? 'Saving…' : 'Update password'}
-					</button>
-				</div>
-			</form>
-		</section>
+					<StatusNote status={status} />
+					<div className="flex items-center justify-end gap-2 border-t border-border pt-4">
+						<button type="button" onClick={onClose} className={buttonClass('outline')}>
+							Cancel
+						</button>
+						<button type="submit" disabled={submitting} className={buttonClass('primary')}>
+							{submitting ? 'Saving…' : 'Update password'}
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
 	);
 }
 
@@ -155,10 +251,10 @@ interface AppSettings {
 	retentionDays: number;
 }
 
-function AnalyticsPrivacyCard() {
+function AnalyticsPrivacy() {
 	const [settings, setSettings] = useState<AppSettings | null>(null);
 	const [saving, setSaving] = useState(false);
-	const [clearing, setClearing] = useState(false);
+	const [deleteScope, setDeleteScope] = useState<'old' | 'all' | null>(null);
 	const [status, setStatus] = useState<Status>(null);
 
 	useEffect(() => {
@@ -198,103 +294,275 @@ function AnalyticsPrivacyCard() {
 		setStatus({ type: 'success', message: 'Settings saved.' });
 	}
 
-	async function clear(scope: 'old' | 'all') {
-		if (scope === 'all' && !window.confirm('Delete all recorded pageview data? This cannot be undone.')) return;
-		setStatus(null);
-		setClearing(true);
+	async function clear(scope: 'old' | 'all'): Promise<boolean> {
 		const response = await fetch('/api/admin/analytics/clear', {
 			method: 'POST',
 			credentials: 'same-origin',
 			headers: { 'content-type': 'application/json' },
 			body: JSON.stringify({ scope }),
 		});
-		setClearing(false);
-		setStatus(
-			response.ok
-				? { type: 'success', message: scope === 'all' ? 'All analytics data cleared.' : 'Old analytics data cleared.' }
-				: { type: 'error', message: 'Could not clear data.' }
-		);
+		return response.ok;
+	}
+
+	const retention = settings?.retentionDays ?? 90;
+
+	return (
+		<>
+			<Section title="Analytics & privacy">
+				<div className={cardClass()}>
+					{!settings ? (
+						<div className="m-5 h-40 animate-pulse rounded-md bg-surface-elevated" />
+					) : (
+						<>
+							<div className="divide-y divide-border">
+								<SettingRow
+									labelId="row-collect"
+									title="Collect analytics"
+									description="First-party visitor analytics. When off, no pageviews are recorded."
+									control={<Switch checked={settings.analyticsEnabled} onChange={(value) => update('analyticsEnabled', value)} labelledBy="row-collect" />}
+								/>
+								<SettingRow
+									labelId="row-consent"
+									title="Cookie consent mode"
+									description="Opt-out sets the returning-visitor cookie by default; opt-in waits for acceptance."
+									control={
+										<select
+											aria-labelledby="row-consent"
+											value={settings.consentMode}
+											onChange={(event) => update('consentMode', event.target.value as AppSettings['consentMode'])}
+											className={`${filterSelectClass} w-48`}
+										>
+											<option value="opt-out">Opt-out (default on)</option>
+											<option value="opt-in">Opt-in (after accept)</option>
+										</select>
+									}
+								/>
+								<SettingRow
+									labelId="row-retention"
+									title="Data retention"
+									description="Days of raw pageview data to keep; used by the cleanup below."
+									control={
+										<input
+											aria-labelledby="row-retention"
+											type="number"
+											min={1}
+											max={3650}
+											value={settings.retentionDays}
+											onChange={(event) => update('retentionDays', Math.max(1, Math.min(3650, Number(event.target.value) || 1)))}
+											className={`${formControlClass} w-24`}
+										/>
+									}
+								/>
+							</div>
+							<div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-5 py-4">
+								<StatusNote status={status} />
+								<button type="button" onClick={save} disabled={saving} className={`${buttonClass('primary')} ml-auto`}>
+									{saving ? 'Saving…' : 'Save settings'}
+								</button>
+							</div>
+						</>
+					)}
+				</div>
+			</Section>
+
+			<Section title="Danger zone">
+				<div className="overflow-hidden rounded-md border border-red-300 bg-red-50/50 shadow-sm dark:border-red-900 dark:bg-red-950/30">
+					<div className="divide-y divide-red-200 dark:divide-red-900">
+						<SettingRow
+							title="Delete old data"
+							description={`Remove pageviews older than the retention window (${retention} days).`}
+							control={
+								<button type="button" onClick={() => setDeleteScope('old')} disabled={!settings} className={buttonClass('dangerOutline')}>
+									Delete old
+								</button>
+							}
+						/>
+						<SettingRow
+							title="Clear all analytics data"
+							description="Permanently delete every recorded pageview. This cannot be undone."
+							control={
+								<button type="button" onClick={() => setDeleteScope('all')} disabled={!settings} className={buttonClass('danger')}>
+									Clear all
+								</button>
+							}
+						/>
+					</div>
+				</div>
+			</Section>
+
+			{deleteScope && (
+				<DeleteDataModal scope={deleteScope} retention={retention} onClose={() => setDeleteScope(null)} onConfirm={() => clear(deleteScope)} />
+			)}
+		</>
+	);
+}
+
+function DeleteDataModal({
+	scope,
+	retention,
+	onClose,
+	onConfirm,
+}: {
+	scope: 'old' | 'all';
+	retention: number;
+	onClose: () => void;
+	onConfirm: () => Promise<boolean>;
+}) {
+	const [busy, setBusy] = useState(false);
+	const [downloading, setDownloading] = useState(false);
+	const [done, setDone] = useState(false);
+	const [status, setStatus] = useState<Status>(null);
+	const isAll = scope === 'all';
+
+	useEffect(() => {
+		function onKey(event: KeyboardEvent) {
+			if (event.key === 'Escape') onClose();
+		}
+		document.addEventListener('keydown', onKey);
+		return () => document.removeEventListener('keydown', onKey);
+	}, [onClose]);
+
+	async function backup() {
+		setStatus(null);
+		setDownloading(true);
+		try {
+			const response = await fetch('/api/admin/analytics/export', { credentials: 'same-origin' });
+			if (!response.ok) throw new Error('export failed');
+			const blob = await response.blob();
+			const url = URL.createObjectURL(blob);
+			const link = document.createElement('a');
+			link.href = url;
+			link.download = `stezora-analytics-${new Date().toISOString().slice(0, 10)}.json`;
+			document.body.appendChild(link);
+			link.click();
+			link.remove();
+			URL.revokeObjectURL(url);
+			setStatus({ type: 'success', message: 'Backup downloaded.' });
+		} catch {
+			setStatus({ type: 'error', message: 'Could not download backup.' });
+		} finally {
+			setDownloading(false);
+		}
+	}
+
+	async function confirm() {
+		setBusy(true);
+		const okResult = await onConfirm();
+		setBusy(false);
+		if (okResult) {
+			setDone(true);
+			setStatus({ type: 'success', message: isAll ? 'All analytics data cleared.' : 'Old analytics data cleared.' });
+		} else {
+			setStatus({ type: 'error', message: 'Could not clear data.' });
+		}
 	}
 
 	return (
-		<section className={cardClass()}>
-			<div className="border-b border-border px-5 py-4">
-				<h2 className="text-base font-semibold text-foreground">Analytics &amp; privacy</h2>
-				<p className="mt-0.5 text-xs text-muted-foreground">First-party visitor analytics collected from your own site.</p>
-			</div>
-			<div className="space-y-5 p-5">
-				{!settings ? (
-					<div className="h-32 animate-pulse rounded-md bg-surface-elevated" />
-				) : (
-					<>
-						<label className="flex items-start justify-between gap-4">
-							<span>
-								<span className="block text-sm font-medium text-foreground">Collect analytics</span>
-								<span className="mt-0.5 block text-xs text-muted-foreground">When off, no pageviews are recorded.</span>
-							</span>
-							<input
-								type="checkbox"
-								checked={settings.analyticsEnabled}
-								onChange={(event) => update('analyticsEnabled', event.target.checked)}
-								className="mt-1 size-4 rounded border-border text-accent focus:ring-accent"
-							/>
-						</label>
+		<div
+			className={modalOverlayClass}
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="delete-data-title"
+			onMouseDown={(event) => {
+				if (event.target === event.currentTarget) onClose();
+			}}
+		>
+			<div className={modalPanelClass('w-full max-w-md max-h-[90vh] overflow-y-auto p-5')}>
+				<h3 id="delete-data-title" className="text-base font-semibold text-foreground">
+					{isAll ? 'Clear all analytics data' : 'Delete old analytics data'}
+				</h3>
+				<p className="mt-2 text-sm text-muted-foreground">
+					{isAll ? 'This permanently deletes every recorded pageview.' : `This removes pageviews older than ${retention} days.`} This cannot be undone. Download a
+					backup first if you want to keep a copy.
+				</p>
 
-						<label htmlFor="consent-mode" className="block">
-							<span className="block text-sm font-medium text-foreground">Cookie consent mode</span>
-							<span className="mt-0.5 block text-xs text-muted-foreground">
-								Opt-out sets the returning-visitor cookie by default; opt-in waits for acceptance.
-							</span>
-							<select
-								id="consent-mode"
-								value={settings.consentMode}
-								onChange={(event) => update('consentMode', event.target.value as AppSettings['consentMode'])}
-								className={`${filterSelectClass} max-w-xs`}
-							>
-								<option value="opt-out">Opt-out (cookie on by default)</option>
-								<option value="opt-in">Opt-in (cookie after accept)</option>
-							</select>
-						</label>
-
-						<label htmlFor="retention" className="block">
-							<span className="block text-sm font-medium text-foreground">Data retention (days)</span>
-							<span className="mt-0.5 block text-xs text-muted-foreground">Used by the "delete old data" action below.</span>
-							<input
-								id="retention"
-								type="number"
-								min={1}
-								max={3650}
-								value={settings.retentionDays}
-								onChange={(event) => update('retentionDays', Math.max(1, Math.min(3650, Number(event.target.value) || 1)))}
-								className={`${formControlClass} max-w-[8rem]`}
-							/>
-						</label>
-
+				{status && (
+					<div className="mt-4">
 						<StatusNote status={status} />
+					</div>
+				)}
 
-						<div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
-							<button type="button" onClick={save} disabled={saving} className={buttonClass('primary')}>
-								{saving ? 'Saving…' : 'Save settings'}
+				<div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
+					<button type="button" onClick={backup} disabled={downloading} className={buttonClass('outline')}>
+						{downloading ? 'Preparing…' : 'Download backup'}
+					</button>
+					<div className="flex gap-2">
+						<button type="button" onClick={onClose} className={buttonClass('outline')}>
+							{done ? 'Close' : 'Cancel'}
+						</button>
+						{!done && (
+							<button type="button" onClick={confirm} disabled={busy} className={buttonClass(isAll ? 'danger' : 'dangerOutline')}>
+								{busy ? 'Deleting…' : isAll ? 'Clear all' : 'Delete'}
 							</button>
-							<button type="button" onClick={() => clear('old')} disabled={clearing} className={buttonClass('outline')}>
-								Delete data older than {settings.retentionDays} days
-							</button>
-							<button type="button" onClick={() => clear('all')} disabled={clearing} className={buttonClass('dangerOutline')}>
-								Clear all data
-							</button>
-						</div>
-					</>
+						)}
+					</div>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function DataExport() {
+	const [downloading, setDownloading] = useState(false);
+	const [status, setStatus] = useState<Status>(null);
+
+	async function download() {
+		setStatus(null);
+		setDownloading(true);
+		try {
+			const response = await fetch('/api/export', { credentials: 'same-origin' });
+			if (response.status === 401) {
+				window.location.href = '/admin/login';
+				return;
+			}
+			if (!response.ok) throw new Error('export failed');
+			const blob = await response.blob();
+			const url = URL.createObjectURL(blob);
+			const link = document.createElement('a');
+			link.href = url;
+			link.download = `stezora-export-${new Date().toISOString().slice(0, 10)}.json`;
+			document.body.appendChild(link);
+			link.click();
+			link.remove();
+			URL.revokeObjectURL(url);
+			setStatus({ type: 'success', message: 'Download started.' });
+		} catch {
+			setStatus({ type: 'error', message: 'Could not download data.' });
+		} finally {
+			setDownloading(false);
+		}
+	}
+
+	return (
+		<Section title="Data">
+			<div className={cardClass()}>
+				<SettingRow
+					title="Download all data"
+					description="Export all content (publications, posts, tags, and media references) as a JSON file. Account credentials are not included."
+					control={
+						<button type="button" onClick={download} disabled={downloading} className={buttonClass('outline')}>
+							{downloading ? 'Preparing…' : 'Download'}
+						</button>
+					}
+				/>
+				{status && (
+					<div className="border-t border-border px-5 py-4">
+						<StatusNote status={status} />
+					</div>
 				)}
 			</div>
-		</section>
+		</Section>
 	);
 }
 
 export default function Settings() {
 	return (
-		<div className="max-w-xl space-y-6">
-			<ChangePasswordCard />
-			<AnalyticsPrivacyCard />
+		<div className="max-w-2xl space-y-8">
+			<Section title="Account">
+				<ChangePassword />
+			</Section>
+			<DataExport />
+			<AnalyticsPrivacy />
 		</div>
 	);
 }
