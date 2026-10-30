@@ -6,6 +6,13 @@
 		"nodejs_compat"
 	],
 	"main": "./worker/index.ts",
+	// Daily cron: refresh Blogger stats, sync Neobook, and record a source
+	// snapshot for the audience trend. 02:00 UTC is ~07:45 Nepal time.
+	"triggers": {
+		"crons": [
+			"0 2 * * *"
+		]
+	},
 	"assets": {
 		"directory": "./dist",
 		// The worker rewrites /admin/posts/:id/view and :id/edit onto the

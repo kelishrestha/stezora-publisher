@@ -3,6 +3,7 @@ import { fail } from './lib/http';
 import { toApiError } from './lib/errors';
 import { getAuth } from './lib/auth';
 import { adminAssetPath, isAdminAssetRequest } from './lib/gate';
+import { runDailySync } from './scheduled';
 
 function errorSummary(error: unknown): { name: string; message: string } {
 	if (error instanceof Error) {
@@ -68,5 +69,11 @@ export default {
 		}
 
 		return env.ASSETS.fetch(request);
+	},
+
+	// Daily cron (see wrangler.jsonc triggers): refresh Blogger stats, sync
+	// Neobook, and record a source snapshot so the audience trend advances.
+	async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+		ctx.waitUntil(runDailySync(env));
 	},
 };

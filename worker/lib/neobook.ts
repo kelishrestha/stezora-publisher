@@ -267,7 +267,7 @@ async function upsertBook(db: D1Database, item: NeobookItem): Promise<'created' 
 	return 'created';
 }
 
-export async function syncNeobook(db: D1Database, bucket?: R2Bucket): Promise<NeobookSyncResult> {
+export async function syncNeobook(db: D1Database, bucket?: R2Bucket, options: { snapshot?: boolean } = {}): Promise<NeobookSyncResult> {
 	const items = await fetchFeed();
 
 	const { results: posts } = await db
@@ -361,7 +361,9 @@ export async function syncNeobook(db: D1Database, bucket?: R2Bucket): Promise<Ne
 		imagesAttached += 1;
 	}
 
-	await captureSourceSnapshot(db);
+	if (options.snapshot !== false) {
+		await captureSourceSnapshot(db);
+	}
 
 	return { items: items.length, postsCreated, contentUpdates, imagesAttached, tagsCreated, booksCreated, booksUpdated, unmatched };
 }

@@ -156,7 +156,7 @@ export interface BloggerStatsResult {
  * without importing posts. Needs the full blogger OAuth scope (the read-only
  * scope cannot read pageviews).
  */
-export async function refreshBloggerStats(db: D1Database, credentials: BloggerImportCredentials): Promise<BloggerStatsResult> {
+export async function refreshBloggerStats(db: D1Database, credentials: BloggerImportCredentials, options: { snapshot?: boolean } = {}): Promise<BloggerStatsResult> {
 	const { clientId, clientSecret, refreshToken } = credentials;
 	if (!clientId || !clientSecret || !refreshToken) {
 		throw new BloggerNotConfiguredError();
@@ -178,7 +178,9 @@ export async function refreshBloggerStats(db: D1Database, credentials: BloggerIm
 		results.push({ slug: publication.slug, name: publication.name, linked: true, viewsAll: totals.views_all, views30d: totals.views_30d, views7d: totals.views_7d });
 	}
 
-	await captureSourceSnapshot(db);
+	if (options.snapshot !== false) {
+		await captureSourceSnapshot(db);
+	}
 	return { statsUpdated, publications: results };
 }
 
