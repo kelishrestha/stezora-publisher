@@ -8,6 +8,7 @@ import { requireAdmin, withBodyLimit } from '../lib/middleware';
 import { adminStats } from './admin/stats';
 import { analytics } from './admin/analytics';
 import { audience } from './admin/audience';
+import { clearAnalytics, getSettings, updateSettings } from './admin/settings';
 import { createPost, deletePost, editorMeta, getPost, listPosts, previewPost, publishPost, updatePost } from './admin/posts';
 import { createTag, deleteTag, listTags, updateTag } from './admin/tags';
 import { deleteAdminMedia, listAdminMedia, localizeMedia, uploadMedia } from './admin/media';
@@ -25,6 +26,9 @@ routes.get('/media/:key*', media);
 routes.get('/api/admin/stats', requireAdmin(adminStats));
 routes.get('/api/admin/analytics', requireAdmin(analytics));
 routes.get('/api/admin/audience', requireAdmin(audience));
+routes.get('/api/admin/settings', requireAdmin(getSettings));
+routes.put('/api/admin/settings', requireAdmin(withBodyLimit(updateSettings)));
+routes.post('/api/admin/analytics/clear', requireAdmin(withBodyLimit(clearAnalytics)));
 
 // Editor routes. `/api/admin/posts/meta` must be registered before
 // `/api/admin/posts/:id` so the router resolves `meta` as a literal path.

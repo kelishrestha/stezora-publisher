@@ -12,15 +12,15 @@ import Analytics from 'analytics';
 export const CONSENT_KEY = 'stezora_consent';
 
 /**
- * The visitor cookie is treated as a necessary cookie and is on by default
- * (opt-out): consent counts as granted unless the visitor has explicitly
- * declined via the cookie notice.
+ * The visitor's raw cookie choice: 'granted', 'denied', or 'unset'. The server
+ * applies the configured consent mode (opt-out treats 'unset' as granted;
+ * opt-in requires an explicit 'granted').
  */
-function hasCookieConsent(): boolean {
+function storedConsent(): string {
 	try {
-		return window.localStorage.getItem(CONSENT_KEY) !== 'denied';
+		return window.localStorage.getItem(CONSENT_KEY) ?? 'unset';
 	} catch {
-		return true;
+		return 'unset';
 	}
 }
 
@@ -34,12 +34,12 @@ export function initPageTracking(): void {
 			{
 				name: 'stezora-first-party',
 				page: () => {
-					// Cookieless pageview always; the stable visitor cookie only with
-					// consent (the Worker gates the cookie on this flag).
+					// Cookieless pageview always; the Worker decides the stable visitor
+					// cookie from this choice and the configured consent mode.
 					const payload = JSON.stringify({
 						p: window.location.pathname,
 						r: document.referrer,
-						c: hasCookieConsent(),
+						consent: storedConsent(),
 					});
 					if (navigator.sendBeacon) {
 						navigator.sendBeacon('/api/collect', new Blob([payload], { type: 'application/json' }));

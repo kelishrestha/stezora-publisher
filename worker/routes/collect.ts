@@ -1,5 +1,6 @@
 import { createDb } from '../db/client';
 import { pageViews } from '../db/schema';
+import { readAppSettings } from '../lib/settings';
 import type { RouteHandler } from '../router';
 
 /**
@@ -90,15 +91,22 @@ export const collect: RouteHandler = async ({ request, env, ctx }) => {
 		return new Response(null, { status: 204 });
 	}
 
-	let body: { p?: unknown; r?: unknown; c?: unknown };
+	let body: { p?: unknown; r?: unknown; consent?: unknown };
 	try {
-		body = (await request.json()) as { p?: unknown; r?: unknown; c?: unknown };
+		body = (await request.json()) as { p?: unknown; r?: unknown; consent?: unknown };
 	} catch {
 		return new Response(null, { status: 204 });
 	}
 
 	const path = typeof body.p === 'string' ? body.p.slice(0, 512) : '';
 	if (!path.startsWith('/')) {
+		return new Response(null, { status: 204 });
+	}
+
+	const db = createDb(env.DB);
+	const settings = await readAppSettings(db);
+	// Tracking kill switch: when analytics is disabled, record nothing.
+	if (!settings.analyticsEnabled) {
 		return new Response(null, { status: 204 });
 	}
 
@@ -109,16 +117,19 @@ export const collect: RouteHandler = async ({ request, env, ctx }) => {
 	const now = new Date();
 	const visitorHash = await dailyVisitorHash(ip, ua, salt, now.toISOString().slice(0, 10));
 
-	// The stable visitor cookie is only used with explicit consent (the consent
-	// banner sends `c: true`). Cookieless per-day analytics run regardless; the
-	// cookie only improves the all-time unique total.
-	const consent = body.c === true;
+	// The stable visitor cookie depends on the consent mode. The client reports
+	// its raw choice ('granted' | 'denied' | 'unset'); the server decides: an
+	// explicit grant always counts, and an undecided visitor counts only in
+	// opt-out mode. Cookieless per-day analytics run regardless; the cookie only
+	// improves the all-time unique total.
+	const rawConsent = typeof body.consent === 'string' ? body.consent : 'unset';
+	const consentGranted = rawConsent === 'granted' || (rawConsent === 'unset' && settings.consentMode === 'opt-out');
 	const cookies = parseCookies(request.headers.get('cookie'));
 	const existingId = cookies[COOKIE_NAME];
 
 	const headers = new Headers();
 	let visitorId: string | null = null;
-	if (consent) {
+	if (consentGranted) {
 		visitorId = existingId ?? crypto.randomUUID();
 		if (!existingId) {
 			headers.append(
@@ -133,7 +144,6 @@ export const collect: RouteHandler = async ({ request, env, ctx }) => {
 
 	const { publication, post } = resolvePost(path);
 
-	const db = createDb(env.DB);
 	const write = db
 		.insert(pageViews)
 		.values({

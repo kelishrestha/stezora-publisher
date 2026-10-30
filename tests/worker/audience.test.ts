@@ -19,11 +19,11 @@ async function fetchWorker(path: string, init?: RequestInit): Promise<Response> 
 	return response;
 }
 
-async function collect(path: string, ua = UA_HUMAN, consent = false): Promise<Response> {
+async function collect(path: string, ua = UA_HUMAN, consent = 'unset'): Promise<Response> {
 	return fetchWorker('/api/collect', {
 		method: 'POST',
 		headers: { 'content-type': 'application/json', 'user-agent': ua, 'cf-connecting-ip': '203.0.113.5' },
-		body: JSON.stringify({ p: path, r: 'https://news.example/story', c: consent }),
+		body: JSON.stringify({ p: path, r: 'https://news.example/story', consent }),
 	});
 }
 
@@ -74,14 +74,14 @@ describe('audience analytics', () => {
 			.run();
 	});
 
-	it('records a human pageview and sets the visitor cookie only with consent', async () => {
-		const response = await collect('/poetry-collections/pub-x/posts/pub-x-hello', UA_HUMAN, true);
+	it('records a human pageview and sets the visitor cookie on granted consent', async () => {
+		const response = await collect('/poetry-collections/pub-x/posts/pub-x-hello', UA_HUMAN, 'granted');
 		expect(response.status).toBe(204);
 		expect(response.headers.get('set-cookie')).toContain('sv_id=');
 	});
 
-	it('records the pageview but sets no cookie without consent', async () => {
-		const response = await collect('/poetry-collections/pub-x/posts/pub-x-hello', UA_HUMAN, false);
+	it('records the pageview but sets no cookie when consent is declined', async () => {
+		const response = await collect('/poetry-collections/pub-x/posts/pub-x-hello', UA_HUMAN, 'denied');
 		expect(response.status).toBe(204);
 		expect(response.headers.get('set-cookie')).toBeNull();
 	});

@@ -151,6 +151,11 @@ export const pageViews = sqliteTable(
 	]
 );
 
+export const appSettings = sqliteTable('app_settings', {
+	key: text('key').primaryKey(),
+	value: text('value').notNull(),
+});
+
 export type Publication = typeof publications.$inferSelect;
 export type Post = typeof posts.$inferSelect;
 export type Tag = typeof tags.$inferSelect;
