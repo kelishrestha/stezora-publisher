@@ -1,17 +1,8 @@
 import { useEffect, useState } from 'react';
 import EmptyState from './EmptyState';
 import LoadingImage from './LoadingImage';
-import { filterSelectClass } from './filters';
 import { EyeIcon, ImagePlaceholderIcon, PencilIcon } from './icons';
-import {
-	badgeClass,
-	buttonClass,
-	cardClass,
-	statCardClass,
-	statCardLabelClass,
-	statCardValueClass,
-	statusBadgeClass,
-} from '../ui/shared/classes';
+import { badgeClass, buttonClass, cardClass, statusBadgeClass } from '../ui/shared/classes';
 
 interface PublicationStats {
 	slug: string;
@@ -41,7 +32,6 @@ interface PublicationOption {
 
 interface Stats {
 	publications: PublicationStats[];
-	totalMedia: number;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -51,15 +41,8 @@ const STATUS_LABELS: Record<string, string> = {
 	archived: 'Archived',
 };
 
-type PostStatus = 'draft' | 'scheduled' | 'published' | 'archived';
-const STATUS_ORDER: PostStatus[] = ['draft', 'scheduled', 'published', 'archived'];
-
-// Books are static publications (no CMS posts), listed when Type is Book.
-const BOOKS = ['The Warrior Must Rise', 'The Peach Fall'];
-const EMPTY_COUNTS = { draft: 0, scheduled: 0, published: 0, archived: 0 };
-
 function formatDate(value: string | null): string {
-	if (!value) return '—';
+	if (!value) return '–';
 	const date = new Date(value);
 	if (Number.isNaN(date.getTime())) return value;
 	return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
@@ -67,11 +50,11 @@ function formatDate(value: string | null): string {
 
 export default function Dashboard() {
 	const [stats, setStats] = useState<Stats | null>(null);
-	const [recentPosts, setRecentPosts] = useState<ListPost[] | null>(null);
+	const [drafts, setDrafts] = useState<ListPost[] | null>(null);
+	const [scheduled, setScheduled] = useState<ListPost[] | null>(null);
+	const [recent, setRecent] = useState<ListPost[] | null>(null);
 	const [publicationNames, setPublicationNames] = useState<Record<string, string>>({});
 	const [error, setError] = useState<string | null>(null);
-	const [statusType, setStatusType] = useState<'publication' | 'book'>('publication');
-	const [statusItem, setStatusItem] = useState('');
 
 	useEffect(() => {
 		let cancelled = false;
@@ -90,17 +73,23 @@ export default function Dashboard() {
 		}
 
 		async function load() {
-			// Recent posts come straight from the posts API (it returns the
-			// most recently updated posts first), so the rows carry the same
-			// data as the posts table: image, update date, publication, status.
-			const [statsData, postsData, meta] = await Promise.all([
+			const [statsData, draftsData, scheduledData, recentData, meta] = await Promise.all([
 				request<Stats>('/api/admin/stats'),
-				request<{ posts: ListPost[] }>('/api/admin/posts?limit=10&sort=published'),
+				request<{ posts: ListPost[] }>('/api/admin/posts?status=draft&limit=5'),
+				request<{ posts: ListPost[] }>('/api/admin/posts?status=scheduled&limit=50'),
+				request<{ posts: ListPost[] }>('/api/admin/posts?limit=8'),
 				request<{ publications: PublicationOption[] }>('/api/admin/posts/meta').catch(() => null),
 			]);
-			if (cancelled || !statsData || !postsData) return;
+			if (cancelled || !statsData || !draftsData || !scheduledData || !recentData) return;
 			setStats(statsData);
-			setRecentPosts(postsData.posts);
+			setDrafts(draftsData.posts);
+			// Upcoming first: the API has no ascending sort, so order by date here.
+			setScheduled(
+				[...scheduledData.posts]
+					.sort((a, b) => (a.publishedAt ?? '').localeCompare(b.publishedAt ?? ''))
+					.slice(0, 5)
+			);
+			setRecent(recentData.posts);
 			if (meta) {
 				setPublicationNames(
 					Object.fromEntries(meta.publications.flatMap((p) => [[p.slug, p.name], [p.id, p.name]]))
@@ -121,114 +110,115 @@ export default function Dashboard() {
 		return <p className="rounded-lg bg-accent-soft px-4 py-3 text-sm text-accent-foreground">{error}</p>;
 	}
 
-	if (!stats || !recentPosts) {
+	if (!stats || !drafts || !scheduled || !recent) {
 		return (
-			<div className="grid gap-4 md:grid-cols-2">
-				{[0, 1, 2].map((i) => (
-					<div key={i} className="h-32 animate-pulse rounded-md border border-border bg-surface shadow-sm" />
-				))}
+			<div className="space-y-6">
+				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+					{[0, 1, 2, 3].map((i) => (
+						<div key={i} className="h-24 animate-pulse rounded-md border border-border bg-surface shadow-sm" />
+					))}
+				</div>
+				<div className="grid gap-6 lg:grid-cols-2">
+					<div className="h-56 animate-pulse rounded-md border border-border bg-surface shadow-sm" />
+					<div className="h-56 animate-pulse rounded-md border border-border bg-surface shadow-sm" />
+				</div>
 			</div>
 		);
 	}
 
-	const totalPosts = stats.publications.reduce((sum, p) => sum + p.draft + p.scheduled + p.published + p.archived, 0);
+	const totals = stats.publications.reduce(
+		(acc, p) => ({
+			draft: acc.draft + p.draft,
+			scheduled: acc.scheduled + p.scheduled,
+			published: acc.published + p.published,
+			total: acc.total + p.draft + p.scheduled + p.published + p.archived,
+		}),
+		{ draft: 0, scheduled: 0, published: 0, total: 0 }
+	);
 
-	// The two selects are connected: Type decides what the second one lists.
-	const statusOptions =
-		statusType === 'publication'
-			? stats.publications.map((publication) => ({ value: publication.slug, label: publication.name }))
-			: BOOKS.map((book) => ({ value: book, label: book }));
-	const selectedOption = statusOptions.find((option) => option.value === statusItem) ?? statusOptions[0];
-	const selectedCounts =
-		statusType === 'publication'
-			? (stats.publications.find((publication) => publication.slug === selectedOption?.value) ?? EMPTY_COUNTS)
-			: EMPTY_COUNTS;
+	const publicationName = (slug: string): string => publicationNames[slug] ?? slug;
 
 	return (
 		<div className="space-y-6">
 			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-				<div className={statCardClass}>
-					<p className={statCardLabelClass}>Publications</p>
-					<p className={statCardValueClass}>{stats.publications.length}</p>
-				</div>
-				<div className={statCardClass}>
-					<p className={statCardLabelClass}>Total posts</p>
-					<p className={statCardValueClass}>{totalPosts}</p>
-				</div>
-				<div className={statCardClass}>
-					<p className={statCardLabelClass}>Published</p>
-					<p className={statCardValueClass}>
-						{stats.publications.reduce((sum, p) => sum + p.published, 0)}
-					</p>
-				</div>
-				<div className={statCardClass}>
-					<p className={statCardLabelClass}>Media files</p>
-					<p className={statCardValueClass}>{stats.totalMedia}</p>
-				</div>
+				<CountTile label="Drafts" value={totals.draft} caption="in progress" href="/admin/posts?status=draft" />
+				<CountTile label="Scheduled" value={totals.scheduled} caption="upcoming" href="/admin/posts?status=scheduled" />
+				<CountTile label="Published" value={totals.published} caption="live" href="/admin/posts?status=published" />
+				<CountTile label="Total posts" value={totals.total} caption="all statuses" href="/admin/posts" />
 			</div>
 
-			<div className={cardClass()}>
-				<div className="flex flex-wrap items-end justify-between gap-4 border-b border-border px-5 py-4">
-					<h2 className="text-base font-semibold text-foreground">Publication status</h2>
-					<div className="flex flex-wrap items-end gap-4">
-						<label htmlFor="status-type" className="block w-40">
-							<span className="text-sm font-medium text-foreground">Type</span>
-							<select
-								id="status-type"
-								value={statusType}
-								onChange={(event) => {
-									setStatusType(event.target.value as 'publication' | 'book');
-									setStatusItem('');
-								}}
-								className={filterSelectClass}
-							>
-								<option value="publication">Publication</option>
-								<option value="book">Book</option>
-							</select>
-						</label>
-						<label htmlFor="status-item" className="block w-64">
-							<span className="text-sm font-medium text-foreground">
-								{statusType === 'publication' ? 'Publication' : 'Book'}
-							</span>
-							<select
-								id="status-item"
-								value={selectedOption?.value ?? ''}
-								onChange={(event) => setStatusItem(event.target.value)}
-								className={filterSelectClass}
-							>
-								{statusOptions.map((option) => (
-									<option key={option.value} value={option.value}>
-										{option.label}
-									</option>
-								))}
-							</select>
-						</label>
-					</div>
-				</div>
-				<div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4">
-					{STATUS_ORDER.map((status) => (
-						<div key={status} className={statCardClass}>
-							<p className={statCardLabelClass}>{STATUS_LABELS[status]}</p>
-							<p className={statCardValueClass}>{selectedCounts[status]}</p>
-						</div>
-					))}
-				</div>
-				{statusType === 'book' && (
-					<p className="px-5 pb-4 text-xs text-muted-foreground">
-						Books are static publications without CMS posts, so their counts stay at zero.
-					</p>
-				)}
+			<div className="grid gap-6 lg:grid-cols-2">
+				<ListCard
+					title="Pick up where you left off"
+					viewAllHref={drafts.length > 0 ? '/admin/posts?status=draft' : undefined}
+				>
+					{drafts.length === 0 ? (
+						<EmptyState
+							icon={<PencilIcon />}
+							title="No drafts in progress"
+							description="Start a new post to see it here."
+							action={
+								<a href="/admin/posts/new" className={buttonClass('primary', 'sm')}>
+									New post
+								</a>
+							}
+						/>
+					) : (
+						<ul className="divide-y divide-border">
+							{drafts.map((post) => (
+								<CompactRow
+									key={post.id}
+									post={post}
+									meta={`Updated ${formatDate(post.updatedAt)}`}
+									publicationName={publicationName}
+									actionLabel="Continue"
+								/>
+							))}
+						</ul>
+					)}
+				</ListCard>
+
+				<ListCard
+					title="Scheduled"
+					viewAllHref={scheduled.length > 0 ? '/admin/posts?status=scheduled' : undefined}
+				>
+					{scheduled.length === 0 ? (
+						<EmptyState
+							icon={<ClockIcon />}
+							title="Nothing scheduled"
+							description="Posts with a future publish date appear here."
+						/>
+					) : (
+						<ul className="divide-y divide-border">
+							{scheduled.map((post) => (
+								<CompactRow
+									key={post.id}
+									post={post}
+									meta={`Scheduled for ${formatDate(post.publishedAt)}`}
+									publicationName={publicationName}
+									actionLabel="Edit"
+								/>
+							))}
+						</ul>
+					)}
+				</ListCard>
 			</div>
 
-			<div className={cardClass()}>
-				<h2 className="border-b border-border px-5 py-4 text-base font-semibold text-foreground">
-					Recent posts
-				</h2>
-				{recentPosts.length === 0 ? (
-					<EmptyState icon={<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="M14 2v4a2 2 0 0 0 2 2h4" /></svg>} title="No posts yet" description="Recent posts appear here once you start writing." />
+			<ListCard title="Recent posts" viewAllHref="/admin/posts">
+				{recent.length === 0 ? (
+					<EmptyState
+						icon={<FileIcon />}
+						title="No posts yet"
+						description="Recent activity appears here once you start writing."
+						action={
+							<a href="/admin/posts/new" className={buttonClass('primary', 'sm')}>
+								New post
+							</a>
+						}
+					/>
 				) : (
 					<ul className="divide-y divide-border">
-						{recentPosts.map((post) => (
+						{recent.map((post) => (
 							<li
 								key={post.id}
 								className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 hover:bg-surface-elevated"
@@ -248,9 +238,7 @@ export default function Dashboard() {
 									<div className="min-w-0">
 										<p className="truncate font-medium text-foreground">{post.title}</p>
 										<p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-											<span className={badgeClass('soft')}>
-												{publicationNames[post.publication] ?? post.publication}
-											</span>
+											<span className={badgeClass('soft')}>{publicationName(post.publication)}</span>
 											{post.updatedAt && <span>Updated on {formatDate(post.updatedAt)}</span>}
 										</p>
 									</div>
@@ -280,7 +268,82 @@ export default function Dashboard() {
 						))}
 					</ul>
 				)}
-			</div>
+			</ListCard>
 		</div>
+	);
+}
+
+function CountTile({ label, value, caption, href }: { label: string; value: number; caption: string; href: string }) {
+	return (
+		<a
+			href={href}
+			className="rounded-md border border-border bg-secondary p-5 shadow-sm transition-colors hover:border-accent focus:outline-none focus:ring-2 focus:ring-accent"
+		>
+			<p className="text-sm font-medium text-on-secondary">{label}</p>
+			<p className="mt-1 text-3xl font-semibold text-foreground">{value}</p>
+			<p className="mt-1 text-xs text-muted-foreground">{caption}</p>
+		</a>
+	);
+}
+
+function ListCard({ title, viewAllHref, children }: { title: string; viewAllHref?: string; children: React.ReactNode }) {
+	return (
+		<section className={cardClass()}>
+			<div className="flex items-center justify-between border-b border-border px-5 py-4">
+				<h2 className="text-base font-semibold text-foreground">{title}</h2>
+				{viewAllHref && (
+					<a href={viewAllHref} className="text-xs font-medium text-accent-foreground underline-offset-2 hover:underline">
+						View all
+					</a>
+				)}
+			</div>
+			{children}
+		</section>
+	);
+}
+
+function CompactRow({
+	post,
+	meta,
+	publicationName,
+	actionLabel,
+}: {
+	post: ListPost;
+	meta: string;
+	publicationName: (slug: string) => string;
+	actionLabel: string;
+}) {
+	return (
+		<li className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-surface-elevated">
+			<a href={`/admin/posts/${post.id}/edit`} className="min-w-0 flex-1">
+				<p className="truncate font-medium text-foreground">{post.title}</p>
+				<p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+					<span className={badgeClass('soft')}>{publicationName(post.publication)}</span>
+					<span>{meta}</span>
+				</p>
+			</a>
+			<a href={`/admin/posts/${post.id}/edit`} className={`${buttonClass('accentOutline', 'sm')} shrink-0`}>
+				<PencilIcon />
+				{actionLabel}
+			</a>
+		</li>
+	);
+}
+
+function ClockIcon() {
+	return (
+		<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5">
+			<circle cx="12" cy="12" r="10" />
+			<polyline points="12 6 12 12 16 14" />
+		</svg>
+	);
+}
+
+function FileIcon() {
+	return (
+		<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5">
+			<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+			<path d="M14 2v4a2 2 0 0 0 2 2h4" />
+		</svg>
 	);
 }

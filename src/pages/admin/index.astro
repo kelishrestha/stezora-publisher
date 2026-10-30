@@ -2,24 +2,28 @@
 import { Icon } from 'astro-icon/components';
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import Dashboard from '../../components/admin/Dashboard';
+import { buttonClass } from '../../components/ui/shared/classes';
 
 const title = 'Dashboard';
-const description = 'Per-publication publishing statistics for the Stezora CMS.';
+const description = 'Your drafts, scheduled posts, and recent activity in the Stezora CMS.';
 ---
 
 <AdminLayout title={title} description={description} path="/admin" breadcrumbs={[{ name: 'Dashboard' }]}>
 	<div class="flex flex-wrap items-start justify-between gap-3">
 		<div>
 			<h1 class="text-2xl font-semibold tracking-tight text-foreground">Dashboard</h1>
-			<p class="mt-1 text-sm text-muted-foreground">Posts per publication, media, and recent activity.</p>
+			<p class="mt-1 text-sm text-muted-foreground">Your drafts, scheduled posts, and recent activity.</p>
 		</div>
-		<a
-			href="/admin/analytics"
-			class="inline-flex items-center gap-1.5 rounded-md border border-accent bg-transparent px-3 py-1.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent hover:text-on-accent focus:outline-none focus:ring-2 focus:ring-accent"
-		>
-			<Icon name="lucide:chart-column" class="size-4" aria-hidden="true" />
-			Writer's Analytics
-		</a>
+		<div class="flex flex-wrap items-center gap-2">
+			<a href="/admin/analytics" class={buttonClass('accentOutline', 'sm')}>
+				<Icon name="lucide:chart-column" class="size-4" aria-hidden="true" />
+				Writer's Analytics
+			</a>
+			<a href="/admin/posts/new" class={buttonClass('primary', 'sm')}>
+				<Icon name="lucide:plus" class="size-4" aria-hidden="true" />
+				New post
+			</a>
+		</div>
 	</div>
 	<div class="mt-6">
 		<Dashboard client:load />

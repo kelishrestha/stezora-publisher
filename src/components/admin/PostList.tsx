@@ -112,7 +112,13 @@ export default function PostList() {
 	const [posts, setPosts] = useState<ListPost[] | null>(null);
 	const [publications, setPublications] = useState<PublicationOption[]>([]);
 	const [publicationNames, setPublicationNames] = useState<Record<string, string>>({});
-	const [filter, setFilter] = useState('all');
+	// Seed the status filter from a ?status= deep link (dashboard count tiles
+	// link here pre-filtered); fall back to showing all.
+	const [filter, setFilter] = useState(() => {
+		if (typeof window === 'undefined') return 'all';
+		const status = new URLSearchParams(window.location.search).get('status');
+		return status && TABS.includes(status) ? status : 'all';
+	});
 	const [nameFilter, setNameFilter] = useState('');
 	const [publicationFilter, setPublicationFilter] = useState('all');
 	const [monthFilter, setMonthFilter] = useState('all');
