@@ -50,6 +50,7 @@ interface AudiencePayload {
 		scope: { publication: string | null; post: string | null; postTitle: string | null };
 		totals: { pageviews: number; visitors: number };
 		sources: { app: number; blogger: number; neobook: number };
+		postSource: { source: string | null; neobookUrl: string | null; neobookViews: number | null } | null;
 		sourceHistory: Array<{ capturedAt: string; app: number; blogger: number; neobook: number }>;
 		bloggerPublications: Array<{ slug: string; viewsAll: number | null }>;
 		neobookPosts: Array<{ title: string; views: number | null }>;
@@ -128,6 +129,15 @@ describe('audience analytics', () => {
 		const body = (await response.json()) as AudiencePayload;
 		expect(body.data.scope).toMatchObject({ publication: 'pub-x', post: 'hello', postTitle: 'Hello World' });
 		expect(body.data.totals.pageviews).toBeGreaterThanOrEqual(1);
+		// The scoped response resolves the post's own cross-source row.
+		expect(body.data.postSource).not.toBeNull();
+		expect(body.data.postSource?.source).toBeTypeOf('string');
+	});
+
+	it('returns a null postSource when not scoped to a post', async () => {
+		const cookie = await signInAndCookies();
+		const body = (await (await fetchWorker('/api/admin/audience', { headers: { cookie } })).json()) as AudiencePayload;
+		expect(body.data.postSource).toBeNull();
 	});
 
 	it('scopes to an unknown selection with no data', async () => {

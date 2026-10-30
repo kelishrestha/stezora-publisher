@@ -57,6 +57,14 @@ interface AudienceData {
 	scope: { publication: string | null; post: string | null; publicationName: string | null; postTitle: string | null };
 	totals: { pageviews: number; visitors: number; last24hPageviews: number; last24hVisitors: number };
 	sources: { app: number; blogger: number; neobook: number };
+	postSource: {
+		source: string | null;
+		neobookUrl: string | null;
+		neobookViews: number | null;
+		neobookLikes: number | null;
+		neobookComments: number | null;
+		bloggerUrl: string | null;
+	} | null;
 	sourceHistory: SourceHistoryPoint[];
 	bloggerPublications: Array<{ slug: string; name: string; viewsAll: number | null; views30d: number | null; views7d: number | null }>;
 	neobookPosts: Array<{ title: string; publication: string; views: number | null; likes: number | null; comments: number | null }>;
@@ -268,10 +276,11 @@ export default function Audience() {
 			) : scopedToPost ? (
 				loading ? (
 					<SkeletonBlocks />
-				) : firstPartyEmpty ? (
-					noDataCard
 				) : (
-					<FirstPartySections data={data} scopedToPost scopedToPublication={scopedToPublication} />
+					<>
+						<PostSourceCard appViews={data.totals.pageviews} postSource={data.postSource} />
+						{firstPartyEmpty ? noDataCard : <FirstPartySections data={data} scopedToPost scopedToPublication={scopedToPublication} />}
+					</>
 				)
 			) : activeSource === 'blogger' ? (
 				<BloggerSourceDetail publications={data.bloggerPublications} publication={publication} days={days} />
@@ -370,6 +379,63 @@ function FirstPartySections({ data, scopedToPost, scopedToPublication }: { data:
 function snapshotLabel(iso: string): string {
 	const date = new Date(iso);
 	return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function PostSourceCard({ appViews, postSource }: { appViews: number; postSource: AudienceData['postSource'] }) {
+	const showBlogger = postSource?.source === 'blogger' || Boolean(postSource?.bloggerUrl);
+	return (
+		<section className={cardClass()}>
+			<div className="border-b border-border px-5 py-4">
+				<h2 className="text-base font-semibold text-foreground">Views by source</h2>
+				<p className="mt-0.5 text-xs text-muted-foreground">This post across the app and its imported sources.</p>
+			</div>
+			<dl className="divide-y divide-border text-sm">
+				<div className="flex items-center justify-between gap-4 px-5 py-3">
+					<dt className="flex items-center gap-2 text-muted-foreground">
+						<span className="inline-block size-2.5 rounded-full bg-[var(--color-accent)]" aria-hidden="true" />
+						This app
+					</dt>
+					<dd className="tabular-nums text-foreground">{formatNumber(appViews)} views</dd>
+				</div>
+				<div className="flex items-center justify-between gap-4 px-5 py-3">
+					<dt className="flex items-center gap-2 text-muted-foreground">
+						<span className="inline-block size-2.5 rounded-full bg-amber-500" aria-hidden="true" />
+						Neobook
+					</dt>
+					<dd className="text-right">
+						{postSource?.neobookUrl ? (
+							<a href={postSource.neobookUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">
+								<span className="tabular-nums text-foreground">{formatNumber(postSource.neobookViews ?? 0)}</span>
+								<span className="text-foreground"> views</span>
+								<span className="text-muted-foreground"> · {postSource.neobookLikes ?? 0} likes · {postSource.neobookComments ?? 0} comments</span>
+							</a>
+						) : (
+							<span className="text-muted-foreground">Not on Neobook</span>
+						)}
+					</dd>
+				</div>
+				{showBlogger && (
+					<div className="flex items-center justify-between gap-4 px-5 py-3">
+						<dt className="flex items-center gap-2 text-muted-foreground">
+							<span className="inline-block size-2.5 rounded-full bg-emerald-500" aria-hidden="true" />
+							Blogger
+						</dt>
+						<dd className="text-right text-muted-foreground">
+							Per-post counts unavailable
+							{postSource?.bloggerUrl && (
+								<>
+									{' · '}
+									<a href={postSource.bloggerUrl} target="_blank" rel="noopener noreferrer" className="text-accent-foreground hover:underline">
+										View on Blogger
+									</a>
+								</>
+							)}
+						</dd>
+					</div>
+				)}
+			</dl>
+		</section>
+	);
 }
 
 function SourceComparison({ sources, active, onSelect }: { sources: { app: number; blogger: number; neobook: number } | null; active: SourceKey; onSelect: (source: SourceKey) => void }) {

@@ -120,9 +120,38 @@ export const audience: AuthenticatedHandler = async ({ env, request }) => {
 			.orderBy(desc(books.views)),
 	]);
 
+	// When scoped to one post, its own cross-source figures: first-party views
+	// come from `totals`, Neobook carries per-poem engagement, and Blogger only
+	// offers a link (no per-post count exists in its API).
+	let postSource: {
+		source: string | null;
+		neobookUrl: string | null;
+		neobookViews: number | null;
+		neobookLikes: number | null;
+		neobookComments: number | null;
+		bloggerUrl: string | null;
+	} | null = null;
+	if (publication && post) {
+		const row = await db
+			.select({
+				source: posts.source,
+				neobookUrl: posts.neobook_url,
+				neobookViews: posts.neobook_views,
+				neobookLikes: posts.neobook_likes,
+				neobookComments: posts.neobook_comments,
+				bloggerUrl: posts.canonical_url,
+			})
+			.from(posts)
+			.innerJoin(publications, eq(publications.id, posts.publication_id))
+			.where(and(eq(publications.slug, publication), eq(posts.slug, post)))
+			.limit(1);
+		postSource = row[0] ?? null;
+	}
+
 	return ok({
 		days,
 		sources,
+		postSource,
 		sourceHistory: historyRows.map((row) => ({ capturedAt: row.captured_at, app: row.app_views, blogger: row.blogger_views, neobook: row.neobook_views })),
 		bloggerPublications,
 		neobookPosts,
