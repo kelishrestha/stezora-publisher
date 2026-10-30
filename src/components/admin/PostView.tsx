@@ -195,7 +195,8 @@ export default function PostView() {
 					</p>
 				)}
 				<p className="mt-2 text-sm text-muted-foreground">
-					Published on {formatDate(post.publishedAt)} · Updated on {formatDate(post.updatedAt)}
+					{post.status !== 'draft' && <>Published on {formatDate(post.publishedAt)} · </>}
+					Updated on {formatDate(post.updatedAt)}
 				</p>
 				{post.canonicalUrl && (
 					<p className="mt-2 text-sm">
