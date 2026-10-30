@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import EmptyState from './EmptyState';
 import LoadingImage from './LoadingImage';
 import { EyeIcon, ImagePlaceholderIcon, PencilIcon } from './icons';
-import { badgeClass, buttonClass, cardClass, statusBadgeClass } from '../ui/shared/classes';
+import { badgeClass, buttonClass, cardClass } from '../ui/shared/classes';
 
 interface PublicationStats {
 	slug: string;
@@ -33,13 +33,6 @@ interface PublicationOption {
 interface Stats {
 	publications: PublicationStats[];
 }
-
-const STATUS_LABELS: Record<string, string> = {
-	draft: 'Draft',
-	scheduled: 'Scheduled',
-	published: 'Published',
-	archived: 'Archived',
-};
 
 function formatDate(value: string | null): string {
 	if (!value) return '–';
@@ -77,7 +70,7 @@ export default function Dashboard() {
 				request<Stats>('/api/admin/stats'),
 				request<{ posts: ListPost[] }>('/api/admin/posts?status=draft&limit=5'),
 				request<{ posts: ListPost[] }>('/api/admin/posts?status=scheduled&limit=50'),
-				request<{ posts: ListPost[] }>('/api/admin/posts?limit=8'),
+				request<{ posts: ListPost[] }>('/api/admin/posts?status=published&limit=8'),
 				request<{ publications: PublicationOption[] }>('/api/admin/posts/meta').catch(() => null),
 			]);
 			if (cancelled || !statsData || !draftsData || !scheduledData || !recentData) return;
@@ -204,12 +197,12 @@ export default function Dashboard() {
 				</ListCard>
 			</div>
 
-			<ListCard title="Recent posts" viewAllHref="/admin/posts">
+			<ListCard title="Recent published posts" viewAllHref="/admin/posts?status=published">
 				{recent.length === 0 ? (
 					<EmptyState
 						icon={<FileIcon />}
-						title="No posts yet"
-						description="Recent activity appears here once you start writing."
+						title="No published posts yet"
+						description="Published posts appear here once you publish."
 						action={
 							<a href="/admin/posts/new" className={buttonClass('primary', 'sm')}>
 								New post
@@ -244,9 +237,6 @@ export default function Dashboard() {
 									</div>
 								</a>
 								<div className="flex shrink-0 items-center gap-2">
-									<span className={statusBadgeClass(post.status)}>
-										{STATUS_LABELS[post.status] ?? post.status}
-									</span>
 									<a
 										href={`/admin/posts/${post.id}/view`}
 										aria-label={`View ${post.title}`}
