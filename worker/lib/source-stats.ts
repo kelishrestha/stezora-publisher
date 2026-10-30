@@ -24,6 +24,9 @@ export async function sourceTotals(db: D1Database): Promise<SourceTotals> {
 	};
 }
 
+/** Keep at most this many snapshots so the history (and trend query) stays bounded. */
+const MAX_SNAPSHOTS = 365;
+
 /** Appends (or replaces, same timestamp) a snapshot of all three source totals. */
 export async function captureSourceSnapshot(db: D1Database): Promise<void> {
 	const totals = await sourceTotals(db);
@@ -34,5 +37,10 @@ export async function captureSourceSnapshot(db: D1Database): Promise<void> {
 				'ON CONFLICT (captured_at) DO UPDATE SET app_views = excluded.app_views, blogger_views = excluded.blogger_views, neobook_views = excluded.neobook_views'
 		)
 		.bind(now, totals.app, totals.blogger, totals.neobook)
+		.run();
+	// Trim the oldest rows beyond the cap (keeps the trend unbounded-growth free).
+	await db
+		.prepare('DELETE FROM source_stats WHERE captured_at NOT IN (SELECT captured_at FROM source_stats ORDER BY captured_at DESC LIMIT ?)')
+		.bind(MAX_SNAPSHOTS)
 		.run();
 }
