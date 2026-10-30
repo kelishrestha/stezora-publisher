@@ -143,6 +143,7 @@ export default function Audience() {
 	const [days, setDays] = useState(30);
 	const [source, setSource] = useState<SourceKey>('app');
 	const [data, setData] = useState<AudienceData | null>(null);
+	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
 	// Publication list for the filter dropdown.
@@ -161,7 +162,10 @@ export default function Audience() {
 
 	useEffect(() => {
 		let cancelled = false;
-		setData(null);
+		// Keep the previous data mounted during a refetch so the overview and
+		// controls stay in place (no full-page skeleton, no scroll jump); only
+		// the reloading section shows a skeleton via `loading`.
+		setLoading(true);
 		async function load() {
 			const params = new URLSearchParams({ days: String(days) });
 			if (publication) params.set('publication', publication);
@@ -173,10 +177,16 @@ export default function Audience() {
 			}
 			if (!response.ok) throw new Error(`Failed to load audience (HTTP ${response.status}).`);
 			const body = (await response.json()) as { data: AudienceData };
-			if (!cancelled) setData(body.data);
+			if (!cancelled) {
+				setData(body.data);
+				setLoading(false);
+			}
 		}
 		load().catch((reason: unknown) => {
-			if (!cancelled) setError(reason instanceof Error ? reason.message : 'Failed to load audience.');
+			if (!cancelled) {
+				setError(reason instanceof Error ? reason.message : 'Failed to load audience.');
+				setLoading(false);
+			}
 		});
 		return () => {
 			cancelled = true;
@@ -256,23 +266,23 @@ export default function Audience() {
 			{!data ? (
 				<SkeletonBlocks />
 			) : scopedToPost ? (
-				firstPartyEmpty ? (
+				loading ? (
+					<SkeletonBlocks />
+				) : firstPartyEmpty ? (
 					noDataCard
 				) : (
 					<FirstPartySections data={data} scopedToPost scopedToPublication={scopedToPublication} />
 				)
+			) : activeSource === 'blogger' ? (
+				<BloggerSourceDetail publications={data.bloggerPublications} publication={publication} days={days} />
+			) : activeSource === 'neobook' ? (
+				<NeobookSourceDetail posts={data.neobookPosts} books={data.neobookBooks} />
+			) : loading ? (
+				<SkeletonBlocks />
+			) : firstPartyEmpty ? (
+				noDataCard
 			) : (
-				<>
-					{activeSource === 'blogger' ? (
-						<BloggerSourceDetail publications={data.bloggerPublications} publication={publication} days={days} />
-					) : activeSource === 'neobook' ? (
-						<NeobookSourceDetail posts={data.neobookPosts} books={data.neobookBooks} />
-					) : firstPartyEmpty ? (
-						noDataCard
-					) : (
-						<FirstPartySections data={data} scopedToPost={false} scopedToPublication={scopedToPublication} />
-					)}
-				</>
+				<FirstPartySections data={data} scopedToPost={false} scopedToPublication={scopedToPublication} />
 			)}
 		</div>
 	);
