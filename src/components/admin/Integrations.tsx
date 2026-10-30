@@ -48,6 +48,7 @@ export default function Integrations() {
 	const [error, setError] = useState<string | null>(null);
 	const [syncing, setSyncing] = useState(false);
 	const [importing, setImporting] = useState(false);
+	const [refreshingStats, setRefreshingStats] = useState(false);
 	const [importOpen, setImportOpen] = useState(false);
 	const [toast, setToast] = useState<{ tone: 'error' | 'success'; message: string } | null>(null);
 	const { confirm, confirmDialog } = useConfirm();
@@ -151,6 +152,27 @@ export default function Integrations() {
 		}
 	}
 
+	async function refreshStats() {
+		setRefreshingStats(true);
+		try {
+			const response = await fetch('/api/admin/blogger/stats', { method: 'POST', credentials: 'same-origin' });
+			if (response.status === 401) {
+				window.location.href = '/admin/login';
+				return;
+			}
+			const body = (await response.json()) as { success: boolean; data?: { statsUpdated: number }; error?: { message?: string } };
+			if (!response.ok || !body.data) {
+				throw new Error(body.error?.message ?? `Could not refresh statistics (HTTP ${response.status}).`);
+			}
+			setToast({ tone: 'success', message: `Statistics refreshed for ${body.data.statsUpdated} blog${body.data.statsUpdated === 1 ? '' : 's'}.` });
+			loadData();
+		} catch (reason: unknown) {
+			setToast({ tone: 'error', message: reason instanceof Error ? reason.message : 'Could not refresh statistics.' });
+		} finally {
+			setRefreshingStats(false);
+		}
+	}
+
 	if (error) {
 		return <p className="rounded-lg bg-accent-soft px-4 py-3 text-sm text-accent-foreground">{error}</p>;
 	}
@@ -214,7 +236,15 @@ export default function Integrations() {
 						</div>
 					)}
 
-					<div className="flex items-center justify-end border-t border-border px-5 py-4">
+					<div className="flex items-center justify-end gap-2 border-t border-border px-5 py-4">
+						<button
+							type="button"
+							onClick={() => void refreshStats()}
+							disabled={refreshingStats || !data || !data.blogger.configured}
+							className={buttonClass('outline', 'sm')}
+						>
+							{refreshingStats ? 'Refreshing…' : 'Refresh stats'}
+						</button>
 						<button type="button" onClick={() => setImportOpen(true)} disabled={importing || !data || !data.blogger.configured} className={buttonClass('accentOutline', 'sm')}>
 							{importing ? 'Importing…' : 'Import'}
 						</button>

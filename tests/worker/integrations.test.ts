@@ -154,3 +154,17 @@ describe('POST /api/admin/neobook/sync', () => {
 		expect((await fetchWorker('/api/admin/neobook/sync', { method: 'POST' })).status).toBe(401);
 	});
 });
+
+describe('POST /api/admin/blogger/stats', () => {
+	it('requires auth', async () => {
+		expect((await fetchWorker('/api/admin/blogger/stats', { method: 'POST' })).status).toBe(401);
+	});
+
+	it('fails clearly when Blogger credentials are not configured', async () => {
+		const cookie = await signInAndCookies();
+		const response = await fetchWorker('/api/admin/blogger/stats', { method: 'POST', headers: { cookie } }, ENV_NO_BLOGGER);
+		expect(response.status).toBe(400);
+		const body = (await response.json()) as { error: { code: string } };
+		expect(body.error.code).toBe('blogger_not_configured');
+	});
+});

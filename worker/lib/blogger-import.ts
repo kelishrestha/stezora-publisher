@@ -71,10 +71,16 @@ const TIME_RANGE_COLUMN: Record<string, 'views_all' | 'views_30d' | 'views_7d'> 
 	SEVEN_DAYS: 'views_7d',
 };
 
+interface StatsTotals {
+	views_all: number | null;
+	views_30d: number | null;
+	views_7d: number | null;
+}
+
 /** Fetches Blogger blog-level pageview totals and upserts the per-publication snapshot. */
-async function saveBloggerStats(db: D1Database, client: BloggerClient, publicationId: string, blogId: string, now: string): Promise<void> {
+async function saveBloggerStats(db: D1Database, client: BloggerClient, publicationId: string, blogId: string, now: string): Promise<StatsTotals> {
 	const pageviews = await client.getPageviews();
-	const totals: Record<string, number | null> = { views_all: null, views_30d: null, views_7d: null };
+	const totals: StatsTotals = { views_all: null, views_30d: null, views_7d: null };
 	for (const entry of pageviews.counts ?? []) {
 		const column = TIME_RANGE_COLUMN[entry.timeRange];
 		if (column) {
@@ -90,6 +96,51 @@ async function saveBloggerStats(db: D1Database, client: BloggerClient, publicati
 		)
 		.bind(publicationId, blogId, totals.views_all, totals.views_30d, totals.views_7d, now)
 		.run();
+	return totals;
+}
+
+export interface BloggerStatsPublicationResult {
+	slug: string;
+	name: string;
+	linked: boolean;
+	viewsAll: number | null;
+	views30d: number | null;
+	views7d: number | null;
+}
+
+export interface BloggerStatsResult {
+	statsUpdated: number;
+	publications: BloggerStatsPublicationResult[];
+}
+
+/**
+ * Refreshes Blogger blog-level pageview totals for every linked publication,
+ * without importing posts. Needs the full blogger OAuth scope (the read-only
+ * scope cannot read pageviews).
+ */
+export async function refreshBloggerStats(db: D1Database, credentials: BloggerImportCredentials): Promise<BloggerStatsResult> {
+	const { clientId, clientSecret, refreshToken } = credentials;
+	if (!clientId || !clientSecret || !refreshToken) {
+		throw new BloggerNotConfiguredError();
+	}
+
+	const now = new Date().toISOString();
+	const results: BloggerStatsPublicationResult[] = [];
+	let statsUpdated = 0;
+
+	for (const publication of publications) {
+		const blogId = await blogIdForPublication(db, publication.id);
+		if (!blogId) {
+			results.push({ slug: publication.slug, name: publication.name, linked: false, viewsAll: null, views30d: null, views7d: null });
+			continue;
+		}
+		const client = new BloggerClient({ blogId, clientId, clientSecret, refreshToken });
+		const totals = await saveBloggerStats(db, client, publication.id, blogId, now);
+		statsUpdated += 1;
+		results.push({ slug: publication.slug, name: publication.name, linked: true, viewsAll: totals.views_all, views30d: totals.views_30d, views7d: totals.views_7d });
+	}
+
+	return { statsUpdated, publications: results };
 }
 
 async function ensureTags(db: D1Database, publicationId: string, tags: string[], now: string): Promise<string[]> {
