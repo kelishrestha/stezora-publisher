@@ -170,10 +170,14 @@ export const updatePost: AuthenticatedHandler = async ({ env, request, params })
 	}
 
 	const now = new Date().toISOString();
+	// A draft has no publish date (clears any imported published_at); published
+	// stamps now when absent; scheduled/archived keep the provided or existing date.
 	const publishedAt =
-		status === 'published'
-			? body.publishedAt ?? existing.publishedAt ?? now
-			: body.publishedAt ?? existing.publishedAt;
+		status === 'draft'
+			? null
+			: status === 'published'
+				? body.publishedAt ?? existing.publishedAt ?? now
+				: body.publishedAt ?? existing.publishedAt;
 	const featuredImageId = await resolveFeaturedImage(
 		env.DB,
 		body.featuredImageId,

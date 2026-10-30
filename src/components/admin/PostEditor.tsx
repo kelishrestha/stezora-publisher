@@ -186,9 +186,9 @@ export default function PostEditor({ postId }: PostEditorProps) {
 			setContentMarkdown(post.contentMarkdown);
 			setTags(post.tags.join(', '));
 			setStatus(post.status);
-			// Drafts (including imported ones) have no real publish date, so show the
-			// created date rather than an imported published_at.
-			setPublishedAt(toDateTimeLocal(post.status === 'draft' ? post.createdAt : post.publishedAt));
+			// A draft has no publish date; show it empty even if an import left a
+			// published_at behind. The field becomes relevant once published/scheduled.
+			setPublishedAt(post.status === 'draft' ? '' : toDateTimeLocal(post.publishedAt));
 			setSeoTitle(post.seoTitle ?? '');
 			setSeoDescription(post.seoDescription ?? '');
 			setFeaturedImageId(post.featuredImageId);
