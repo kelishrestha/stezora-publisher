@@ -19,6 +19,10 @@ const posts = defineCollection({
 		bloggerBlogId: z.string().optional(),
 		bloggerPostId: z.string().optional(),
 		bloggerUrl: z.url().optional(),
+		neobookUrl: z.url().optional(),
+		neobookViews: z.number().optional(),
+		neobookLikes: z.number().optional(),
+		neobookComments: z.number().optional(),
 	}),
 });
 

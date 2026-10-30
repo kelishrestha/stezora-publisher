@@ -64,6 +64,13 @@ export interface PostRecord {
 	bloggerBlogId?: string;
 	bloggerPostId: string;
 	bloggerUrl: string;
+	// Neobook engagement snapshot, carried into the static build for the public
+	// per-post stats. Present only when the post is matched on Neobook; counts
+	// are emitted only when positive.
+	neobookUrl?: string;
+	neobookViews?: number;
+	neobookLikes?: number;
+	neobookComments?: number;
 }
 
 export interface ImportedImage {

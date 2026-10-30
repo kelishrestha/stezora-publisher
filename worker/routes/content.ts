@@ -35,6 +35,10 @@ export interface ContentPost {
 	bloggerBlogId?: string;
 	bloggerPostId?: string;
 	bloggerUrl?: string;
+	neobookUrl?: string;
+	neobookViews?: number;
+	neobookLikes?: number;
+	neobookComments?: number;
 }
 
 interface ContentResponse {
@@ -81,6 +85,10 @@ export const content: RouteHandler = async ({ env }) => {
 				blogger_post_id: posts.blogger_post_id,
 				blogger_blog_id: posts.blogger_blog_id,
 				canonical_url: posts.canonical_url,
+				neobook_url: posts.neobook_url,
+				neobook_views: posts.neobook_views,
+				neobook_likes: posts.neobook_likes,
+				neobook_comments: posts.neobook_comments,
 				seo_title: posts.seo_title,
 				seo_description: posts.seo_description,
 				publication: publications.slug,
@@ -144,6 +152,19 @@ export const content: RouteHandler = async ({ env }) => {
 		}
 		if (row.canonical_url) {
 			post.bloggerUrl = row.canonical_url;
+		}
+		if (row.neobook_url) {
+			post.neobookUrl = row.neobook_url;
+		}
+		// Counts are emitted only when positive so the public page can omit zeros.
+		if (row.neobook_views && row.neobook_views > 0) {
+			post.neobookViews = row.neobook_views;
+		}
+		if (row.neobook_likes && row.neobook_likes > 0) {
+			post.neobookLikes = row.neobook_likes;
+		}
+		if (row.neobook_comments && row.neobook_comments > 0) {
+			post.neobookComments = row.neobook_comments;
 		}
 		const featured = mediaUrl(
 			{ r2_key: row.featured_r2_key, source_url: row.featured_source_url },

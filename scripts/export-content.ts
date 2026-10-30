@@ -26,6 +26,10 @@ export interface ContentPost {
 	bloggerBlogId?: string;
 	bloggerPostId?: string;
 	bloggerUrl?: string;
+	neobookUrl?: string;
+	neobookViews?: number;
+	neobookLikes?: number;
+	neobookComments?: number;
 }
 
 export interface ContentResponse {
@@ -182,6 +186,10 @@ interface ExportRecord {
 	bloggerBlogId?: string;
 	bloggerPostId?: string;
 	bloggerUrl?: string;
+	neobookUrl?: string;
+	neobookViews?: number;
+	neobookLikes?: number;
+	neobookComments?: number;
 }
 
 function toPostRecord(post: ContentPost): PostRecord {
@@ -210,6 +218,18 @@ function toPostRecord(post: ContentPost): PostRecord {
 	}
 	if (post.updatedDate) {
 		record.updatedDate = post.updatedDate;
+	}
+	if (post.neobookUrl) {
+		record.neobookUrl = post.neobookUrl;
+	}
+	if (post.neobookViews) {
+		record.neobookViews = post.neobookViews;
+	}
+	if (post.neobookLikes) {
+		record.neobookLikes = post.neobookLikes;
+	}
+	if (post.neobookComments) {
+		record.neobookComments = post.neobookComments;
 	}
 	return record as PostRecord;
 }
