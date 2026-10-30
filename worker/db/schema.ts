@@ -213,6 +213,19 @@ export const bloggerStats = sqliteTable('blogger_stats', {
 	fetched_at: text('fetched_at').notNull(),
 });
 
+/**
+ * Timestamped total-view snapshots per source (this app, Blogger, Neobook),
+ * captured on each Blogger stats refresh and Neobook sync. Blogger and Neobook
+ * expose only cumulative totals, so this history is what lets the audience page
+ * draw a comparable multi-source trend over time.
+ */
+export const sourceStats = sqliteTable('source_stats', {
+	captured_at: text('captured_at').primaryKey(),
+	app_views: integer('app_views').notNull().default(0),
+	blogger_views: integer('blogger_views').notNull().default(0),
+	neobook_views: integer('neobook_views').notNull().default(0),
+});
+
 export type Publication = typeof publications.$inferSelect;
 export type Post = typeof posts.$inferSelect;
 export type Tag = typeof tags.$inferSelect;

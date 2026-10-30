@@ -113,6 +113,13 @@
       "when": 1793363380606,
       "tag": "0015_integrations_books_stats",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1793367664845,
+      "tag": "0016_source_stats_history",
+      "breakpoints": true
     }
   ]
 }
