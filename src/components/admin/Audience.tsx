@@ -381,59 +381,64 @@ function snapshotLabel(iso: string): string {
 	return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
+function SourceStat({ label, dot, value, hint }: { label: string; dot: string; value: string; hint?: React.ReactNode }) {
+	return (
+		<div className={statCardClass}>
+			<p className={`${statCardLabelClass} flex items-center gap-2`}>
+				<span className={`inline-block size-2.5 rounded-full ${dot}`} aria-hidden="true" />
+				{label}
+			</p>
+			<p className={statCardValueClass}>{value}</p>
+			{hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
+		</div>
+	);
+}
+
 function PostSourceCard({ appViews, postSource }: { appViews: number; postSource: AudienceData['postSource'] }) {
 	const showBlogger = postSource?.source === 'blogger' || Boolean(postSource?.bloggerUrl);
+	const onNeobook = Boolean(postSource?.neobookUrl);
 	return (
-		<section className={cardClass()}>
-			<div className="border-b border-border px-5 py-4">
+		<section className="space-y-3">
+			<div>
 				<h2 className="text-base font-semibold text-foreground">Views by source</h2>
 				<p className="mt-0.5 text-xs text-muted-foreground">This post across the app and its imported sources.</p>
 			</div>
-			<dl className="divide-y divide-border text-sm">
-				<div className="flex items-center justify-between gap-4 px-5 py-3">
-					<dt className="flex items-center gap-2 text-muted-foreground">
-						<span className="inline-block size-2.5 rounded-full bg-[var(--color-accent)]" aria-hidden="true" />
-						This app
-					</dt>
-					<dd className="tabular-nums text-foreground">{formatNumber(appViews)} views</dd>
-				</div>
-				<div className="flex items-center justify-between gap-4 px-5 py-3">
-					<dt className="flex items-center gap-2 text-muted-foreground">
-						<span className="inline-block size-2.5 rounded-full bg-amber-500" aria-hidden="true" />
-						Neobook
-					</dt>
-					<dd className="text-right">
-						{postSource?.neobookUrl ? (
-							<a href={postSource.neobookUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">
-								<span className="tabular-nums text-foreground">{formatNumber(postSource.neobookViews ?? 0)}</span>
-								<span className="text-foreground"> views</span>
-								<span className="text-muted-foreground"> · {postSource.neobookLikes ?? 0} likes · {postSource.neobookComments ?? 0} comments</span>
-							</a>
+			<div className="grid gap-4 sm:grid-cols-3">
+				<SourceStat label="This app" dot="bg-[var(--color-accent)]" value={formatNumber(appViews)} hint="views" />
+				<SourceStat
+					label="Neobook"
+					dot="bg-amber-500"
+					value={onNeobook ? formatNumber(postSource?.neobookViews ?? 0) : '–'}
+					hint={
+						onNeobook ? (
+							<>
+								{postSource?.neobookLikes ?? 0} likes · {postSource?.neobookComments ?? 0} comments ·{' '}
+								<a href={postSource?.neobookUrl ?? '#'} target="_blank" rel="noopener noreferrer" className="text-accent-foreground hover:underline">
+									View on Neobook
+								</a>
+							</>
 						) : (
-							<span className="text-muted-foreground">Not on Neobook</span>
-						)}
-					</dd>
-				</div>
+							'Not on Neobook'
+						)
+					}
+				/>
 				{showBlogger && (
-					<div className="flex items-center justify-between gap-4 px-5 py-3">
-						<dt className="flex items-center gap-2 text-muted-foreground">
-							<span className="inline-block size-2.5 rounded-full bg-emerald-500" aria-hidden="true" />
-							Blogger
-						</dt>
-						<dd className="text-right text-muted-foreground">
-							Per-post counts unavailable
-							{postSource?.bloggerUrl && (
-								<>
-									{' · '}
-									<a href={postSource.bloggerUrl} target="_blank" rel="noopener noreferrer" className="text-accent-foreground hover:underline">
-										View on Blogger
-									</a>
-								</>
-							)}
-						</dd>
-					</div>
+					<SourceStat
+						label="Blogger"
+						dot="bg-emerald-500"
+						value="–"
+						hint={
+							postSource?.bloggerUrl ? (
+								<a href={postSource.bloggerUrl} target="_blank" rel="noopener noreferrer" className="text-accent-foreground hover:underline">
+									View on Blogger
+								</a>
+							) : (
+								'Per-post counts unavailable'
+							)
+						}
+					/>
 				)}
-			</dl>
+			</div>
 		</section>
 	);
 }
