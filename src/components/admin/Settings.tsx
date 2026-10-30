@@ -3,18 +3,18 @@ import { createAuthClient } from 'better-auth/client';
 import { buttonClass, cardClass, formControlClass, modalOverlayClass, modalPanelClass } from '../ui/shared/classes';
 import { filterSelectClass } from './filters';
 import { useConfirm } from './useConfirm';
+import Toast, { ToastStack } from './Toast';
 
 /**
- * Admin settings, grouped into labelled sections (Account, Analytics & privacy,
- * Danger zone). Simple settings use a row pattern (label + description on the
- * left, control on the right); destructive actions live in the danger zone.
- * Two-factor is a planned follow-up (PLAN.md M8.1).
+ * Admin settings, grouped into labelled sections (Account, Data, Analytics &
+ * privacy, Danger zone). Status messages surface as toasts; destructive actions
+ * live in the danger zone. Two-factor is a planned follow-up (PLAN.md M8.1).
  */
 
 const authClient = createAuthClient();
 const MIN_LENGTH = 8;
 
-type Status = { type: 'error' | 'success'; message: string } | null;
+type PushToast = (tone: 'error' | 'success', message: string) => void;
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
 	return (
@@ -56,32 +56,10 @@ function SettingRow({
 function Switch({ checked, onChange, labelledBy }: { checked: boolean; onChange: (value: boolean) => void; labelledBy?: string }) {
 	return (
 		<label className="relative inline-block h-6 w-11 shrink-0 cursor-pointer">
-			<input
-				type="checkbox"
-				className="peer sr-only"
-				checked={checked}
-				aria-labelledby={labelledBy}
-				onChange={(event) => onChange(event.target.checked)}
-			/>
+			<input type="checkbox" className="peer sr-only" checked={checked} aria-labelledby={labelledBy} onChange={(event) => onChange(event.target.checked)} />
 			<span className="absolute inset-0 rounded-full bg-muted transition-colors peer-checked:bg-accent peer-focus-visible:ring-2 peer-focus-visible:ring-accent peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface"></span>
 			<span className="absolute inset-y-0 start-0 m-0.5 size-5 rounded-full bg-surface shadow transition-all peer-checked:start-5"></span>
 		</label>
-	);
-}
-
-function StatusNote({ status }: { status: Status }) {
-	if (!status) return null;
-	return (
-		<div
-			className={
-				status.type === 'error'
-					? 'rounded-md bg-accent-soft px-3 py-2 text-sm text-accent-foreground'
-					: 'rounded-md bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
-			}
-			role="alert"
-		>
-			{status.message}
-		</div>
 	);
 }
 
@@ -110,15 +88,7 @@ function PasswordField({
 				{label}
 			</label>
 			<div className="relative mt-0.5">
-				<input
-					id={id}
-					type={show ? 'text' : 'password'}
-					autoComplete={autoComplete}
-					required
-					value={value}
-					onChange={(event) => onChange(event.target.value)}
-					className={passwordInputClass}
-				/>
+				<input id={id} type={show ? 'text' : 'password'} autoComplete={autoComplete} required value={value} onChange={(event) => onChange(event.target.value)} className={passwordInputClass} />
 				<button
 					type="button"
 					onClick={() => setShow((value) => !value)}
@@ -134,7 +104,7 @@ function PasswordField({
 	);
 }
 
-function ChangePassword() {
+function ChangePassword({ pushToast }: { pushToast: PushToast }) {
 	const [open, setOpen] = useState(false);
 	return (
 		<div className={cardClass()}>
@@ -147,18 +117,17 @@ function ChangePassword() {
 					</button>
 				}
 			/>
-			{open && <ChangePasswordModal onClose={() => setOpen(false)} />}
+			{open && <ChangePasswordModal onClose={() => setOpen(false)} pushToast={pushToast} />}
 		</div>
 	);
 }
 
-function ChangePasswordModal({ onClose }: { onClose: () => void }) {
+function ChangePasswordModal({ onClose, pushToast }: { onClose: () => void; pushToast: PushToast }) {
 	const [current, setCurrent] = useState('');
 	const [next, setNext] = useState('');
-	const [confirm, setConfirm] = useState('');
+	const [confirmValue, setConfirmValue] = useState('');
 	const [revokeOthers, setRevokeOthers] = useState(true);
 	const [submitting, setSubmitting] = useState(false);
-	const [status, setStatus] = useState<Status>(null);
 
 	useEffect(() => {
 		function onKey(event: KeyboardEvent) {
@@ -170,30 +139,27 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
 
 	async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
 		event.preventDefault();
-		setStatus(null);
 		if (next.length < MIN_LENGTH) {
-			setStatus({ type: 'error', message: `New password must be at least ${MIN_LENGTH} characters.` });
+			pushToast('error', `New password must be at least ${MIN_LENGTH} characters.`);
 			return;
 		}
-		if (next !== confirm) {
-			setStatus({ type: 'error', message: 'New password and confirmation do not match.' });
+		if (next !== confirmValue) {
+			pushToast('error', 'New password and confirmation do not match.');
 			return;
 		}
 		if (next === current) {
-			setStatus({ type: 'error', message: 'New password must differ from the current one.' });
+			pushToast('error', 'New password must differ from the current one.');
 			return;
 		}
 		setSubmitting(true);
 		const { error } = await authClient.changePassword({ currentPassword: current, newPassword: next, revokeOtherSessions: revokeOthers });
 		setSubmitting(false);
 		if (error) {
-			setStatus({ type: 'error', message: error.message || 'Could not change the password. Check your current password.' });
+			pushToast('error', error.message || 'Could not change the password. Check your current password.');
 			return;
 		}
-		setStatus({ type: 'success', message: 'Password changed.' });
-		setCurrent('');
-		setNext('');
-		setConfirm('');
+		pushToast('success', 'Password changed.');
+		onClose();
 	}
 
 	return (
@@ -211,12 +177,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
 					<h3 id="change-pw-title" className="text-base font-semibold text-foreground">
 						Change password
 					</h3>
-					<button
-						type="button"
-						onClick={onClose}
-						aria-label="Close"
-						className="rounded p-1 text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
-					>
+					<button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-accent">
 						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
 							<path d="M18 6 6 18" />
 							<path d="m6 6 12 12" />
@@ -226,12 +187,11 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
 				<form onSubmit={handleSubmit} className="space-y-4">
 					<PasswordField id="current-password" label="Current password" autoComplete="current-password" value={current} onChange={setCurrent} />
 					<PasswordField id="new-password" label="New password" autoComplete="new-password" value={next} onChange={setNext} hint={`At least ${MIN_LENGTH} characters.`} />
-					<PasswordField id="confirm-password" label="Confirm new password" autoComplete="new-password" value={confirm} onChange={setConfirm} />
+					<PasswordField id="confirm-password" label="Confirm new password" autoComplete="new-password" value={confirmValue} onChange={setConfirmValue} />
 					<label className="flex items-center gap-2 text-sm text-muted-foreground">
 						<input type="checkbox" checked={revokeOthers} onChange={(event) => setRevokeOthers(event.target.checked)} className="rounded border-border text-accent focus:ring-accent" />
 						Sign out other devices
 					</label>
-					<StatusNote status={status} />
 					<div className="flex items-center justify-end gap-2 border-t border-border pt-4">
 						<button type="button" onClick={onClose} className={buttonClass('outline')}>
 							Cancel
@@ -246,17 +206,62 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
 	);
 }
 
+function DataExport({ pushToast }: { pushToast: PushToast }) {
+	const [downloading, setDownloading] = useState(false);
+
+	async function download() {
+		setDownloading(true);
+		try {
+			const response = await fetch('/api/export', { credentials: 'same-origin' });
+			if (response.status === 401) {
+				window.location.href = '/admin/login';
+				return;
+			}
+			if (!response.ok) throw new Error('export failed');
+			const blob = await response.blob();
+			const url = URL.createObjectURL(blob);
+			const link = document.createElement('a');
+			link.href = url;
+			link.download = `stezora-export-${new Date().toISOString().slice(0, 10)}.json`;
+			document.body.appendChild(link);
+			link.click();
+			link.remove();
+			URL.revokeObjectURL(url);
+			pushToast('success', 'Download started.');
+		} catch {
+			pushToast('error', 'Could not download data.');
+		} finally {
+			setDownloading(false);
+		}
+	}
+
+	return (
+		<Section title="Data">
+			<div className={cardClass()}>
+				<SettingRow
+					title="Download all data"
+					description="Export all content (publications, posts, tags, and media references) as a JSON file. Account credentials are not included."
+					control={
+						<button type="button" onClick={download} disabled={downloading} className={buttonClass('outline')}>
+							{downloading ? 'Preparing…' : 'Download'}
+						</button>
+					}
+				/>
+			</div>
+		</Section>
+	);
+}
+
 interface AppSettings {
 	analyticsEnabled: boolean;
 	consentMode: 'opt-out' | 'opt-in';
 	retentionDays: number;
 }
 
-function AnalyticsPrivacy() {
+function AnalyticsPrivacy({ pushToast }: { pushToast: PushToast }) {
 	const [settings, setSettings] = useState<AppSettings | null>(null);
 	const [saving, setSaving] = useState(false);
 	const [deleteScope, setDeleteScope] = useState<'old' | 'all' | null>(null);
-	const [status, setStatus] = useState<Status>(null);
 	const { confirm, confirmDialog } = useConfirm();
 
 	useEffect(() => {
@@ -279,7 +284,6 @@ function AnalyticsPrivacy() {
 	async function save() {
 		if (!settings) return;
 		if (!(await confirm({ title: 'Save settings?', message: 'Apply these analytics and privacy settings?', confirmLabel: 'Save', tone: 'primary' }))) return;
-		setStatus(null);
 		setSaving(true);
 		const response = await fetch('/api/admin/settings', {
 			method: 'PUT',
@@ -289,12 +293,12 @@ function AnalyticsPrivacy() {
 		});
 		setSaving(false);
 		if (!response.ok) {
-			setStatus({ type: 'error', message: 'Could not save settings.' });
+			pushToast('error', 'Could not save settings.');
 			return;
 		}
 		const body = (await response.json()) as { data: { settings: AppSettings } };
 		setSettings(body.data.settings);
-		setStatus({ type: 'success', message: 'Settings saved.' });
+		pushToast('success', 'Settings saved.');
 	}
 
 	async function clear(scope: 'old' | 'all'): Promise<boolean> {
@@ -358,9 +362,8 @@ function AnalyticsPrivacy() {
 									}
 								/>
 							</div>
-							<div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-5 py-4">
-								<StatusNote status={status} />
-								<button type="button" onClick={save} disabled={saving} className={`${buttonClass('primary')} ml-auto`}>
+							<div className="flex items-center justify-end border-t border-border px-5 py-4">
+								<button type="button" onClick={save} disabled={saving} className={buttonClass('primary')}>
 									{saving ? 'Saving…' : 'Save settings'}
 								</button>
 							</div>
@@ -395,7 +398,7 @@ function AnalyticsPrivacy() {
 			</Section>
 
 			{deleteScope && (
-				<DeleteDataModal scope={deleteScope} retention={retention} onClose={() => setDeleteScope(null)} onConfirm={() => clear(deleteScope)} />
+				<DeleteDataModal scope={deleteScope} retention={retention} onClose={() => setDeleteScope(null)} onConfirm={() => clear(deleteScope)} pushToast={pushToast} />
 			)}
 		</>
 	);
@@ -406,16 +409,17 @@ function DeleteDataModal({
 	retention,
 	onClose,
 	onConfirm,
+	pushToast,
 }: {
 	scope: 'old' | 'all';
 	retention: number;
 	onClose: () => void;
 	onConfirm: () => Promise<boolean>;
+	pushToast: PushToast;
 }) {
 	const [busy, setBusy] = useState(false);
 	const [downloading, setDownloading] = useState(false);
 	const [done, setDone] = useState(false);
-	const [status, setStatus] = useState<Status>(null);
 	const isAll = scope === 'all';
 
 	useEffect(() => {
@@ -427,7 +431,6 @@ function DeleteDataModal({
 	}, [onClose]);
 
 	async function backup() {
-		setStatus(null);
 		setDownloading(true);
 		try {
 			const response = await fetch('/api/admin/analytics/export', { credentials: 'same-origin' });
@@ -441,9 +444,9 @@ function DeleteDataModal({
 			link.click();
 			link.remove();
 			URL.revokeObjectURL(url);
-			setStatus({ type: 'success', message: 'Backup downloaded.' });
+			pushToast('success', 'Backup downloaded.');
 		} catch {
-			setStatus({ type: 'error', message: 'Could not download backup.' });
+			pushToast('error', 'Could not download backup.');
 		} finally {
 			setDownloading(false);
 		}
@@ -455,9 +458,9 @@ function DeleteDataModal({
 		setBusy(false);
 		if (okResult) {
 			setDone(true);
-			setStatus({ type: 'success', message: isAll ? 'All analytics data cleared.' : 'Old analytics data cleared.' });
+			pushToast('success', isAll ? 'All analytics data cleared.' : 'Old analytics data cleared.');
 		} else {
-			setStatus({ type: 'error', message: 'Could not clear data.' });
+			pushToast('error', 'Could not clear data.');
 		}
 	}
 
@@ -480,12 +483,6 @@ function DeleteDataModal({
 					backup first if you want to keep a copy.
 				</p>
 
-				{status && (
-					<div className="mt-4">
-						<StatusNote status={status} />
-					</div>
-				)}
-
 				<div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
 					<button type="button" onClick={backup} disabled={downloading} className={buttonClass('outline')}>
 						{downloading ? 'Preparing…' : 'Download backup'}
@@ -506,67 +503,18 @@ function DeleteDataModal({
 	);
 }
 
-function DataExport() {
-	const [downloading, setDownloading] = useState(false);
-	const [status, setStatus] = useState<Status>(null);
-
-	async function download() {
-		setStatus(null);
-		setDownloading(true);
-		try {
-			const response = await fetch('/api/export', { credentials: 'same-origin' });
-			if (response.status === 401) {
-				window.location.href = '/admin/login';
-				return;
-			}
-			if (!response.ok) throw new Error('export failed');
-			const blob = await response.blob();
-			const url = URL.createObjectURL(blob);
-			const link = document.createElement('a');
-			link.href = url;
-			link.download = `stezora-export-${new Date().toISOString().slice(0, 10)}.json`;
-			document.body.appendChild(link);
-			link.click();
-			link.remove();
-			URL.revokeObjectURL(url);
-			setStatus({ type: 'success', message: 'Download started.' });
-		} catch {
-			setStatus({ type: 'error', message: 'Could not download data.' });
-		} finally {
-			setDownloading(false);
-		}
-	}
-
-	return (
-		<Section title="Data">
-			<div className={cardClass()}>
-				<SettingRow
-					title="Download all data"
-					description="Export all content (publications, posts, tags, and media references) as a JSON file. Account credentials are not included."
-					control={
-						<button type="button" onClick={download} disabled={downloading} className={buttonClass('outline')}>
-							{downloading ? 'Preparing…' : 'Download'}
-						</button>
-					}
-				/>
-				{status && (
-					<div className="border-t border-border px-5 py-4">
-						<StatusNote status={status} />
-					</div>
-				)}
-			</div>
-		</Section>
-	);
-}
-
 export default function Settings() {
+	const [toast, setToast] = useState<{ tone: 'error' | 'success'; message: string } | null>(null);
+	const pushToast: PushToast = (tone, message) => setToast({ tone, message });
+
 	return (
 		<div className="max-w-2xl space-y-8">
 			<Section title="Account">
-				<ChangePassword />
+				<ChangePassword pushToast={pushToast} />
 			</Section>
-			<DataExport />
-			<AnalyticsPrivacy />
+			<DataExport pushToast={pushToast} />
+			<AnalyticsPrivacy pushToast={pushToast} />
+			<ToastStack>{toast && <Toast tone={toast.tone} message={toast.message} onDismiss={() => setToast(null)} />}</ToastStack>
 		</div>
 	);
 }
