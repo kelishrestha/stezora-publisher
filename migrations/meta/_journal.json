@@ -134,6 +134,13 @@
       "when": 1793377616919,
       "tag": "0018_testimonial_rating",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1793378400004,
+      "tag": "0019_likes",
+      "breakpoints": true
     }
   ]
 }

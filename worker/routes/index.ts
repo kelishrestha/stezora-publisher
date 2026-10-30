@@ -4,6 +4,7 @@ import { collect } from './collect';
 import { exportAll } from './export';
 import { media } from './media';
 import { postViews } from './views';
+import { getLikes, postLike } from './likes';
 import { requireAdmin, withBodyLimit } from '../lib/middleware';
 import { adminStats } from './admin/stats';
 import { analytics } from './admin/analytics';
@@ -26,6 +27,9 @@ routes.get('/api/export', exportAll);
 // view count used by the on-page badge.
 routes.post('/api/collect', collect);
 routes.get('/api/views/:publication/:post', postViews);
+// Public like button: read the count and toggle the visitor's like.
+routes.get('/api/likes/:type/:id*', getLikes);
+routes.post('/api/likes/:type/:id*', postLike);
 // Rest parameter: localized objects live under nested keys (localized/<id>.<ext>).
 routes.get('/media/:key*', media);
 routes.get('/api/admin/stats', requireAdmin(adminStats));

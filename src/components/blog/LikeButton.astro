@@ -1,0 +1,65 @@
+---
+// A public like button. `type` is post | publication | book and `id` is the
+// entity's public key (pub/post slug, publication slug, or book slug). The
+// count and liked state load from /api/likes on the client; the total combines
+// first-party likes with imported (Neobook) likes.
+export interface Props {
+	type: 'post' | 'publication' | 'book';
+	id: string;
+	label?: string;
+	class?: string;
+}
+
+const { type, id, label = 'like', class: extraClass = '' } = Astro.props;
+---
+
+<button
+	type="button"
+	data-like-button
+	data-type={type}
+	data-id={id}
+	aria-pressed="false"
+	aria-label={`Like (${label})`}
+	class={`group inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-sm text-muted-foreground transition-colors hover:text-foreground disabled:opacity-60 aria-pressed:border-red-300 aria-pressed:text-red-500 dark:aria-pressed:border-red-900 ${extraClass}`}
+>
+	<svg data-heart-outline xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4 group-hover:hidden" aria-hidden="true">
+		<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+	</svg>
+	<svg data-heart-filled xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="hidden size-4 text-red-500 group-hover:block" aria-hidden="true">
+		<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+	</svg>
+	<span data-like-count class="tabular-nums">&hellip;</span>
+</button>
+
+<script>
+	interface LikeData {
+		total?: number;
+		liked?: boolean;
+	}
+	function render(button: HTMLElement, data: LikeData) {
+		const count = button.querySelector('[data-like-count]');
+		if (count && typeof data.total === 'number') count.textContent = new Intl.NumberFormat().format(data.total);
+		button.setAttribute('aria-pressed', data.liked ? 'true' : 'false');
+		button.querySelector('[data-heart-outline]')?.classList.toggle('hidden', Boolean(data.liked));
+		button.querySelector('[data-heart-filled]')?.classList.toggle('hidden', !data.liked);
+	}
+	document.querySelectorAll<HTMLButtonElement>('[data-like-button]').forEach((button) => {
+		const { type, id } = button.dataset;
+		if (!type || !id) return;
+		const url = `/api/likes/${type}/${id}`;
+		fetch(url)
+			.then((response) => (response.ok ? (response.json() as Promise<{ data: LikeData }>) : null))
+			.then((body) => body && render(button, body.data))
+			.catch(() => undefined);
+		button.addEventListener('click', () => {
+			button.disabled = true;
+			fetch(url, { method: 'POST', credentials: 'same-origin' })
+				.then((response) => (response.ok ? (response.json() as Promise<{ data: LikeData }>) : null))
+				.then((body) => body && render(button, body.data))
+				.catch(() => undefined)
+				.finally(() => {
+					button.disabled = false;
+				});
+		});
+	});
+</script>

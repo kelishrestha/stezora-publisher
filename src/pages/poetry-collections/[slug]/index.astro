@@ -2,6 +2,7 @@
 import PublicationLayout from '../../../layouts/PublicationLayout.astro';
 import PostList from '../../../components/blog/PostList.astro';
 import PaginationNav from '../../../components/blog/PaginationNav.astro';
+import LikeButton from '../../../components/blog/LikeButton.astro';
 import { getPostsForPublication } from '../../../lib/publications/collections';
 import { POSTS_PAGE_SIZE, getPublications, publicationPath } from '../../../lib/publications';
 
@@ -21,6 +22,9 @@ const pagePosts = posts.slice(0, POSTS_PAGE_SIZE);
 ---
 
 <PublicationLayout publication={publication} path={publicationPath(publication.slug)}>
+	<div class="mb-6">
+		<LikeButton type="publication" id={publication.slug} label={publication.name} />
+	</div>
 	{pagePosts.length > 0 ? (
 		<section>
 			<div>

@@ -6,6 +6,7 @@ import type { Post } from '../lib/publications/collections';
 import type { Publication } from '../lib/publications/types';
 import { PUBLICATIONS_PATH, publicationPath, postExcerpt, postPath, slugify, tagPath } from '../lib/publications';
 import { imageVariant } from '../lib/publications/images';
+import LikeButton from '../components/blog/LikeButton.astro';
 import { badgeClass } from '../components/ui/shared/classes';
 
 export interface Props {
@@ -27,7 +28,6 @@ const path = postPath(publication.slug, post.id);
 // Neobook, summed client-side). Likes and comments come from Neobook. Each stat
 // renders only when positive.
 const neobookViews = post.data.neobookViews ?? 0;
-const likes = post.data.neobookLikes ?? 0;
 const comments = post.data.neobookComments ?? 0;
 const breadcrumbs = [
 	{ name: 'Home', href: '/' },
@@ -67,14 +67,7 @@ const breadcrumbs = [
 					<span data-view-count data-publication={publication.slug} data-post={postSlug} data-neobook-views={neobookViews}></span>
 					<span>views</span>
 				</span>
-				{likes > 0 && (
-					<span class="inline-flex items-center gap-1.5">
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4 text-red-500" aria-hidden="true">
-							<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-						</svg>
-						{likes.toLocaleString()} likes
-					</span>
-				)}
+				<LikeButton type="post" id={`${publication.slug}/${postSlug}`} label={post.data.title} />
 				{comments > 0 && <span>{comments.toLocaleString()} comments</span>}
 			</div>
 		</header>

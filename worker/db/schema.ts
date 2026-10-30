@@ -198,6 +198,27 @@ export const books = sqliteTable(
 );
 
 /**
+ * First-party likes. One row per (entity, visitor), so a visitor likes an item
+ * at most once (toggle). entity_type is 'post' | 'publication' | 'book';
+ * entity_id is the public key for that entity (pub/post slug, publication slug,
+ * or book slug). The public like count is the row count per entity.
+ */
+export const likes = sqliteTable(
+	'likes',
+	{
+		id: text('id').primaryKey(),
+		entity_type: text('entity_type').notNull(),
+		entity_id: text('entity_id').notNull(),
+		visitor_id: text('visitor_id').notNull(),
+		created_at: text('created_at').notNull(),
+	},
+	(table) => [
+		uniqueIndex('likes_entity_visitor_unique').on(table.entity_type, table.entity_id, table.visitor_id),
+		index('idx_likes_entity').on(table.entity_type, table.entity_id),
+	]
+);
+
+/**
  * Reader testimonials shown in the homepage carousel. Admin-authored only
  * (stories arrive by email via the contact form, then an admin "raises" them
  * here), so there is no public submission path and no pending state, just a
