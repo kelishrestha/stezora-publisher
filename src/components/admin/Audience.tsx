@@ -197,140 +197,155 @@ export default function Audience() {
 	// A per-post view is first-party only; otherwise the dropdown picks the source.
 	const activeSource: SourceKey = scopedToPost ? 'app' : source;
 
+	const noDataCard = (
+		<div className={cardClass()}>
+			<p className="px-5 py-16 text-center text-sm text-muted-foreground">
+				No visits recorded yet{scopedToPost || scopedToPublication ? ' for this selection' : ''}. Data appears here once the site receives traffic (admin pages are never tracked).
+			</p>
+		</div>
+	);
+
 	return (
 		<div className="space-y-6">
-			<div className="flex flex-wrap items-center justify-between gap-3">
-				{scopedToPost ? (
-					<a href="/admin/audience" className="inline-flex items-center gap-1.5 text-sm font-medium text-accent-foreground hover:underline">
-						<span aria-hidden="true">&larr;</span> All audience
-					</a>
-				) : (
-					<label htmlFor="publication" className="block w-56">
-						<span className="sr-only">Publication</span>
-						<select id="publication" value={publication} onChange={(event) => changePublication(event.target.value)} className={filterSelectClass}>
-							<option value="">All publications</option>
-							{publications.map((option) => (
-								<option key={option.slug} value={option.slug}>
-									{option.name}
-								</option>
-							))}
-						</select>
-					</label>
-				)}
-				<div className="flex flex-wrap items-center gap-3">
-					{!scopedToPost && (
-						<label htmlFor="source" className="block w-44">
-							<span className="sr-only">Source</span>
-							<select id="source" value={source} onChange={(event) => setSource(event.target.value as SourceKey)} className={filterSelectClass}>
-								{SOURCES.map((option) => (
-									<option key={option.key} value={option.key}>
-										{option.label}
-									</option>
-								))}
-							</select>
-						</label>
+			{scopedToPost ? (
+				<>
+					<div className="flex flex-wrap items-center justify-between gap-3">
+						<a href="/admin/audience" className="inline-flex items-center gap-1.5 text-sm font-medium text-accent-foreground hover:underline">
+							<span aria-hidden="true">&larr;</span> All audience
+						</a>
+						<RangeSelect days={days} onChange={setDays} />
+					</div>
+					{data?.scope.postTitle && (
+						<p className="text-sm text-muted-foreground">
+							Showing analytics for <span className="font-medium text-foreground">{data.scope.postTitle}</span>
+							{data.scope.publicationName ? ` in ${data.scope.publicationName}` : ''}.
+						</p>
 					)}
-					<label htmlFor="range" className="block w-44">
-						<span className="sr-only">Date range</span>
-						<select id="range" value={days} onChange={(event) => setDays(Number(event.target.value))} className={filterSelectClass}>
-							{RANGES.map((range) => (
-								<option key={range.value} value={range.value}>
-									{range.label}
-								</option>
-							))}
-						</select>
-					</label>
-				</div>
-			</div>
-
-			{scopedToPost && data?.scope.postTitle && (
-				<p className="text-sm text-muted-foreground">
-					Showing analytics for <span className="font-medium text-foreground">{data.scope.postTitle}</span>
-					{data.scope.publicationName ? ` in ${data.scope.publicationName}` : ''}.
-				</p>
+				</>
+			) : (
+				<>
+					<SourceComparison sources={data?.sources ?? null} active={activeSource} onSelect={setSource} />
+					{activeSource !== 'neobook' && (
+						<div className="flex flex-wrap items-center gap-3">
+							<label htmlFor="publication" className="block w-56">
+								<span className="sr-only">Publication</span>
+								<select id="publication" value={publication} onChange={(event) => changePublication(event.target.value)} className={filterSelectClass}>
+									<option value="">All publications</option>
+									{publications.map((option) => (
+										<option key={option.slug} value={option.slug}>
+											{option.name}
+										</option>
+									))}
+								</select>
+							</label>
+							<RangeSelect days={days} onChange={setDays} />
+						</div>
+					)}
+				</>
 			)}
 
 			{!data ? (
 				<SkeletonBlocks />
+			) : scopedToPost ? (
+				firstPartyEmpty ? (
+					noDataCard
+				) : (
+					<FirstPartySections data={data} scopedToPost scopedToPublication={scopedToPublication} />
+				)
 			) : (
 				<>
-					{!scopedToPost && <SourceComparison sources={data.sources} active={activeSource} onSelect={setSource} />}
-					{!scopedToPost && <SourceTrend history={data.sourceHistory} />}
-
+					<SourceTrend history={data.sourceHistory} />
 					{activeSource === 'blogger' ? (
-						<BloggerSourceDetail publications={data.bloggerPublications} />
+						<BloggerSourceDetail publications={data.bloggerPublications} publication={publication} days={days} />
 					) : activeSource === 'neobook' ? (
 						<NeobookSourceDetail posts={data.neobookPosts} books={data.neobookBooks} />
 					) : firstPartyEmpty ? (
-						<div className={cardClass()}>
-							<p className="px-5 py-16 text-center text-sm text-muted-foreground">
-								No visits recorded yet{scopedToPost || scopedToPublication ? ' for this selection' : ''}. Data appears here once the site receives traffic (admin pages are never tracked).
-							</p>
-						</div>
+						noDataCard
 					) : (
-						<>
-							<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-						<StatTile label="Pageviews" value={formatNumber(data.totals.pageviews)} hint={`last ${data.days} days shown below`} />
-						<StatTile label="Unique visitors" value={formatNumber(data.totals.visitors)} hint="all time" />
-						<StatTile label="Views (24h)" value={formatNumber(data.totals.last24hPageviews)} />
-						<StatTile label="Visitors (24h)" value={formatNumber(data.totals.last24hVisitors)} />
-					</div>
-
-					<ViewsOverTime daily={data.viewsByDay} hourly={data.viewsByHour} days={data.days} />
-
-					{!scopedToPost &&
-						(scopedToPublication ? (
-							<BarListCard
-								title="Top posts"
-								rows={data.topPosts.map((row) => ({
-									label: row.title ?? `${row.publication ?? ''}/${row.slug ?? ''}`,
-									views: row.views,
-									href: row.publication && row.slug ? audienceHref(row.publication, row.slug) : undefined,
-								}))}
-								emptyLabel="No post views yet."
-							/>
-						) : (
-							<div className="grid gap-6 lg:grid-cols-2">
-								<BarListCard
-									title="Top publications"
-									rows={data.topPublications.map((row) => ({
-										label: row.name ?? row.publication ?? 'Unknown',
-										views: row.views,
-										href: row.publication ? audienceHref(row.publication) : undefined,
-									}))}
-									emptyLabel="No publication views yet."
-								/>
-								<BarListCard
-									title="Top posts"
-									rows={data.topPosts.map((row) => ({
-										label: row.title ?? `${row.publication ?? ''}/${row.slug ?? ''}`,
-										views: row.views,
-										href: row.publication && row.slug ? audienceHref(row.publication, row.slug) : undefined,
-									}))}
-									emptyLabel="No post views yet."
-								/>
-							</div>
-						))}
-
-					<div className="grid gap-6 lg:grid-cols-2">
-						<BarListCard
-							title="Top countries"
-							rows={data.topCountries.map((row) => ({ label: `${flag(row.country)}  ${countryName(row.country)}`, views: row.views }))}
-							emptyLabel="No geography yet."
-						/>
-						<BarListCard
-							title="Top referrers"
-							rows={data.topReferrers.map((row) => ({ label: row.host ?? 'Direct / none', views: row.views }))}
-							emptyLabel="No referrers yet."
-						/>
-					</div>
-
-							<RecentVisitsCard visits={data.recentVisits} />
-						</>
+						<FirstPartySections data={data} scopedToPost={false} scopedToPublication={scopedToPublication} />
 					)}
 				</>
 			)}
 		</div>
+	);
+}
+
+function RangeSelect({ days, onChange }: { days: number; onChange: (value: number) => void }) {
+	return (
+		<label htmlFor="range" className="block w-44">
+			<span className="sr-only">Date range</span>
+			<select id="range" value={days} onChange={(event) => onChange(Number(event.target.value))} className={filterSelectClass}>
+				{RANGES.map((range) => (
+					<option key={range.value} value={range.value}>
+						{range.label}
+					</option>
+				))}
+			</select>
+		</label>
+	);
+}
+
+function FirstPartySections({ data, scopedToPost, scopedToPublication }: { data: AudienceData; scopedToPost: boolean; scopedToPublication: boolean }) {
+	return (
+		<>
+			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+				<StatTile label="Pageviews" value={formatNumber(data.totals.pageviews)} hint={`last ${data.days} days shown below`} />
+				<StatTile label="Unique visitors" value={formatNumber(data.totals.visitors)} hint="all time" />
+				<StatTile label="Views (24h)" value={formatNumber(data.totals.last24hPageviews)} />
+				<StatTile label="Visitors (24h)" value={formatNumber(data.totals.last24hVisitors)} />
+			</div>
+
+			<ViewsOverTime daily={data.viewsByDay} hourly={data.viewsByHour} days={data.days} />
+
+			{!scopedToPost &&
+				(scopedToPublication ? (
+					<BarListCard
+						title="Top posts"
+						rows={data.topPosts.map((row) => ({
+							label: row.title ?? `${row.publication ?? ''}/${row.slug ?? ''}`,
+							views: row.views,
+							href: row.publication && row.slug ? audienceHref(row.publication, row.slug) : undefined,
+						}))}
+						emptyLabel="No post views yet."
+					/>
+				) : (
+					<div className="grid gap-6 lg:grid-cols-2">
+						<BarListCard
+							title="Top publications"
+							rows={data.topPublications.map((row) => ({
+								label: row.name ?? row.publication ?? 'Unknown',
+								views: row.views,
+								href: row.publication ? audienceHref(row.publication) : undefined,
+							}))}
+							emptyLabel="No publication views yet."
+						/>
+						<BarListCard
+							title="Top posts"
+							rows={data.topPosts.map((row) => ({
+								label: row.title ?? `${row.publication ?? ''}/${row.slug ?? ''}`,
+								views: row.views,
+								href: row.publication && row.slug ? audienceHref(row.publication, row.slug) : undefined,
+							}))}
+							emptyLabel="No post views yet."
+						/>
+					</div>
+				))}
+
+			<div className="grid gap-6 lg:grid-cols-2">
+				<BarListCard
+					title="Top countries"
+					rows={data.topCountries.map((row) => ({ label: `${flag(row.country)}  ${countryName(row.country)}`, views: row.views }))}
+					emptyLabel="No geography yet."
+				/>
+				<BarListCard
+					title="Top referrers"
+					rows={data.topReferrers.map((row) => ({ label: row.host ?? 'Direct / none', views: row.views }))}
+					emptyLabel="No referrers yet."
+				/>
+			</div>
+
+			<RecentVisitsCard visits={data.recentVisits} />
+		</>
 	);
 }
 
@@ -339,31 +354,30 @@ function snapshotLabel(iso: string): string {
 	return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-function SourceComparison({ sources, active, onSelect }: { sources: { app: number; blogger: number; neobook: number }; active: SourceKey; onSelect: (source: SourceKey) => void }) {
+function SourceComparison({ sources, active, onSelect }: { sources: { app: number; blogger: number; neobook: number } | null; active: SourceKey; onSelect: (source: SourceKey) => void }) {
 	return (
 		<section className={cardClass()}>
 			<div className="border-b border-border px-5 py-4">
 				<h2 className="text-base font-semibold text-foreground">Views by source</h2>
-				<p className="mt-0.5 text-xs text-muted-foreground">Total views across all content sources. Select one to see its detail below.</p>
+				<p className="mt-0.5 text-xs text-muted-foreground">Total views across all content sources. Pick one to see its detail below.</p>
 			</div>
-			<div className="grid gap-px bg-border sm:grid-cols-3">
+			<fieldset className="grid gap-px bg-border sm:grid-cols-3">
+				<legend className="sr-only">Content source</legend>
 				{SOURCES.map((meta) => (
-					<button
+					<label
 						key={meta.key}
-						type="button"
-						onClick={() => onSelect(meta.key)}
-						aria-pressed={active === meta.key}
-						className={`flex flex-col gap-1 bg-surface px-5 py-4 text-left transition-colors hover:bg-surface-elevated ${active === meta.key ? 'ring-2 ring-inset ring-accent' : ''}`}
+						className="flex cursor-pointer flex-col gap-1 bg-surface px-5 py-4 transition-colors hover:bg-surface-elevated has-[:checked]:bg-accent-soft has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-inset has-[:focus-visible]:ring-accent"
 					>
+						<input type="radio" name="audience-source" value={meta.key} checked={active === meta.key} onChange={() => onSelect(meta.key)} className="sr-only" />
 						<span className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
 							<span className={`inline-block size-2.5 rounded-full ${meta.dot}`} aria-hidden="true" />
 							{meta.label}
 							{meta.imported && <span className={badgeClass('muted')}>Imported</span>}
 						</span>
-						<span className="text-2xl font-semibold tabular-nums text-foreground">{formatNumber(sources[meta.key])}</span>
-					</button>
+						<span className="text-2xl font-semibold tabular-nums text-foreground">{sources ? formatNumber(sources[meta.key]) : '…'}</span>
+					</label>
 				))}
-			</div>
+			</fieldset>
 		</section>
 	);
 }
@@ -437,7 +451,15 @@ function SourceTrend({ history }: { history: SourceHistoryPoint[] }) {
 	);
 }
 
-function BloggerSourceDetail({ publications }: { publications: AudienceData['bloggerPublications'] }) {
+function bloggerBucket(days: number): { key: 'views7d' | 'views30d' | 'viewsAll'; label: string } {
+	if (days <= 7) return { key: 'views7d', label: 'Views (7 days)' };
+	if (days <= 30) return { key: 'views30d', label: 'Views (30 days)' };
+	return { key: 'viewsAll', label: 'Views (all time)' };
+}
+
+function BloggerSourceDetail({ publications, publication, days }: { publications: AudienceData['bloggerPublications']; publication: string; days: number }) {
+	const bucket = bloggerBucket(days);
+	const rows = publication ? publications.filter((row) => row.slug === publication) : publications;
 	return (
 		<section className={cardClass()}>
 			<div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
@@ -447,26 +469,24 @@ function BloggerSourceDetail({ publications }: { publications: AudienceData['blo
 				</div>
 				<span className={badgeClass('muted')}>Imported</span>
 			</div>
-			{publications.length === 0 ? (
-				<p className="px-5 py-10 text-center text-sm text-muted-foreground">No Blogger statistics yet. Use Refresh stats on the integrations page.</p>
+			{rows.length === 0 ? (
+				<p className="px-5 py-10 text-center text-sm text-muted-foreground">
+					{publications.length === 0 ? 'No Blogger statistics yet. Use Refresh stats on the integrations page.' : 'No Blogger statistics for this publication.'}
+				</p>
 			) : (
 				<div className="overflow-x-auto">
 					<table className="min-w-full divide-y divide-border text-left text-sm">
 						<thead>
 							<tr className="text-xs text-muted-foreground">
 								<th className="px-5 py-2 font-medium">Publication</th>
-								<th className="px-5 py-2 text-right font-medium">Views (7d)</th>
-								<th className="px-5 py-2 text-right font-medium">Views (30d)</th>
-								<th className="px-5 py-2 text-right font-medium">Views (all)</th>
+								<th className="px-5 py-2 text-right font-medium">{bucket.label}</th>
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-border">
-							{publications.map((row) => (
+							{rows.map((row) => (
 								<tr key={row.slug}>
 									<td className="px-5 py-2 font-medium text-foreground">{row.name}</td>
-									<td className="px-5 py-2 text-right tabular-nums text-muted-foreground">{row.views7d?.toLocaleString() ?? '–'}</td>
-									<td className="px-5 py-2 text-right tabular-nums text-muted-foreground">{row.views30d?.toLocaleString() ?? '–'}</td>
-									<td className="px-5 py-2 text-right tabular-nums text-muted-foreground">{row.viewsAll?.toLocaleString() ?? '–'}</td>
+									<td className="px-5 py-2 text-right tabular-nums text-muted-foreground">{row[bucket.key]?.toLocaleString() ?? '–'}</td>
 								</tr>
 							))}
 						</tbody>
