@@ -48,10 +48,12 @@ const breadcrumbs = [
 	accent={publication.accent}
 >
 	<article class="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-		<header>
-			<Breadcrumbs items={breadcrumbs} />
-			<!-- Title stays in view while the body scrolls (below the fixed site header). -->
-			<h1 class="mt-6 font-serif text-3xl font-bold tracking-tight sm:text-4xl lg:sticky lg:top-16 lg:z-10 lg:bg-background lg:py-2">{post.data.title}</h1>
+		<Breadcrumbs items={breadcrumbs} />
+		<!-- On large screens the title, dates, and stats stay fixed as one block
+		     while the body scrolls (sticky against the tall article, below the
+		     fixed site header). On mobile it is a normal block in natural flow. -->
+		<header class="mt-6 lg:sticky lg:top-16 lg:z-20 lg:bg-background lg:py-2">
+			<h1 class="font-serif text-3xl font-bold tracking-tight sm:text-4xl">{post.data.title}</h1>
 			<div class="mt-4">
 				<PostMeta pubDate={post.data.pubDate} updatedDate={post.data.updatedDate} />
 			</div>
@@ -73,9 +75,6 @@ const breadcrumbs = [
 					</span>
 				)}
 				{comments > 0 && <span>{comments.toLocaleString()} comments</span>}
-				{post.data.neobookUrl && (
-					<a href={post.data.neobookUrl} target="_blank" rel="noopener" class="text-accent-foreground hover:underline">View on Neobook</a>
-				)}
 			</div>
 		</header>
 		<div class="prose mt-10 max-w-none dark:prose-invert">
