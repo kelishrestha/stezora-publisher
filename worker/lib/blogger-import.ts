@@ -36,6 +36,7 @@ export interface BloggerImportResult {
 	includeDrafts: boolean;
 	imported: number;
 	skipped: number;
+	statsUpdated: number;
 	publications: BloggerImportPublicationResult[];
 }
 
@@ -62,6 +63,33 @@ async function blogIdForPublication(db: D1Database, publicationId: string): Prom
 		.bind(publicationId)
 		.first<{ blogger_blog_id: string }>();
 	return row?.blogger_blog_id ?? null;
+}
+
+const TIME_RANGE_COLUMN: Record<string, 'views_all' | 'views_30d' | 'views_7d'> = {
+	ALL_TIME: 'views_all',
+	THIRTY_DAYS: 'views_30d',
+	SEVEN_DAYS: 'views_7d',
+};
+
+/** Fetches Blogger blog-level pageview totals and upserts the per-publication snapshot. */
+async function saveBloggerStats(db: D1Database, client: BloggerClient, publicationId: string, blogId: string, now: string): Promise<void> {
+	const pageviews = await client.getPageviews();
+	const totals: Record<string, number | null> = { views_all: null, views_30d: null, views_7d: null };
+	for (const entry of pageviews.counts ?? []) {
+		const column = TIME_RANGE_COLUMN[entry.timeRange];
+		if (column) {
+			const parsed = Number.parseInt(entry.count, 10);
+			totals[column] = Number.isFinite(parsed) ? parsed : null;
+		}
+	}
+	await db
+		.prepare(
+			'INSERT INTO blogger_stats (publication_id, blog_id, views_all, views_30d, views_7d, fetched_at) VALUES (?, ?, ?, ?, ?, ?) ' +
+				'ON CONFLICT (publication_id) DO UPDATE SET blog_id = excluded.blog_id, views_all = excluded.views_all, ' +
+				'views_30d = excluded.views_30d, views_7d = excluded.views_7d, fetched_at = excluded.fetched_at'
+		)
+		.bind(publicationId, blogId, totals.views_all, totals.views_30d, totals.views_7d, now)
+		.run();
 }
 
 async function ensureTags(db: D1Database, publicationId: string, tags: string[], now: string): Promise<string[]> {
@@ -94,6 +122,7 @@ export async function importBlogger(
 	const perPublication: BloggerImportPublicationResult[] = [];
 	let totalImported = 0;
 	let totalSkipped = 0;
+	let statsUpdated = 0;
 
 	for (const publication of publications) {
 		const blogId = await blogIdForPublication(db, publication.id);
@@ -103,6 +132,16 @@ export async function importBlogger(
 		}
 
 		const client = new BloggerClient({ blogId, clientId, clientSecret, refreshToken });
+
+		// Blog-level pageview totals. A stats failure (for example when the token
+		// lacks the scope) must not abort the post import.
+		try {
+			await saveBloggerStats(db, client, publication.id, blogId, now);
+			statsUpdated += 1;
+		} catch {
+			// Leave the previous snapshot in place.
+		}
+
 		const { results: slugRows } = await db
 			.prepare('SELECT slug FROM posts WHERE publication_id = ?')
 			.bind(publication.id)
@@ -134,8 +173,8 @@ export async function importBlogger(
 
 			await db
 				.prepare(
-					'INSERT INTO posts (id, publication_id, title, slug, excerpt, content, content_markdown, status, published_at, updated_at, canonical_url, blogger_blog_id, blogger_post_id, created_at) ' +
-						'VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)'
+					'INSERT INTO posts (id, publication_id, title, slug, excerpt, content, content_markdown, status, published_at, updated_at, canonical_url, blogger_blog_id, blogger_post_id, source, created_at) ' +
+						"VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, 'blogger', ?)"
 				)
 				.bind(
 					postId,
@@ -182,5 +221,5 @@ export async function importBlogger(
 		totalSkipped += skipped;
 	}
 
-	return { includeDrafts: options.includeDrafts, imported: totalImported, skipped: totalSkipped, publications: perPublication };
+	return { includeDrafts: options.includeDrafts, imported: totalImported, skipped: totalSkipped, statsUpdated, publications: perPublication };
 }

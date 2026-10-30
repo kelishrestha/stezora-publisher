@@ -70,6 +70,12 @@ export interface ImportedImage {
 	url: string;
 }
 
+/** Blogger blog-level pageview totals (owner-only; no per-post breakdown). */
+export interface BloggerPageviews {
+	blogId?: string;
+	counts?: Array<{ count: string; timeRange: string }>;
+}
+
 export interface ImportReport {
 	publicationSlug: string;
 	blogId: string;

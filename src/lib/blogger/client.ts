@@ -1,4 +1,4 @@
-import type { BloggerClientConfig, BloggerListOptions, BloggerListResponse, BloggerPostDto } from './types';
+import type { BloggerClientConfig, BloggerListOptions, BloggerListResponse, BloggerPageviews, BloggerPostDto } from './types';
 
 const DEFAULT_BASE_URL = 'https://www.googleapis.com/blogger/v3';
 const DEFAULT_TOKEN_URL = 'https://oauth2.googleapis.com/token';
@@ -103,6 +103,20 @@ export class BloggerClient {
 		}
 
 		return (await response.json()) as BloggerListResponse;
+	}
+
+	/**
+	 * Blog-level pageview totals (all time, 30 days, 7 days). Owner-only data,
+	 * so it needs the OAuth token; Blogger exposes no per-post breakdown here.
+	 */
+	async getPageviews(): Promise<BloggerPageviews> {
+		const url = `${DEFAULT_BASE_URL}/blogs/${this.config.blogId}/pageviews`;
+		const token = await this.getAccessToken();
+		const response = await this.fetchWithRetry(url, { headers: { Authorization: `Bearer ${token}` } });
+		if (!response.ok) {
+			throw new Error(`Blogger pageviews request failed: ${response.status} ${await response.text()}`);
+		}
+		return (await response.json()) as BloggerPageviews;
 	}
 
 	async *fetchAllPosts(options: Omit<BloggerListOptions, 'pageToken'> = {}): AsyncGenerator<BloggerPostDto> {
