@@ -254,7 +254,7 @@ function DataExport({ pushToast }: { pushToast: PushToast }) {
 			const url = URL.createObjectURL(blob);
 			const link = document.createElement('a');
 			link.href = url;
-			link.download = `stezora-export-${new Date().toISOString().slice(0, 10)}.json`;
+			link.download = `stezora-export-${new Date().toISOString().slice(0, 10)}.zip`;
 			document.body.appendChild(link);
 			link.click();
 			link.remove();
@@ -273,7 +273,7 @@ function DataExport({ pushToast }: { pushToast: PushToast }) {
 				<div className="divide-y divide-border">
 					<SettingRow
 						title="Download all data"
-						description="Export all content (publications, posts, tags, and media references) as a JSON file. Account credentials are not included."
+						description="Export a ZIP bundle: raw content tables as JSON, plus the audience and analytics breakdowns as CSV. Account credentials are not included."
 						control={
 							<button type="button" onClick={download} disabled={downloading} className={buttonClass('outline')}>
 								{downloading ? 'Preparing…' : 'Download'}

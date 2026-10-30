@@ -16,16 +16,6 @@ async function fetchWorker(path: string, init?: RequestInit, extraEnv?: Record<s
 	return response;
 }
 
-interface ExportPayload {
-	success: boolean;
-	data: {
-		schema: string;
-		counts: Record<string, number>;
-		posts: Array<{ id: string; status: string; content_markdown: string | null }>;
-		publications: Array<{ id: string }>;
-	};
-}
-
 describe('backup export API', () => {
 	beforeAll(async () => {
 		const now = new Date().toISOString();
@@ -61,19 +51,38 @@ describe('backup export API', () => {
 		).toBe(401);
 	});
 
-	it('exports every table, drafts included, with the bearer token', async () => {
+	it('streams a zip bundle, drafts included, with the bearer token', async () => {
 		const response = await fetchWorker(
 			'/api/export',
 			{ headers: { authorization: 'Bearer backup-secret' } },
 			{ BACKUP_TOKEN: 'backup-secret' }
 		);
 		expect(response.status).toBe(200);
-		const body = (await response.json()) as ExportPayload;
-		expect(body.data.schema).toBe('stezora-export/1');
-		const draft = body.data.posts.find((post) => post.id === 'post-draft');
-		expect(draft?.status).toBe('draft');
-		expect(draft?.content_markdown).toBe('raw');
-		expect(body.data.counts.publications).toBeGreaterThan(0);
+		expect(response.headers.get('content-type')).toContain('application/zip');
+		expect(response.headers.get('content-disposition')).toContain('.zip');
+
+		const bytes = new Uint8Array(await response.arrayBuffer());
+		// The local file header magic marks a real zip archive.
+		expect([bytes[0], bytes[1], bytes[2], bytes[3]]).toEqual([0x50, 0x4b, 0x03, 0x04]);
+
+		// Stored (uncompressed) entries keep their names and JSON in plaintext,
+		// so the bundle's shape and the draft row are both visible in the bytes.
+		const text = new TextDecoder().decode(bytes);
+		for (const name of [
+			'manifest.json',
+			'data/posts.json',
+			'data/likes.json',
+			'data/page-views.json',
+			'audience/views-by-day.csv',
+			'audience/top-posts.csv',
+			'analytics/status-by-publication.csv',
+			'analytics/posts-by-month.csv',
+		]) {
+			expect(text).toContain(name);
+		}
+		expect(text).toContain('stezora-export/3');
+		expect(text).toContain('secret-draft');
+		expect(text).toContain('"status": "draft"');
 	});
 
 	it('accepts an admin session', async () => {
