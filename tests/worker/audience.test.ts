@@ -49,6 +49,10 @@ interface AudiencePayload {
 	data: {
 		scope: { publication: string | null; post: string | null; postTitle: string | null };
 		totals: { pageviews: number; visitors: number };
+		sources: { app: number; blogger: number; neobook: number };
+		sourceHistory: Array<{ capturedAt: string; app: number; blogger: number; neobook: number }>;
+		bloggerPublications: Array<{ slug: string; viewsAll: number | null }>;
+		neobookPosts: Array<{ title: string; views: number | null }>;
 		topPublications: Array<{ publication: string | null; name: string | null; views: number }>;
 		topPosts: Array<{ publication: string | null; slug: string | null; title: string | null; views: number }>;
 		topCountries: Array<{ country: string | null; views: number }>;
@@ -110,6 +114,11 @@ describe('audience analytics', () => {
 		expect(hello?.title).toBe('Hello World');
 		expect(body.data.recentVisits.length).toBeGreaterThanOrEqual(1);
 		expect(body.data.topPublications.find((p) => p.publication === 'pub-x')?.name).toBe('Pub X');
+		// Cross-source fields are present; app view total mirrors first-party pageviews.
+		expect(body.data.sources.app).toBeGreaterThanOrEqual(1);
+		expect(Array.isArray(body.data.sourceHistory)).toBe(true);
+		expect(Array.isArray(body.data.bloggerPublications)).toBe(true);
+		expect(Array.isArray(body.data.neobookPosts)).toBe(true);
 	});
 
 	it('scopes to a single post and resolves its title', async () => {

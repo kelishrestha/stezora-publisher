@@ -1,7 +1,8 @@
-import { type SQL, and, count, countDistinct, desc, eq, gte, isNotNull, sql } from 'drizzle-orm';
+import { type SQL, and, asc, count, countDistinct, desc, eq, gte, isNotNull, sql } from 'drizzle-orm';
 import { createDb } from '../../db/client';
-import { pageViews, posts, publications } from '../../db/schema';
+import { bloggerStats, books, pageViews, posts, publications, sourceStats } from '../../db/schema';
 import { ok } from '../../lib/http';
+import { sourceTotals } from '../../lib/source-stats';
 import type { AuthenticatedHandler } from '../../lib/middleware';
 
 /**
@@ -96,8 +97,36 @@ export const audience: AuthenticatedHandler = async ({ env, request }) => {
 			.limit(20),
 	]);
 
+	// Cross-source data (unscoped by publication/post, which are first-party
+	// concepts). Powers the source dropdown, the comparison, and the trend.
+	const [sources, historyRows, bloggerPublications, neobookPosts, neobookBooks] = await Promise.all([
+		sourceTotals(env.DB),
+		db.select().from(sourceStats).orderBy(asc(sourceStats.captured_at)),
+		db
+			.select({ slug: publications.slug, name: publications.name, viewsAll: bloggerStats.views_all, views30d: bloggerStats.views_30d, views7d: bloggerStats.views_7d })
+			.from(bloggerStats)
+			.innerJoin(publications, eq(publications.id, bloggerStats.publication_id))
+			.orderBy(desc(bloggerStats.views_all)),
+		db
+			.select({ title: posts.title, publication: publications.slug, views: posts.neobook_views, likes: posts.neobook_likes, comments: posts.neobook_comments })
+			.from(posts)
+			.innerJoin(publications, eq(publications.id, posts.publication_id))
+			.where(isNotNull(posts.neobook_url))
+			.orderBy(desc(posts.neobook_views))
+			.limit(50),
+		db
+			.select({ title: books.title, views: books.views, likes: books.likes, comments: books.comments, linkUrl: books.link_url })
+			.from(books)
+			.orderBy(desc(books.views)),
+	]);
+
 	return ok({
 		days,
+		sources,
+		sourceHistory: historyRows.map((row) => ({ capturedAt: row.captured_at, app: row.app_views, blogger: row.blogger_views, neobook: row.neobook_views })),
+		bloggerPublications,
+		neobookPosts,
+		neobookBooks,
 		scope: {
 			publication: publication ?? null,
 			post: post ?? null,
