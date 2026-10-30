@@ -89,6 +89,14 @@ const RANGES = [
 	{ value: 90, label: 'Last 90 days' },
 ];
 
+// Blogger exposes 7-day, 30-day, and all-time buckets (no 90-day), so its range
+// options reuse the same values but relabel 90 as "All time".
+const BLOGGER_RANGES = [
+	{ value: 7, label: 'Last 7 days' },
+	{ value: 30, label: 'Last 30 days' },
+	{ value: 90, label: 'All time' },
+];
+
 const regionNames = typeof Intl !== 'undefined' && 'DisplayNames' in Intl ? new Intl.DisplayNames(['en'], { type: 'region' }) : null;
 
 function countryName(code: string | null): string {
@@ -238,7 +246,7 @@ export default function Audience() {
 									))}
 								</select>
 							</label>
-							<RangeSelect days={days} onChange={setDays} />
+							<RangeSelect days={days} onChange={setDays} options={activeSource === 'blogger' ? BLOGGER_RANGES : RANGES} />
 						</div>
 					)}
 				</>
@@ -270,12 +278,12 @@ export default function Audience() {
 	);
 }
 
-function RangeSelect({ days, onChange }: { days: number; onChange: (value: number) => void }) {
+function RangeSelect({ days, onChange, options = RANGES }: { days: number; onChange: (value: number) => void; options?: Array<{ value: number; label: string }> }) {
 	return (
 		<label htmlFor="range" className="block w-44">
 			<span className="sr-only">Date range</span>
 			<select id="range" value={days} onChange={(event) => onChange(Number(event.target.value))} className={filterSelectClass}>
-				{RANGES.map((range) => (
+				{options.map((range) => (
 					<option key={range.value} value={range.value}>
 						{range.label}
 					</option>
