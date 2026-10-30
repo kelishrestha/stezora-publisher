@@ -99,10 +99,14 @@ async function blogIdForPublication(db: D1Database, publicationId: string): Prom
 	return row?.blogger_blog_id ?? null;
 }
 
+// Blogger has used both naming styles for the response timeRange; map both.
 const TIME_RANGE_COLUMN: Record<string, 'views_all' | 'views_30d' | 'views_7d'> = {
 	ALL_TIME: 'views_all',
+	all: 'views_all',
 	THIRTY_DAYS: 'views_30d',
+	'30DAYS': 'views_30d',
 	SEVEN_DAYS: 'views_7d',
+	'7DAYS': 'views_7d',
 };
 
 interface StatsTotals {

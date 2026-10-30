@@ -113,7 +113,13 @@ export class BloggerClient {
 	 * so it needs the OAuth token; Blogger exposes no per-post breakdown here.
 	 */
 	async getPageviews(): Promise<BloggerPageviews> {
-		const url = `${DEFAULT_BASE_URL}/blogs/${this.config.blogId}/pageviews`;
+		// Request every range explicitly: omitting `range` makes Blogger return
+		// only the 30-day count, leaving all-time and 7-day empty.
+		const query = new URLSearchParams();
+		for (const range of ['all', '30DAYS', '7DAYS']) {
+			query.append('range', range);
+		}
+		const url = `${DEFAULT_BASE_URL}/blogs/${this.config.blogId}/pageviews?${query}`;
 		const token = await this.getAccessToken();
 		const response = await this.fetchWithRetry(url, { headers: { Authorization: `Bearer ${token}` } });
 		if (!response.ok) {
