@@ -97,4 +97,40 @@ describe('blogger client', () => {
 		await expect(client.listPosts()).rejects.toThrow(/Blogger API request failed: 500/);
 		expect(fetchImpl).toHaveBeenCalledTimes(5);
 	});
+
+	it('invokes fetch with the global scope as `this`, not the client', async () => {
+		// Regression guard: calling `this.fetchImpl(...)` would bind `this` to the
+		// client, which workerd rejects with "Illegal invocation" for native fetch.
+		const receivers: unknown[] = [];
+		const ok = () => new Response(JSON.stringify({ access_token: 't', expires_in: 3600, items: [] }), { headers: { 'Content-Type': 'application/json' } });
+		function fetchImpl(this: unknown) {
+			receivers.push(this);
+			return Promise.resolve(ok());
+		}
+
+		const client = clientWithFetch(fetchImpl as unknown as typeof fetch);
+		await client.listPosts();
+		await client.getPageviews();
+
+		expect(receivers.length).toBeGreaterThan(0);
+		expect(receivers.every((receiver) => receiver === globalThis)).toBe(true);
+	});
+
+	it('fetches blog-level pageviews', async () => {
+		const tokenResponse = new Response(JSON.stringify({ access_token: 'token-1', expires_in: 3600 }), {
+			status: 200,
+			headers: { 'Content-Type': 'application/json' },
+		});
+		const pageviews = new Response(JSON.stringify({ blogId: 'blog-id', counts: [{ count: '42', timeRange: 'ALL_TIME' }] }), {
+			status: 200,
+			headers: { 'Content-Type': 'application/json' },
+		});
+		const fetchImpl = vi.fn(async () => pageviews);
+		fetchImpl.mockResolvedValueOnce(tokenResponse);
+
+		const client = clientWithFetch(fetchImpl as unknown as typeof fetch);
+		const result = await client.getPageviews();
+
+		expect(result.counts?.[0]).toEqual({ count: '42', timeRange: 'ALL_TIME' });
+	});
 });

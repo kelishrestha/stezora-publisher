@@ -25,7 +25,10 @@ export class BloggerClient {
 	}
 
 	private get fetchImpl(): typeof fetch {
-		return this.config.fetchImpl ?? fetch;
+		// Bind to the global scope: calling `this.fetchImpl(...)` would otherwise
+		// invoke the global fetch with `this` set to this client, which workerd
+		// rejects with an "Illegal invocation" error (Node tolerates it).
+		return (this.config.fetchImpl ?? fetch).bind(globalThis);
 	}
 
 	private async refreshAccessToken(): Promise<string> {

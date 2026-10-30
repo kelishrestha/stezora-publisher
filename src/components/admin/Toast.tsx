@@ -23,8 +23,8 @@ export default function Toast({ message, tone, onDismiss }: ToastProps) {
 			role={tone === 'error' ? 'alert' : 'status'}
 			className={`pointer-events-auto flex items-start justify-between gap-3 rounded-lg border px-4 py-3 text-sm shadow-lg ${toneClass}`}
 		>
-			<span>{message}</span>
-			<button type="button" onClick={onDismiss} aria-label="Dismiss" className="font-bold opacity-70 hover:opacity-100">
+			<span className="min-w-0 break-words">{message}</span>
+			<button type="button" onClick={onDismiss} aria-label="Dismiss" className="shrink-0 font-bold opacity-70 hover:opacity-100">
 				&times;
 			</button>
 		</div>
