@@ -1,4 +1,5 @@
 import { promises as fs } from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
@@ -241,6 +242,55 @@ export interface WriteExportOptions {
 	 * broken remote endpoint) can never silently produce an empty site.
 	 */
 	allowEmpty?: boolean;
+	/**
+	 * Download external post images into a static directory and rewrite the
+	 * featuredImage to a local path. Production has no R2, so images must ship
+	 * as build assets instead of being hotlinked from Blogger/Neobook. Off by
+	 * default (and in tests) so writeExport stays network-free unless asked.
+	 */
+	localizeImages?: boolean;
+	/** Directory for localized images (served at /localized). Defaults to public/localized. */
+	imageDir?: string;
+}
+
+const EXT_BY_TYPE: Record<string, string> = {
+	'image/jpeg': 'jpg',
+	'image/png': 'png',
+	'image/webp': 'webp',
+	'image/gif': 'gif',
+	'image/avif': 'avif',
+};
+
+/**
+ * Downloads one external image into `imageDir` (deduped by URL hash) and returns
+ * its `/localized/<name>` path. On any failure the original URL is returned so a
+ * missing image never breaks the export.
+ */
+async function localizeImage(url: string, imageDir: string, cache: Map<string, string>): Promise<string> {
+	if (!/^https?:\/\//i.test(url)) {
+		return url;
+	}
+	const cached = cache.get(url);
+	if (cached) {
+		return cached;
+	}
+	try {
+		const response = await fetch(url);
+		if (!response.ok) {
+			return url;
+		}
+		const ext = EXT_BY_TYPE[(response.headers.get('content-type') ?? '').split(';')[0].trim()] ?? 'jpg';
+		const name = `${createHash('sha256').update(url).digest('hex').slice(0, 16)}.${ext}`;
+		await fs.mkdir(imageDir, { recursive: true });
+		const file = path.join(imageDir, name);
+		const localPath = `/localized/${name}`;
+		const bytes = new Uint8Array(await response.arrayBuffer());
+		await fs.writeFile(file, bytes);
+		cache.set(url, localPath);
+		return localPath;
+	} catch {
+		return url;
+	}
 }
 
 export async function writeExport(dir: string, data: ContentResponse, options: WriteExportOptions = {}): Promise<void> {
@@ -267,11 +317,18 @@ export async function writeExport(dir: string, data: ContentResponse, options: W
 		}
 	}
 
+	const imageDir = options.imageDir ?? path.join(root, 'public', 'localized');
+	const imageCache = new Map<string, string>();
+
 	const expectedFiles = new Set<string>();
 	for (const post of data.posts) {
 		const filename = postFilename(post.publication, post.slug);
 		expectedFiles.add(filename);
-		await writePost(dir, post.publication, post.slug, toPostRecord(post));
+		const record = toPostRecord(post);
+		if (options.localizeImages && record.featuredImage) {
+			record.featuredImage = await localizeImage(record.featuredImage, imageDir, imageCache);
+		}
+		await writePost(dir, post.publication, post.slug, record);
 	}
 
 	for (const file of existing) {
@@ -311,7 +368,11 @@ async function main(): Promise<void> {
 		data = await fetchLocalContent();
 	}
 
-	await writeExport(postsDir, data, { allowEmpty: process.env.EXPORT_CONTENT_ALLOW_EMPTY === '1' });
+	await writeExport(postsDir, data, {
+		allowEmpty: process.env.EXPORT_CONTENT_ALLOW_EMPTY === '1',
+		// Production has no R2, so ship images as static build assets.
+		localizeImages: process.env.EXPORT_SKIP_IMAGE_LOCALIZE !== '1',
+	});
 	console.error(`export:content: wrote ${data.posts.length} post(s) to src/content/posts`);
 }
 
