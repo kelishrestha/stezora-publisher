@@ -73,6 +73,17 @@ const inactiveLink =
 				</ul>
 			</div>
 			<div class="sticky inset-x-0 bottom-0 border-t border-border bg-surface p-4">
+				<div class="mb-2 flex items-center gap-2 px-1">
+					<span
+						id="admin-user-initial"
+						class="grid size-8 shrink-0 place-content-center rounded-full bg-accent-soft text-xs font-semibold text-accent-foreground"
+						aria-hidden="true"
+					></span>
+					<div class="min-w-0">
+						<p id="admin-user-name" class="truncate text-sm font-medium text-foreground">&nbsp;</p>
+						<p id="admin-user-email" class="truncate text-xs text-muted-foreground"></p>
+					</div>
+				</div>
 				<button
 					type="button"
 					id="admin-sign-out"
@@ -135,4 +146,17 @@ const inactiveLink =
 
 	document.getElementById('admin-sign-out')?.addEventListener('click', () => void signOut());
 	document.getElementById('admin-sign-out-mobile')?.addEventListener('click', () => void signOut());
+
+	// Show the signed-in user above the sign-out button.
+	void authClient.getSession().then((result) => {
+		const user = result?.data?.user;
+		if (!user) return;
+		const name = user.name || user.email || '';
+		const nameEl = document.getElementById('admin-user-name');
+		const emailEl = document.getElementById('admin-user-email');
+		const initialEl = document.getElementById('admin-user-initial');
+		if (nameEl) nameEl.textContent = name;
+		if (emailEl && user.email && user.email !== name) emailEl.textContent = user.email;
+		if (initialEl) initialEl.textContent = (name.trim().charAt(0) || '?').toUpperCase();
+	});
 </script>
