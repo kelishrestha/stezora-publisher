@@ -9,9 +9,13 @@ const ADMIN_PASSWORD = 'correct-horse-battery-staple';
 const ADMIN_HASH =
 	'ce018f62e94bb4691067bb9dcd0619af:25c1257d17e89a1312174042b05759811aca8c66a1fcbbb05c87d41b4df1936f8be05b155c4fb30387a417cef6820e3217fd8650d1bbbb592f613cb0e4b0adde';
 
-async function fetchWorker(path: string, init?: RequestInit): Promise<Response> {
+// Blogger credentials may or may not be present in the local .dev.vars, so
+// tests that assert on configuration pass an explicit env to stay deterministic.
+const ENV_NO_BLOGGER = { ...env, BLOGGER_CLIENT_ID: undefined, BLOGGER_CLIENT_SECRET: undefined, BLOGGER_REFRESH_TOKEN: undefined } as typeof env;
+
+async function fetchWorker(path: string, init?: RequestInit, workerEnv: typeof env = env): Promise<Response> {
 	const ctx = createExecutionContext();
-	const response = await worker.fetch(new Request(`http://localhost${path}`, init), env, ctx);
+	const response = await worker.fetch(new Request(`http://localhost${path}`, init), workerEnv, ctx);
 	await waitOnExecutionContext(ctx);
 	return response;
 }
@@ -70,9 +74,14 @@ describe('GET /api/admin/integrations', () => {
 		const pubX = data.blogger.publications.find((p) => p.slug === 'pub-x');
 		expect(pubX).toMatchObject({ blogHost: 'pubx.blogspot.com', linkedPosts: 1 });
 		expect(data.neobook.profileUrl).toContain('neobook.org');
-		// No Blogger secrets in the test env, and the Neobook feed is public.
-		expect(data.blogger.configured).toBe(false);
+		// The Neobook feed is public, so it is always reported configured.
 		expect(data.neobook.configured).toBe(true);
+	});
+
+	it('reports Blogger as not configured when credentials are absent', async () => {
+		const cookie = await signInAndCookies();
+		const { data } = (await (await fetchWorker('/api/admin/integrations', { headers: { cookie } }, ENV_NO_BLOGGER)).json()) as IntegrationsPayload;
+		expect(data.blogger.configured).toBe(false);
 	});
 
 	it('reports the imported book count and blogger stats snapshot', async () => {
@@ -125,11 +134,15 @@ describe('POST /api/admin/blogger/import', () => {
 
 	it('fails clearly when Blogger credentials are not configured', async () => {
 		const cookie = await signInAndCookies();
-		const response = await fetchWorker('/api/admin/blogger/import', {
-			method: 'POST',
-			headers: { 'content-type': 'application/json', cookie },
-			body: JSON.stringify({ includeDrafts: false }),
-		});
+		const response = await fetchWorker(
+			'/api/admin/blogger/import',
+			{
+				method: 'POST',
+				headers: { 'content-type': 'application/json', cookie },
+				body: JSON.stringify({ includeDrafts: false }),
+			},
+			ENV_NO_BLOGGER
+		);
 		expect(response.status).toBe(400);
 		const body = (await response.json()) as { error: { code: string } };
 		expect(body.error.code).toBe('blogger_not_configured');

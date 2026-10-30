@@ -5,7 +5,9 @@ import { writeBloggerRefreshToken } from './token-store';
 
 const AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
-const SCOPE = 'https://www.googleapis.com/auth/blogger.readonly';
+// Full blogger scope, not blogger.readonly: the pageviews endpoint (statistics
+// import) is owner-only data that the read-only scope cannot reach.
+const SCOPE = 'https://www.googleapis.com/auth/blogger';
 const PORT = Number(process.env.BLOGGER_OAUTH_PORT ?? 8765);
 const REDIRECT_URI = `http://localhost:${PORT}/`;
 
