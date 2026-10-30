@@ -267,7 +267,7 @@ async function upsertBook(db: D1Database, item: NeobookItem): Promise<'created' 
 	return 'created';
 }
 
-export async function syncNeobook(db: D1Database, bucket?: R2Bucket, options: { snapshot?: boolean } = {}): Promise<NeobookSyncResult> {
+export async function syncNeobook(db: D1Database, bucket?: R2Bucket, options: { snapshot?: boolean; statsOnly?: boolean } = {}): Promise<NeobookSyncResult> {
 	const items = await fetchFeed();
 
 	const { results: posts } = await db
@@ -300,7 +300,9 @@ export async function syncNeobook(db: D1Database, bucket?: R2Bucket, options: { 
 		}
 		const normalized = normalizeTitle(item.title);
 		let post = byTitle.get(normalized) ?? byTitle.get(TITLE_ALIASES[normalized] ?? '');
-		if (!post && NEW_POSTS[normalized]) {
+		// statsOnly (the daily cron) never creates posts: it only refreshes the
+		// engagement snapshot on posts that already exist.
+		if (!post && NEW_POSTS[normalized] && !options.statsOnly) {
 			post = await createPost(db, NEW_POSTS[normalized], item);
 			byTitle.set(normalized, post);
 			postsCreated += 1;
@@ -325,6 +327,12 @@ export async function syncNeobook(db: D1Database, bucket?: R2Bucket, options: { 
 			.prepare('UPDATE posts SET neobook_url = ?, neobook_views = ?, neobook_likes = ?, neobook_comments = ? WHERE id = ?')
 			.bind(neobookUrl(item.link_path), toInt(item.views), toInt(item.likes), toInt(item.comments), post.id)
 			.run();
+
+		// statsOnly stops here: it never overwrites published title/content or
+		// attaches images, so the automated daily run cannot change live copy.
+		if (options.statsOnly) {
+			continue;
+		}
 
 		const title = item.title.replace(/\u00a0/g, ' ').trim();
 		const titleChanged = title !== post.title;
