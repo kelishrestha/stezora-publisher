@@ -620,16 +620,41 @@ function BloggerSourceDetail({ publications, publication, days }: { publications
 	);
 }
 
+const NEOBOOK_METRICS = [
+	{ key: 'views', label: 'Views' },
+	{ key: 'likes', label: 'Likes' },
+	{ key: 'comments', label: 'Comments' },
+] as const;
+type NeobookMetric = (typeof NEOBOOK_METRICS)[number]['key'];
+
 function NeobookSourceDetail({ posts, books }: { posts: AudienceData['neobookPosts']; books: AudienceData['neobookBooks'] }) {
+	const [metric, setMetric] = useState<NeobookMetric>('views');
 	const empty = posts.length === 0 && books.length === 0;
+	const label = NEOBOOK_METRICS.find((option) => option.key === metric)?.label ?? 'Views';
+	const lower = label.toLowerCase();
+
 	return (
 		<section className="space-y-6">
-			<div className={`${cardClass()} flex items-center justify-between gap-3 px-5 py-4`}>
+			<div className={`${cardClass()} flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between`}>
 				<div>
 					<h2 className="text-base font-semibold text-foreground">Neobook engagement</h2>
-					<p className="mt-0.5 text-xs text-muted-foreground">Per-item view counts from Neobook, refreshed on each sync.</p>
+					<p className="mt-0.5 text-xs text-muted-foreground">Per-item engagement from Neobook, refreshed on each sync.</p>
 				</div>
-				<span className={badgeClass('muted')}>Imported</span>
+				<div className="flex items-center gap-2">
+					<fieldset className="inline-flex overflow-hidden rounded-lg border border-border">
+						<legend className="sr-only">Metric</legend>
+						{NEOBOOK_METRICS.map((option) => (
+							<label
+								key={option.key}
+								className="cursor-pointer px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-elevated has-[:checked]:bg-accent-soft has-[:checked]:text-accent-foreground"
+							>
+								<input type="radio" name="neobook-metric" value={option.key} checked={metric === option.key} onChange={() => setMetric(option.key)} className="sr-only" />
+								{option.label}
+							</label>
+						))}
+					</fieldset>
+					<span className={badgeClass('muted')}>Imported</span>
+				</div>
 			</div>
 			{empty ? (
 				<div className={cardClass()}>
@@ -637,10 +662,10 @@ function NeobookSourceDetail({ posts, books }: { posts: AudienceData['neobookPos
 				</div>
 			) : (
 				<div className="grid gap-6 lg:grid-cols-2">
-					<BarListCard title="Poems by views" rows={posts.map((row) => ({ label: row.title, views: row.views ?? 0 }))} emptyLabel="No poems synced yet." />
+					<BarListCard title={`Poems by ${lower}`} rows={posts.map((row) => ({ label: row.title, views: row[metric] ?? 0 }))} emptyLabel="No poems synced yet." />
 					<BarListCard
-						title="Books by views"
-						rows={books.map((row) => ({ label: row.title, views: row.views ?? 0, href: row.linkUrl ?? undefined, external: true }))}
+						title={`Books by ${lower}`}
+						rows={books.map((row) => ({ label: row.title, views: row[metric] ?? 0, href: row.linkUrl ?? undefined, external: true }))}
 						emptyLabel="No books synced yet."
 					/>
 				</div>
