@@ -22,6 +22,7 @@ interface BloggerPublication {
 interface IntegrationsData {
 	blogger: { connected: boolean; configured: boolean; canAuthorize: boolean; publications: BloggerPublication[] };
 	neobook: { configured: boolean; profileUrl: string; books: number };
+	automation: { schedule: string; cadence: string; description: string };
 }
 
 const OAUTH_ERROR_MESSAGES: Record<string, string> = {
@@ -328,6 +329,29 @@ export default function Integrations() {
 							{syncing ? 'Syncing…' : 'Sync'}
 						</button>
 					</div>
+				</div>
+			</Section>
+
+			<Section id="automation" title="Automation">
+				<div className={cardClass()}>
+					<div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
+						<div>
+							<h3 className="text-sm font-semibold text-foreground">Scheduled sync</h3>
+							<p className="mt-0.5 text-xs text-muted-foreground">Runs the Neobook sync and Blogger stats refresh automatically.</p>
+						</div>
+						<span className={badgeClass('muted')}>Read-only</span>
+					</div>
+					{data && (
+						<dl className="divide-y divide-border text-sm">
+							<div className="flex items-center justify-between gap-4 px-5 py-3">
+								<dt className="text-muted-foreground">Schedule</dt>
+								<dd className="text-right text-foreground">
+									{data.automation.cadence} <code className="ml-1 rounded bg-surface-elevated px-1.5 py-0.5 text-xs text-muted-foreground">{data.automation.schedule}</code>
+								</dd>
+							</div>
+							<div className="px-5 py-3 text-muted-foreground">{data.automation.description}</div>
+						</dl>
+					)}
 				</div>
 			</Section>
 

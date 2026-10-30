@@ -65,6 +65,13 @@ export const integrations: AuthenticatedHandler = async ({ env }) => {
 	const [bookCount] = await db.select({ count: sql<number>`count(*)` }).from(books);
 
 	return ok({
+		// Read-only: the schedule is fixed in wrangler.jsonc "triggers.crons".
+		// Keep this in sync with that cron expression.
+		automation: {
+			schedule: '0 2 * * *',
+			cadence: 'Daily at 02:00 UTC',
+			description: 'Refreshes Blogger statistics, syncs Neobook, and records a source snapshot for the audience trend.',
+		},
 		blogger: {
 			connected: bloggerPublications.some((publication) => publication.linkedPosts > 0),
 			configured: bloggerConfigured,
