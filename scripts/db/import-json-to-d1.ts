@@ -141,7 +141,8 @@ export function buildBackfillSql(records: BackfillInput[], options: BackfillOpti
 					`, ${sqlString(sanitizedContent)}`,
 					`, ${sqlString(htmlToMarkdown(sanitizedContent))}`,
 					`, ${sqlString(record.status)}`,
-					`, ${sqlString(record.pubDate)}`,
+					// Drafts have no publish date; only live/scheduled posts carry one.
+					`, ${record.status === 'draft' ? sqlNullable(undefined) : sqlString(record.pubDate)}`,
 					`, ${sqlNullable(record.updatedDate)}`,
 					`, ${sqlNullable(record.bloggerUrl)}`,
 					`, ${sqlNullable(bloggerBlogId)}`,
