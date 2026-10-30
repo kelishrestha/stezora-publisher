@@ -23,8 +23,42 @@ interface PostRecord {
 	canonicalUrl: string | null;
 	bloggerBlogId: string | null;
 	bloggerPostId: string | null;
+	neobookUrl: string | null;
+	source: string;
+	neobookViews: number | null;
+	neobookLikes: number | null;
+	neobookComments: number | null;
 	featuredImage: { id: string; url: string; filename: string; mimeType: string } | null;
 	createdAt: string;
+}
+
+const SOURCE_LABELS: Record<string, string> = {
+	app: 'Created here',
+	blogger: 'Imported from Blogger',
+	neobook: 'Imported from Neobook',
+};
+
+function SourceLink({ href, label }: { href: string; label: string }) {
+	return (
+		<a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-accent-foreground hover:underline">
+			{label}
+			<svg
+				aria-hidden="true"
+				xmlns="http://www.w3.org/2000/svg"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				strokeWidth="2"
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				className="size-3.5"
+			>
+				<path d="M15 3h6v6" />
+				<path d="M10 14 21 3" />
+				<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+			</svg>
+		</a>
+	);
 }
 
 interface PublicationOption {
@@ -197,32 +231,17 @@ export default function PostView() {
 				<p className="mt-2 text-sm text-muted-foreground">
 					{post.status !== 'draft' && <>Published on {formatDate(post.publishedAt)} · </>}
 					Updated on {formatDate(post.updatedAt)}
+					{SOURCE_LABELS[post.source] && <> · {SOURCE_LABELS[post.source]}</>}
 				</p>
-				{post.canonicalUrl && (
-					<p className="mt-2 text-sm">
-						<a
-							href={post.canonicalUrl}
-							target="_blank"
-							rel="noopener noreferrer"
-							className="inline-flex items-center gap-1.5 text-accent-foreground hover:underline"
-						>
-							See blogger post
-							<svg
-								aria-hidden="true"
-								xmlns="http://www.w3.org/2000/svg"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="2"
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								className="size-3.5"
-							>
-								<path d="M15 3h6v6" />
-								<path d="M10 14 21 3" />
-								<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-							</svg>
-						</a>
+				{(post.canonicalUrl || post.neobookUrl) && (
+					<p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+						{post.canonicalUrl && <SourceLink href={post.canonicalUrl} label="See Blogger post" />}
+						{post.neobookUrl && <SourceLink href={post.neobookUrl} label="See Neobook post" />}
+					</p>
+				)}
+				{post.neobookUrl && (post.neobookViews !== null || post.neobookLikes !== null || post.neobookComments !== null) && (
+					<p className="mt-2 text-sm text-muted-foreground">
+						Neobook: {post.neobookViews ?? 0} views · {post.neobookLikes ?? 0} likes · {post.neobookComments ?? 0} comments
 					</p>
 				)}
 				{post.excerpt && <p className="mt-3 text-sm text-muted-foreground">{post.excerpt}</p>}

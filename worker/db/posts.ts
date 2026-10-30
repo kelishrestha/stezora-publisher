@@ -36,6 +36,11 @@ export interface AdminPost {
 	canonicalUrl: string | null;
 	bloggerBlogId: string | null;
 	bloggerPostId: string | null;
+	neobookUrl: string | null;
+	source: string;
+	neobookViews: number | null;
+	neobookLikes: number | null;
+	neobookComments: number | null;
 	featuredImageId: string | null;
 	featuredImage: FeaturedImage | null;
 	createdAt: string;
@@ -74,6 +79,11 @@ interface PostRow {
 	canonical_url: string | null;
 	blogger_blog_id: string | null;
 	blogger_post_id: string | null;
+	neobook_url: string | null;
+	source: string;
+	neobook_views: number | null;
+	neobook_likes: number | null;
+	neobook_comments: number | null;
 	featured_image_id: string | null;
 	created_at: string;
 }
@@ -125,6 +135,11 @@ export class PostRepository {
 				canonical_url: posts.canonical_url,
 				blogger_blog_id: posts.blogger_blog_id,
 				blogger_post_id: posts.blogger_post_id,
+				neobook_url: posts.neobook_url,
+				source: posts.source,
+				neobook_views: posts.neobook_views,
+				neobook_likes: posts.neobook_likes,
+				neobook_comments: posts.neobook_comments,
 				featured_image_id: posts.featured_image_id,
 				created_at: posts.created_at,
 			})
@@ -160,6 +175,11 @@ export class PostRepository {
 				canonical_url: posts.canonical_url,
 				blogger_blog_id: posts.blogger_blog_id,
 				blogger_post_id: posts.blogger_post_id,
+				neobook_url: posts.neobook_url,
+				source: posts.source,
+				neobook_views: posts.neobook_views,
+				neobook_likes: posts.neobook_likes,
+				neobook_comments: posts.neobook_comments,
 				featured_image_id: posts.featured_image_id,
 				created_at: posts.created_at,
 			})
@@ -379,6 +399,11 @@ export class PostRepository {
 			canonicalUrl: row.canonical_url,
 			bloggerBlogId: row.blogger_blog_id,
 			bloggerPostId: row.blogger_post_id,
+			neobookUrl: row.neobook_url,
+			source: row.source,
+			neobookViews: row.neobook_views,
+			neobookLikes: row.neobook_likes,
+			neobookComments: row.neobook_comments,
 			featuredImageId: row.featured_image_id,
 			featuredImage: (row.featured_image_id && imagesByPost.get(row.id)) || null,
 			createdAt: row.created_at,

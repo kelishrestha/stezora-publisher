@@ -28,8 +28,12 @@ async function signInAndCookies(): Promise<string> {
 interface IntegrationsPayload {
 	success: true;
 	data: {
-		blogger: { connected: boolean; publications: Array<{ slug: string; blogHost: string | null; linkedPosts: number }> };
-		neobook: { profileUrl: string };
+		blogger: {
+			connected: boolean;
+			configured: boolean;
+			publications: Array<{ slug: string; blogHost: string | null; linkedPosts: number; stats: { viewsAll: number | null } | null }>;
+		};
+		neobook: { configured: boolean; profileUrl: string; books: number };
 	};
 }
 
@@ -66,6 +70,46 @@ describe('GET /api/admin/integrations', () => {
 		const pubX = data.blogger.publications.find((p) => p.slug === 'pub-x');
 		expect(pubX).toMatchObject({ blogHost: 'pubx.blogspot.com', linkedPosts: 1 });
 		expect(data.neobook.profileUrl).toContain('neobook.org');
+		// No Blogger secrets in the test env, and the Neobook feed is public.
+		expect(data.blogger.configured).toBe(false);
+		expect(data.neobook.configured).toBe(true);
+	});
+
+	it('reports the imported book count and blogger stats snapshot', async () => {
+		const now = new Date().toISOString();
+		await db
+			.prepare('INSERT INTO books (id, source, neobook_token, title, created_at) VALUES (?, ?, ?, ?, ?)')
+			.bind('b-neobook-tok1', 'neobook', 'tok1', 'A Test Book', now)
+			.run();
+		await db
+			.prepare('INSERT INTO blogger_stats (publication_id, blog_id, views_all, views_30d, views_7d, fetched_at) VALUES (?, ?, ?, ?, ?, ?)')
+			.bind('pub-x', '12345', 999, 12, 3, now)
+			.run();
+
+		const cookie = await signInAndCookies();
+		const { data } = (await (await fetchWorker('/api/admin/integrations', { headers: { cookie } })).json()) as IntegrationsPayload;
+		expect(data.neobook.books).toBe(1);
+		const pubX = data.blogger.publications.find((p) => p.slug === 'pub-x');
+		expect(pubX?.stats?.viewsAll).toBe(999);
+	});
+});
+
+describe('GET /api/admin/books', () => {
+	it('requires auth', async () => {
+		expect((await fetchWorker('/api/admin/books')).status).toBe(401);
+	});
+
+	it('lists imported books', async () => {
+		const now = new Date().toISOString();
+		await db
+			.prepare('INSERT OR IGNORE INTO books (id, source, neobook_token, title, created_at) VALUES (?, ?, ?, ?, ?)')
+			.bind('b-neobook-tok2', 'neobook', 'tok2', 'Another Book', now)
+			.run();
+		const cookie = await signInAndCookies();
+		const response = await fetchWorker('/api/admin/books', { headers: { cookie } });
+		expect(response.status).toBe(200);
+		const body = (await response.json()) as { data: { books: Array<{ id: string; title: string }> } };
+		expect(body.data.books.some((book) => book.id === 'b-neobook-tok2')).toBe(true);
 	});
 });
 

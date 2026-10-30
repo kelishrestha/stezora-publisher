@@ -4,16 +4,24 @@ import Toast, { ToastStack } from './Toast';
 import { useConfirm } from './useConfirm';
 import { badgeClass, buttonClass, cardClass, modalOverlayClass, modalPanelClass } from '../ui/shared/classes';
 
+interface BloggerStats {
+	viewsAll: number | null;
+	views30d: number | null;
+	views7d: number | null;
+	fetchedAt: string;
+}
+
 interface BloggerPublication {
 	slug: string;
 	name: string;
 	blogHost: string | null;
 	linkedPosts: number;
+	stats: BloggerStats | null;
 }
 
 interface IntegrationsData {
-	blogger: { connected: boolean; publications: BloggerPublication[] };
-	neobook: { profileUrl: string };
+	blogger: { connected: boolean; configured: boolean; publications: BloggerPublication[] };
+	neobook: { configured: boolean; profileUrl: string; books: number };
 }
 
 interface NeobookSyncResult {
@@ -22,6 +30,8 @@ interface NeobookSyncResult {
 	contentUpdates: number;
 	imagesAttached: number;
 	tagsCreated: number;
+	booksCreated: number;
+	booksUpdated: number;
 	unmatched: string[];
 }
 
@@ -29,6 +39,7 @@ interface BloggerImportResult {
 	includeDrafts: boolean;
 	imported: number;
 	skipped: number;
+	statsUpdated: number;
 	publications: Array<{ slug: string; name: string; linked: boolean; imported: number; skipped: number }>;
 }
 
@@ -88,6 +99,7 @@ export default function Integrations() {
 				`${result.contentUpdates} updated`,
 				`${result.imagesAttached} image${result.imagesAttached === 1 ? '' : 's'}`,
 				`${result.tagsCreated} tag${result.tagsCreated === 1 ? '' : 's'}`,
+				`${result.booksCreated + result.booksUpdated} book${result.booksCreated + result.booksUpdated === 1 ? '' : 's'}`,
 			];
 			const unmatched = result.unmatched.length > 0 ? ` (${result.unmatched.length} unmatched)` : '';
 			setToast({ tone: 'success', message: `Synced ${result.items} item${result.items === 1 ? '' : 's'}: ${parts.join(', ')}.${unmatched}` });
@@ -129,7 +141,8 @@ export default function Integrations() {
 			}
 			const result = body.data;
 			const skipped = result.skipped > 0 ? ` (${result.skipped} already present)` : '';
-			setToast({ tone: 'success', message: `Imported ${result.imported} new post${result.imported === 1 ? '' : 's'}.${skipped}` });
+			const stats = result.statsUpdated > 0 ? ' Statistics updated.' : '';
+			setToast({ tone: 'success', message: `Imported ${result.imported} new post${result.imported === 1 ? '' : 's'}.${skipped}${stats}` });
 			loadData();
 		} catch (reason: unknown) {
 			setToast({ tone: 'error', message: reason instanceof Error ? reason.message : 'Could not import from Blogger.' });
@@ -152,11 +165,17 @@ export default function Integrations() {
 							<p className="mt-0.5 text-xs text-muted-foreground">Posts are imported from Blogger into the CMS.</p>
 						</div>
 						{data && (
-							<span className={data.blogger.connected ? badgeClass('success') : badgeClass('muted')}>
-								{data.blogger.connected ? 'Connected' : 'Not configured'}
+							<span className={data.blogger.configured ? badgeClass('success') : badgeClass('muted')}>
+								{data.blogger.configured ? 'Connected' : 'Not configured'}
 							</span>
 						)}
 					</div>
+
+					{data && !data.blogger.configured && (
+						<p className="border-b border-border bg-amber-50 px-5 py-3 text-xs text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+							Blogger API credentials are not configured on the server, so import and statistics are unavailable. Set the Blogger OAuth secrets to enable them.
+						</p>
+					)}
 
 					{!data ? (
 						<div className="m-5 h-24 animate-pulse rounded-md bg-surface-elevated" />
@@ -168,6 +187,8 @@ export default function Integrations() {
 										<th className="px-5 py-2 font-medium">Publication</th>
 										<th className="px-5 py-2 font-medium">Blog</th>
 										<th className="px-5 py-2 text-right font-medium">Linked posts</th>
+										<th className="px-5 py-2 text-right font-medium">Views (30d)</th>
+										<th className="px-5 py-2 text-right font-medium">Views (all)</th>
 									</tr>
 								</thead>
 								<tbody className="divide-y divide-border">
@@ -184,6 +205,8 @@ export default function Integrations() {
 												)}
 											</td>
 											<td className="px-5 py-2 text-right tabular-nums text-muted-foreground">{publication.linkedPosts}</td>
+											<td className="px-5 py-2 text-right tabular-nums text-muted-foreground">{publication.stats?.views30d?.toLocaleString() ?? '–'}</td>
+											<td className="px-5 py-2 text-right tabular-nums text-muted-foreground">{publication.stats?.viewsAll?.toLocaleString() ?? '–'}</td>
 										</tr>
 									))}
 								</tbody>
@@ -192,7 +215,7 @@ export default function Integrations() {
 					)}
 
 					<div className="flex items-center justify-end border-t border-border px-5 py-4">
-						<button type="button" onClick={() => setImportOpen(true)} disabled={importing || !data} className={buttonClass('accentOutline', 'sm')}>
+						<button type="button" onClick={() => setImportOpen(true)} disabled={importing || !data || !data.blogger.configured} className={buttonClass('accentOutline', 'sm')}>
 							{importing ? 'Importing…' : 'Import'}
 						</button>
 					</div>
@@ -207,12 +230,21 @@ export default function Integrations() {
 					</div>
 					<div className="flex flex-col gap-4 px-5 py-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
 						{data && (
-							<p>
-								Profile:{' '}
-								<a href={data.neobook.profileUrl} target="_blank" rel="noopener" className="text-accent-foreground hover:underline">
-									{data.neobook.profileUrl}
-								</a>
-							</p>
+							<div className="space-y-1">
+								<p>
+									Profile:{' '}
+									<a href={data.neobook.profileUrl} target="_blank" rel="noopener" className="text-accent-foreground hover:underline">
+										{data.neobook.profileUrl}
+									</a>
+								</p>
+								<p className="text-xs">
+									Public profile, no credentials required.{' '}
+									<a href="/admin/books" className="text-accent-foreground hover:underline">
+										{data.neobook.books} book{data.neobook.books === 1 ? '' : 's'} imported
+									</a>
+									.
+								</p>
+							</div>
 						)}
 						<button type="button" onClick={() => void syncNeobook()} disabled={syncing} className={`${buttonClass('accentOutline', 'sm')} shrink-0`}>
 							{syncing ? 'Syncing…' : 'Sync'}

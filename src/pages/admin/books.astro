@@ -1,0 +1,15 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import Books from '../../components/admin/Books';
+
+const title = 'Books';
+const description = 'Standalone works imported from Neobook.';
+---
+
+<AdminLayout title={title} description={description} path="/admin/books" breadcrumbs={[{ name: 'Dashboard', href: '/admin' }, { name: 'Books' }]}>
+	<h1 class="text-2xl font-semibold tracking-tight text-foreground">Books</h1>
+	<p class="mt-1 text-sm text-muted-foreground">Standalone works imported from Neobook, with their latest engagement counts.</p>
+	<div class="mt-6">
+		<Books client:load />
+	</div>
+</AdminLayout>
