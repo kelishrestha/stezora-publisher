@@ -96,6 +96,20 @@ The refresh token can come from either path:
   worker secret with `npx wrangler secret put BLOGGER_REFRESH_TOKEN`. A
   stored (Authorize) token takes precedence over this secret.
 
+The in-UI token is stored in D1 (app_settings) in plaintext, readable to
+anything with database access. It never reaches the browser (it lives under
+its own key that the settings API does not return). Treat the D1 database as
+sensitive accordingly.
+
+## Media storage
+
+Production has no R2, so post images are localized into the static build
+(`public/localized`, committed) and served from the app; no media binding is
+required for the public site. The MEDIA/R2 path is optional and gated by both
+the `ENABLE_MEDIA_STORAGE` env var and a Settings -> Data toggle ("Serve media
+from storage"). When storage is off or an object is missing, the `/media`
+route redirects to the media row's original source URL.
+
 ## 4. First deploy (bootstrap)
 
 `pnpm deploy` requires `EXPORT_CONTENT_URL`, which does not exist until the
