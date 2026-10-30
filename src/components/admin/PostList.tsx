@@ -7,6 +7,7 @@ import { MONTHS, filterSelectClass, matchesMonthYear, yearsOf } from './filters'
 import { ChartIcon, EyeIcon, ImagePlaceholderIcon, PencilIcon } from './icons';
 import { badgeClass, buttonClass, statusBadgeClass } from '../ui/shared/classes';
 import { cardClass, countBadgeClass } from '../ui/shared/classes';
+import { formatDate } from '../../lib/admin/datetime';
 
 interface ListPost {
 	id: string;
@@ -35,12 +36,6 @@ const STATUS_LABELS: Record<string, string> = {
 const TABS = ['all', 'draft', 'scheduled', 'published', 'archived'];
 
 const TAB_LABELS: Record<string, string> = { all: 'All', ...STATUS_LABELS };
-
-function formatDate(value: string): string {
-	const date = new Date(value);
-	if (Number.isNaN(date.getTime())) return value;
-	return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-}
 
 /** The date a post counts under: its publish date, else its last update. */
 function postDate(post: ListPost): Date | null {

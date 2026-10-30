@@ -4,7 +4,7 @@ import { createDb } from '../../db/client';
 import { pageViews } from '../../db/schema';
 import { ok } from '../../lib/http';
 import { readJsonBody } from '../../lib/validate';
-import { readAppSettings, writeAppSettings } from '../../lib/settings';
+import { isValidTimeZone, readAppSettings, writeAppSettings } from '../../lib/settings';
 import type { AuthenticatedHandler } from '../../lib/middleware';
 
 /** GET /api/admin/settings */
@@ -26,6 +26,7 @@ const settingsPatch = z.object({
 	analyticsEnabled: z.boolean().optional(),
 	consentMode: z.enum(['opt-out', 'opt-in']).optional(),
 	retentionDays: z.number().int().min(1).max(3650).optional(),
+	timezone: z.string().refine(isValidTimeZone, 'Invalid timezone.').optional(),
 });
 
 /** PUT /api/admin/settings */

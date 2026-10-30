@@ -6,6 +6,7 @@ import Pagination from './Pagination';
 import { MONTHS, filterSelectClass, matchesMonthYear, yearsOf } from './filters';
 import { badgeClass, buttonClass, formControlClass } from '../ui/shared/classes';
 import { cardClass, modalOverlayClass, modalPanelClass } from '../ui/shared/classes';
+import { formatDate } from '../../lib/admin/datetime';
 
 interface MediaItem {
 	id: string;
@@ -60,11 +61,6 @@ function formatSize(bytes: number): string {
 	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function formatDate(value: string): string {
-	const date = new Date(value);
-	if (Number.isNaN(date.getTime())) return value;
-	return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-}
 
 export default function MediaManager() {
 	const [items, setItems] = useState<MediaItem[] | null>(null);

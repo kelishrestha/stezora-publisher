@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { cardClass, statCardClass, statCardLabelClass, statCardValueClass } from '../ui/shared/classes';
 import { filterSelectClass } from './filters';
+import { formatDateTime } from '../../lib/admin/datetime';
 
 /**
  * Audience analytics: first-party visitor data from the page_views table (no
@@ -82,12 +83,6 @@ function flag(code: string | null): string {
 
 function formatNumber(value: number): string {
 	return value.toLocaleString();
-}
-
-function formatDateTime(value: string): string {
-	const date = new Date(value);
-	if (Number.isNaN(date.getTime())) return value;
-	return date.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 function placeLabel(visit: RecentVisit): string {

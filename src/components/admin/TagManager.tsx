@@ -7,6 +7,7 @@ import Pagination from './Pagination';
 import { MONTHS, filterSelectClass, matchesMonthYear, yearsOf } from './filters';
 import { badgeClass, buttonClass, formControlClass } from '../ui/shared/classes';
 import { cardClass, countBadgeClass, modalOverlayClass, modalPanelClass } from '../ui/shared/classes';
+import { getAdminTimeZone } from '../../lib/admin/datetime';
 
 interface TagRecord {
 	id: string;
@@ -60,7 +61,7 @@ function formatDate(value: string | null): string | null {
 	if (!value) return null;
 	const date = new Date(value);
 	if (Number.isNaN(date.getTime())) return null;
-	return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+	return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', timeZone: getAdminTimeZone() });
 }
 
 function TagIcon({ className = 'size-4' }: { className?: string }) {

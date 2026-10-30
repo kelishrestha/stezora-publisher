@@ -66,12 +66,22 @@ describe('app settings', () => {
 	it('returns defaults and persists updates', async () => {
 		const cookie = await signInAndCookies();
 		const get = (await (await fetchWorker('/api/admin/settings', { headers: { cookie } })).json()) as { data: { settings: Record<string, unknown> } };
-		expect(get.data.settings).toMatchObject({ analyticsEnabled: true, consentMode: 'opt-out', retentionDays: 90 });
+		expect(get.data.settings).toMatchObject({ analyticsEnabled: true, consentMode: 'opt-out', retentionDays: 90, timezone: 'Asia/Kathmandu' });
 
 		const put = (await (await putSettings(cookie, { analyticsEnabled: true, consentMode: 'opt-in', retentionDays: 30 })).json()) as {
 			data: { settings: Record<string, unknown> };
 		};
 		expect(put.data.settings).toMatchObject({ consentMode: 'opt-in', retentionDays: 30 });
+	});
+
+	it('persists a valid timezone and rejects an invalid one', async () => {
+		const cookie = await signInAndCookies();
+		const ok = await putSettings(cookie, { timezone: 'Europe/London' });
+		expect(ok.status).toBe(200);
+		expect(((await ok.json()) as { data: { settings: { timezone: string } } }).data.settings.timezone).toBe('Europe/London');
+
+		const bad = await putSettings(cookie, { timezone: 'Not/AZone' });
+		expect(bad.status).not.toBe(200);
 	});
 
 	it('records no pageviews while analytics is disabled', async () => {

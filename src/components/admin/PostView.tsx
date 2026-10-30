@@ -3,6 +3,7 @@ import AdminBreadcrumbs from './AdminBreadcrumbs';
 import LoadingImage from './LoadingImage';
 import { badgeClass, buttonClass, statusBadgeClass } from '../ui/shared/classes';
 import { cardClass } from '../ui/shared/classes';
+import { getAdminTimeZone } from '../../lib/admin/datetime';
 
 interface PostRecord {
 	id: string;
@@ -43,7 +44,7 @@ function formatDate(value: string | null): string {
 	if (!value) return 'Never';
 	const date = new Date(value);
 	if (Number.isNaN(date.getTime())) return value;
-	return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+	return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric', timeZone: getAdminTimeZone() });
 }
 
 function postIdFromPath(): string | undefined {

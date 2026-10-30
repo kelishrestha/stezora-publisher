@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createAuthClient } from 'better-auth/client';
 import { buttonClass, cardClass, formControlClass, modalOverlayClass, modalPanelClass } from '../ui/shared/classes';
 import { filterSelectClass } from './filters';
 import { useConfirm } from './useConfirm';
 import Toast, { ToastStack } from './Toast';
+import { DEFAULT_TZ, setAdminTimeZone } from '../../lib/admin/datetime';
 
 /**
  * Admin settings, grouped into labelled sections (Account, Data, Analytics &
@@ -256,6 +257,90 @@ interface AppSettings {
 	analyticsEnabled: boolean;
 	consentMode: 'opt-out' | 'opt-in';
 	retentionDays: number;
+	timezone: string;
+}
+
+function timezoneList(): string[] {
+	try {
+		const withValues = Intl as unknown as { supportedValuesOf?: (key: string) => string[] };
+		const zones = withValues.supportedValuesOf?.('timeZone');
+		if (zones && zones.length > 0) return zones;
+	} catch {
+		/* fall through to the curated list */
+	}
+	return [DEFAULT_TZ, 'UTC', 'Asia/Kolkata', 'Asia/Dubai', 'Europe/London', 'Europe/Paris', 'America/New_York', 'America/Los_Angeles', 'Australia/Sydney'];
+}
+
+function DisplaySettings({ pushToast }: { pushToast: PushToast }) {
+	const [timezone, setTimezone] = useState<string | null>(null);
+	const [saving, setSaving] = useState(false);
+	const zones = useMemo(() => timezoneList(), []);
+
+	useEffect(() => {
+		let cancelled = false;
+		fetch('/api/admin/settings', { credentials: 'same-origin' })
+			.then((response) => (response.ok ? (response.json() as Promise<{ data: { settings: AppSettings } }>) : null))
+			.then((body) => {
+				if (cancelled || !body) return;
+				setTimezone(body.data.settings.timezone);
+				setAdminTimeZone(body.data.settings.timezone);
+			})
+			.catch(() => undefined);
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
+	async function save() {
+		if (!timezone) return;
+		setSaving(true);
+		const response = await fetch('/api/admin/settings', {
+			method: 'PUT',
+			credentials: 'same-origin',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ timezone }),
+		});
+		setSaving(false);
+		if (!response.ok) {
+			pushToast('error', 'Could not save the timezone.');
+			return;
+		}
+		setAdminTimeZone(timezone);
+		pushToast('success', 'Timezone saved.');
+	}
+
+	return (
+		<Section title="Display">
+			<div className={cardClass()}>
+				<SettingRow
+					labelId="row-timezone"
+					title="Timezone"
+					description="Dates and times across the admin are shown in this timezone."
+					control={
+						<select
+							aria-labelledby="row-timezone"
+							value={timezone ?? ''}
+							onChange={(event) => setTimezone(event.target.value)}
+							disabled={!timezone}
+							className={`${filterSelectClass} w-64`}
+						>
+							{timezone && !zones.includes(timezone) && <option value={timezone}>{timezone}</option>}
+							{zones.map((zone) => (
+								<option key={zone} value={zone}>
+									{zone.replace(/_/g, ' ')}
+								</option>
+							))}
+						</select>
+					}
+				/>
+				<div className="flex justify-end border-t border-border px-5 py-4">
+					<button type="button" onClick={save} disabled={saving || !timezone} className={buttonClass('primary')}>
+						{saving ? 'Saving…' : 'Save timezone'}
+					</button>
+				</div>
+			</div>
+		</Section>
+	);
 }
 
 function AnalyticsPrivacy({ pushToast }: { pushToast: PushToast }) {
@@ -289,7 +374,8 @@ function AnalyticsPrivacy({ pushToast }: { pushToast: PushToast }) {
 			method: 'PUT',
 			credentials: 'same-origin',
 			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify(settings),
+			// Only this section's fields, so it never clobbers the timezone.
+			body: JSON.stringify({ analyticsEnabled: settings.analyticsEnabled, consentMode: settings.consentMode, retentionDays: settings.retentionDays }),
 		});
 		setSaving(false);
 		if (!response.ok) {
@@ -512,6 +598,7 @@ export default function Settings() {
 			<Section title="Account">
 				<ChangePassword pushToast={pushToast} />
 			</Section>
+			<DisplaySettings pushToast={pushToast} />
 			<DataExport pushToast={pushToast} />
 			<AnalyticsPrivacy pushToast={pushToast} />
 			<ToastStack>{toast && <Toast tone={toast.tone} message={toast.message} onDismiss={() => setToast(null)} />}</ToastStack>
