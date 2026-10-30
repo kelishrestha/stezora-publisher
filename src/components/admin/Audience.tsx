@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { cardClass, statCardClass, statCardLabelClass, statCardValueClass } from '../ui/shared/classes';
+import { badgeClass, cardClass, statCardClass, statCardLabelClass, statCardValueClass } from '../ui/shared/classes';
 import { filterSelectClass } from './filters';
 import { formatDateTime } from '../../lib/admin/datetime';
 
@@ -45,10 +45,22 @@ interface PublicationOption {
 	slug: string;
 }
 
+interface SourceHistoryPoint {
+	capturedAt: string;
+	app: number;
+	blogger: number;
+	neobook: number;
+}
+
 interface AudienceData {
 	days: number;
 	scope: { publication: string | null; post: string | null; publicationName: string | null; postTitle: string | null };
 	totals: { pageviews: number; visitors: number; last24hPageviews: number; last24hVisitors: number };
+	sources: { app: number; blogger: number; neobook: number };
+	sourceHistory: SourceHistoryPoint[];
+	bloggerPublications: Array<{ slug: string; name: string; viewsAll: number | null; views30d: number | null; views7d: number | null }>;
+	neobookPosts: Array<{ title: string; publication: string; views: number | null; likes: number | null; comments: number | null }>;
+	neobookBooks: Array<{ title: string; views: number | null; likes: number | null; comments: number | null; linkUrl: string | null }>;
 	viewsByDay: DayPoint[];
 	viewsByHour: HourPoint[];
 	topCountries: Array<{ country: string | null; views: number }>;
@@ -57,6 +69,19 @@ interface AudienceData {
 	topPosts: Array<{ publication: string | null; slug: string | null; title: string | null; views: number }>;
 	recentVisits: RecentVisit[];
 }
+
+type SourceKey = 'app' | 'blogger' | 'neobook';
+
+/**
+ * The three content sources. app uses the brand accent; blogger and neobook use
+ * emerald and amber (theme-sanctioned, distinct hues). A legend always pairs the
+ * color with a text label so identity is never color-alone.
+ */
+const SOURCES: Array<{ key: SourceKey; label: string; imported: boolean; stroke: string; fill: string; dot: string }> = [
+	{ key: 'app', label: 'This app', imported: false, stroke: 'stroke-[var(--color-accent)]', fill: 'fill-[var(--color-accent)]', dot: 'bg-[var(--color-accent)]' },
+	{ key: 'blogger', label: 'Blogger', imported: true, stroke: 'stroke-emerald-500', fill: 'fill-emerald-500', dot: 'bg-emerald-500' },
+	{ key: 'neobook', label: 'Neobook', imported: true, stroke: 'stroke-amber-500', fill: 'fill-amber-500', dot: 'bg-amber-500' },
+];
 
 const RANGES = [
 	{ value: 7, label: 'Last 7 days' },
@@ -108,6 +133,7 @@ export default function Audience() {
 	});
 	const [publications, setPublications] = useState<PublicationOption[]>([]);
 	const [days, setDays] = useState(30);
+	const [source, setSource] = useState<SourceKey>('app');
 	const [data, setData] = useState<AudienceData | null>(null);
 	const [error, setError] = useState<string | null>(null);
 
@@ -167,7 +193,9 @@ export default function Audience() {
 
 	const scopedToPost = Boolean(post);
 	const scopedToPublication = Boolean(publication);
-	const empty = data && data.totals.pageviews === 0;
+	const firstPartyEmpty = Boolean(data && data.totals.pageviews === 0);
+	// A per-post view is first-party only; otherwise the dropdown picks the source.
+	const activeSource: SourceKey = scopedToPost ? 'app' : source;
 
 	return (
 		<div className="space-y-6">
@@ -189,16 +217,30 @@ export default function Audience() {
 						</select>
 					</label>
 				)}
-				<label htmlFor="range" className="block w-44">
-					<span className="sr-only">Date range</span>
-					<select id="range" value={days} onChange={(event) => setDays(Number(event.target.value))} className={filterSelectClass}>
-						{RANGES.map((range) => (
-							<option key={range.value} value={range.value}>
-								{range.label}
-							</option>
-						))}
-					</select>
-				</label>
+				<div className="flex flex-wrap items-center gap-3">
+					{!scopedToPost && (
+						<label htmlFor="source" className="block w-44">
+							<span className="sr-only">Source</span>
+							<select id="source" value={source} onChange={(event) => setSource(event.target.value as SourceKey)} className={filterSelectClass}>
+								{SOURCES.map((option) => (
+									<option key={option.key} value={option.key}>
+										{option.label}
+									</option>
+								))}
+							</select>
+						</label>
+					)}
+					<label htmlFor="range" className="block w-44">
+						<span className="sr-only">Date range</span>
+						<select id="range" value={days} onChange={(event) => setDays(Number(event.target.value))} className={filterSelectClass}>
+							{RANGES.map((range) => (
+								<option key={range.value} value={range.value}>
+									{range.label}
+								</option>
+							))}
+						</select>
+					</label>
+				</div>
 			</div>
 
 			{scopedToPost && data?.scope.postTitle && (
@@ -210,15 +252,24 @@ export default function Audience() {
 
 			{!data ? (
 				<SkeletonBlocks />
-			) : empty ? (
-				<div className={cardClass()}>
-					<p className="px-5 py-16 text-center text-sm text-muted-foreground">
-						No visits recorded yet{scopedToPost || scopedToPublication ? ' for this selection' : ''}. Data appears here once the site receives traffic (admin pages are never tracked).
-					</p>
-				</div>
 			) : (
 				<>
-					<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+					{!scopedToPost && <SourceComparison sources={data.sources} active={activeSource} onSelect={setSource} />}
+					{!scopedToPost && <SourceTrend history={data.sourceHistory} />}
+
+					{activeSource === 'blogger' ? (
+						<BloggerSourceDetail publications={data.bloggerPublications} />
+					) : activeSource === 'neobook' ? (
+						<NeobookSourceDetail posts={data.neobookPosts} books={data.neobookBooks} />
+					) : firstPartyEmpty ? (
+						<div className={cardClass()}>
+							<p className="px-5 py-16 text-center text-sm text-muted-foreground">
+								No visits recorded yet{scopedToPost || scopedToPublication ? ' for this selection' : ''}. Data appears here once the site receives traffic (admin pages are never tracked).
+							</p>
+						</div>
+					) : (
+						<>
+							<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 						<StatTile label="Pageviews" value={formatNumber(data.totals.pageviews)} hint={`last ${data.days} days shown below`} />
 						<StatTile label="Unique visitors" value={formatNumber(data.totals.visitors)} hint="all time" />
 						<StatTile label="Views (24h)" value={formatNumber(data.totals.last24hPageviews)} />
@@ -274,10 +325,185 @@ export default function Audience() {
 						/>
 					</div>
 
-					<RecentVisitsCard visits={data.recentVisits} />
+							<RecentVisitsCard visits={data.recentVisits} />
+						</>
+					)}
 				</>
 			)}
 		</div>
+	);
+}
+
+function snapshotLabel(iso: string): string {
+	const date = new Date(iso);
+	return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function SourceComparison({ sources, active, onSelect }: { sources: { app: number; blogger: number; neobook: number }; active: SourceKey; onSelect: (source: SourceKey) => void }) {
+	return (
+		<section className={cardClass()}>
+			<div className="border-b border-border px-5 py-4">
+				<h2 className="text-base font-semibold text-foreground">Views by source</h2>
+				<p className="mt-0.5 text-xs text-muted-foreground">Total views across all content sources. Select one to see its detail below.</p>
+			</div>
+			<div className="grid gap-px bg-border sm:grid-cols-3">
+				{SOURCES.map((meta) => (
+					<button
+						key={meta.key}
+						type="button"
+						onClick={() => onSelect(meta.key)}
+						aria-pressed={active === meta.key}
+						className={`flex flex-col gap-1 bg-surface px-5 py-4 text-left transition-colors hover:bg-surface-elevated ${active === meta.key ? 'ring-2 ring-inset ring-accent' : ''}`}
+					>
+						<span className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+							<span className={`inline-block size-2.5 rounded-full ${meta.dot}`} aria-hidden="true" />
+							{meta.label}
+							{meta.imported && <span className={badgeClass('muted')}>Imported</span>}
+						</span>
+						<span className="text-2xl font-semibold tabular-nums text-foreground">{formatNumber(sources[meta.key])}</span>
+					</button>
+				))}
+			</div>
+		</section>
+	);
+}
+
+function SourceTrend({ history }: { history: SourceHistoryPoint[] }) {
+	if (history.length < 2) {
+		return (
+			<ChartCard title="Aggregate views over time" subtitle="Cumulative total views per source">
+				<p className="text-sm text-muted-foreground">
+					The trend appears once a few snapshots are recorded. Each Blogger stats refresh and Neobook sync captures one.
+				</p>
+			</ChartCard>
+		);
+	}
+
+	const W = 760;
+	const H = 240;
+	const padL = 44;
+	const padR = 48;
+	const padT = 12;
+	const padB = 28;
+	const plotW = W - padL - padR;
+	const plotH = H - padT - padB;
+	const n = history.length;
+	const maxY = Math.max(1, ...history.flatMap((point) => [point.app, point.blogger, point.neobook]));
+	const x = (i: number) => padL + (i / (n - 1)) * plotW;
+	const y = (value: number) => padT + plotH - (value / maxY) * plotH;
+	const pathFor = (key: SourceKey) => history.map((point, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(point[key]).toFixed(1)}`).join(' ');
+	const tickIdx = Array.from(new Set([0, Math.floor((n - 1) / 2), n - 1]));
+
+	const legend = (
+		<div className="flex flex-wrap gap-3">
+			{SOURCES.map((meta) => (
+				<span key={meta.key} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+					<span className={`inline-block size-2.5 rounded-full ${meta.dot}`} aria-hidden="true" />
+					{meta.label}
+				</span>
+			))}
+		</div>
+	);
+
+	return (
+		<ChartCard title="Aggregate views over time" subtitle="Cumulative total views per source" action={legend}>
+			<svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Cumulative views per source over time">
+				{[0, 0.5, 1].map((frac) => {
+					const gy = padT + plotH - frac * plotH;
+					return (
+						<g key={frac}>
+							<line x1={padL} y1={gy} x2={W - padR} y2={gy} className="stroke-border" strokeWidth={1} />
+							<text x={padL - 6} y={gy + 3} textAnchor="end" className="fill-muted-foreground text-[10px]">
+								{Math.round(frac * maxY)}
+							</text>
+						</g>
+					);
+				})}
+				{tickIdx.map((i) => (
+					<text key={i} x={x(i)} y={H - 8} textAnchor="middle" className="fill-muted-foreground text-[10px]">
+						{snapshotLabel(history[i].capturedAt)}
+					</text>
+				))}
+				{SOURCES.map((meta) => (
+					<path key={meta.key} d={pathFor(meta.key)} fill="none" className={meta.stroke} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+				))}
+				{SOURCES.map((meta) => (
+					<text key={`${meta.key}-end`} x={x(n - 1) + 4} y={y(history[n - 1][meta.key]) + 3} className={`${meta.fill} text-[10px] font-medium`}>
+						{formatNumber(history[n - 1][meta.key])}
+					</text>
+				))}
+			</svg>
+		</ChartCard>
+	);
+}
+
+function BloggerSourceDetail({ publications }: { publications: AudienceData['bloggerPublications'] }) {
+	return (
+		<section className={cardClass()}>
+			<div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
+				<div>
+					<h2 className="text-base font-semibold text-foreground">Blogger pageviews</h2>
+					<p className="mt-0.5 text-xs text-muted-foreground">Blog-level totals from Blogger. Refresh them on the integrations page.</p>
+				</div>
+				<span className={badgeClass('muted')}>Imported</span>
+			</div>
+			{publications.length === 0 ? (
+				<p className="px-5 py-10 text-center text-sm text-muted-foreground">No Blogger statistics yet. Use Refresh stats on the integrations page.</p>
+			) : (
+				<div className="overflow-x-auto">
+					<table className="min-w-full divide-y divide-border text-left text-sm">
+						<thead>
+							<tr className="text-xs text-muted-foreground">
+								<th className="px-5 py-2 font-medium">Publication</th>
+								<th className="px-5 py-2 text-right font-medium">Views (7d)</th>
+								<th className="px-5 py-2 text-right font-medium">Views (30d)</th>
+								<th className="px-5 py-2 text-right font-medium">Views (all)</th>
+							</tr>
+						</thead>
+						<tbody className="divide-y divide-border">
+							{publications.map((row) => (
+								<tr key={row.slug}>
+									<td className="px-5 py-2 font-medium text-foreground">{row.name}</td>
+									<td className="px-5 py-2 text-right tabular-nums text-muted-foreground">{row.views7d?.toLocaleString() ?? '–'}</td>
+									<td className="px-5 py-2 text-right tabular-nums text-muted-foreground">{row.views30d?.toLocaleString() ?? '–'}</td>
+									<td className="px-5 py-2 text-right tabular-nums text-muted-foreground">{row.viewsAll?.toLocaleString() ?? '–'}</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+			)}
+			<p className="border-t border-border px-5 py-3 text-xs text-muted-foreground">Geography, referrers, and per-visit detail are available for first-party analytics only.</p>
+		</section>
+	);
+}
+
+function NeobookSourceDetail({ posts, books }: { posts: AudienceData['neobookPosts']; books: AudienceData['neobookBooks'] }) {
+	const empty = posts.length === 0 && books.length === 0;
+	return (
+		<section className="space-y-6">
+			<div className={`${cardClass()} flex items-center justify-between gap-3 px-5 py-4`}>
+				<div>
+					<h2 className="text-base font-semibold text-foreground">Neobook engagement</h2>
+					<p className="mt-0.5 text-xs text-muted-foreground">Per-item view counts from Neobook, refreshed on each sync.</p>
+				</div>
+				<span className={badgeClass('muted')}>Imported</span>
+			</div>
+			{empty ? (
+				<div className={cardClass()}>
+					<p className="px-5 py-10 text-center text-sm text-muted-foreground">No Neobook items yet. Run a sync from the integrations page.</p>
+				</div>
+			) : (
+				<div className="grid gap-6 lg:grid-cols-2">
+					<BarListCard title="Poems by views" rows={posts.map((row) => ({ label: row.title, views: row.views ?? 0 }))} emptyLabel="No poems synced yet." />
+					<BarListCard
+						title="Books by views"
+						rows={books.map((row) => ({ label: row.title, views: row.views ?? 0, href: row.linkUrl ?? undefined, external: true }))}
+						emptyLabel="No books synced yet."
+					/>
+				</div>
+			)}
+		</section>
 	);
 }
 
