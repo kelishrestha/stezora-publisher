@@ -4,6 +4,7 @@ import { exportAll } from './export';
 import { media } from './media';
 import { requireAdmin, withBodyLimit } from '../lib/middleware';
 import { adminStats } from './admin/stats';
+import { analytics } from './admin/analytics';
 import { createPost, deletePost, editorMeta, getPost, listPosts, previewPost, publishPost, updatePost } from './admin/posts';
 import { createTag, deleteTag, listTags, updateTag } from './admin/tags';
 import { deleteAdminMedia, listAdminMedia, localizeMedia, uploadMedia } from './admin/media';
@@ -15,6 +16,7 @@ routes.get('/api/export', exportAll);
 // Rest parameter: localized objects live under nested keys (localized/<id>.<ext>).
 routes.get('/media/:key*', media);
 routes.get('/api/admin/stats', requireAdmin(adminStats));
+routes.get('/api/admin/analytics', requireAdmin(analytics));
 
 // Editor routes. `/api/admin/posts/meta` must be registered before
 // `/api/admin/posts/:id` so the router resolves `meta` as a literal path.
